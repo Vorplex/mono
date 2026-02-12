@@ -29,8 +29,7 @@ const packageDirectories = readdirSync(join(process.cwd(), 'packages', 'vorplex'
 for (const packageDirectory of packageDirectories) {
     console.log(`Publishing @vorplex/${packageDirectory}...`);
     console.log('dist exists:', existsSync(`./packages/vorplex/${packageDirectory}/dist`));
-    exec(`cd "./packages/vorplex/${packageDirectory}"`);
-    exec(`pnpm publish --access public --no-git-checks`);
+    exec(`cd "./packages/vorplex/${packageDirectory}" & pnpm publish --access public --no-git-checks`);
 }
 
 console.log(`\nDone. Published ${packageDirectories.length} package(s) at v${currentVersion}.`);
