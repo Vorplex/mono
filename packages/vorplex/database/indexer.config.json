@@ -1,0 +1,12 @@
+{
+    "output": "src/index.ts",
+    "imports": [],
+    "exports": [
+        "**/*.ts"
+    ],
+    "exclude": [
+        "index.ts",
+        "test.ts",
+        "**/*.spec.ts"
+    ]
+}

@@ -1,0 +1,15 @@
+{
+    "output": "src/index.ts",
+    "imports": [
+        "**/*.extensions.ts"
+    ],
+    "exports": [
+        "**/*.ts",
+        "**/*.tsx"
+    ],
+    "exclude": [
+        "index.ts",
+        "test.ts",
+        "**/*.spec.ts"
+    ]
+}

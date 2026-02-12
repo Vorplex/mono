@@ -1,0 +1,16 @@
+{
+    "private": true,
+    "name": "mono",
+    "version": "0.0.1",
+    "scripts": {
+        "clean:modules": "npx rimraf@2 **/node_modules",
+        "clean:dist": "npx rimraf@2 **/dist",
+        "compose": "docker-compose up -d --build --force-recreate",
+        "compose:dry": "docker compose build --dry-run",
+        "build": "pnpm -r --filter ./packages/vorplex/* build",
+        "version": "npx tsx .github/scripts/version.ts"
+    },
+    "devDependencies": {
+        "@types/node": "^25.2.3"
+    }
+}

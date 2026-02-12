@@ -1,0 +1,21 @@
+{
+    "extends": "../tsconfig.json",
+    "compilerOptions": {
+        "composite": true,
+        "declaration": true,
+        "rootDir": ".",
+        "outDir": "../dist/client",
+        "paths": {}
+    },
+    "include": [
+        "**/*.ts"
+    ],
+    "exclude": [
+        "./test.ts",
+        "**/*.spec.ts",
+        "**/*.d.ts"
+    ],
+    "references": [
+        { "path": "../../core/tsconfig.build.json" }
+    ]
+}

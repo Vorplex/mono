@@ -1,0 +1,17 @@
+{
+    "extends": "./tsconfig.json",
+    "compilerOptions": {
+        "composite": true,
+        "paths": {}
+    },
+    "references": [
+        {
+            "path": "./client/tsconfig.build.json"
+        },
+        {
+            "path": "./server/tsconfig.build.json"
+        }
+    ],
+    "files": [],
+    "include": []
+}

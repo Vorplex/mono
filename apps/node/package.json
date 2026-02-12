@@ -1,0 +1,21 @@
+{
+    "private": true,
+    "name": "node",
+    "version": "1.0.0",
+    "type": "module",
+    "scripts": {
+        "dev": "tsx watch src/main.ts",
+        "build": "tsc -b tsconfig.json"
+    },
+    "dependencies": {
+        "@vorplex/api": "workspace:*",
+        "@vorplex/core": "workspace:*",
+        "@vorplex/database": "workspace:*",
+        "@vorplex/node": "workspace:*"
+    },
+    "devDependencies": {
+        "@types/node": "^25.2.3",
+        "tsx": "^4.21.0",
+        "typescript": "^5.9.3"
+    }
+}

@@ -1,0 +1,22 @@
+{
+    "extends": "./tsconfig.json",
+    "compilerOptions": {
+        "declaration": true,
+        "rootDir": "src",
+        "outDir": "dist",
+        "paths": {}
+    },
+    "include": [
+        "src/**/*.ts",
+        "src/**/*.tsx"
+    ],
+    "exclude": [
+        "src/test.ts",
+        "**/*.spec.ts",
+        "**/*.d.ts"
+    ],
+    "references": [
+        { "path": "../core/tsconfig.build.json" },
+        { "path": "../web/tsconfig.build.json" }
+    ]
+}

@@ -1,0 +1,44 @@
+{
+    "compilerOptions": {
+        "target": "esnext",
+        "module": "preserve",
+        "lib": [
+            "DOM",
+            "ESNext",
+            "DOM.Iterable"
+        ],
+        "jsx": "preserve",
+        "strict": false,
+        "skipLibCheck": true,
+        "baseUrl": ".",
+        "paths": {
+            "@vorplex/core": [
+                "./packages/vorplex/core/src/index.ts"
+            ],
+            "@vorplex/web": [
+                "./packages/vorplex/web/src/index.ts"
+            ],
+            "@vorplex/solid": [
+                "./packages/vorplex/solid/src/index.ts"
+            ],
+            "@vorplex/api/server": [
+                "./packages/vorplex/api/server/index.ts"
+            ],
+            "@vorplex/api/client": [
+                "./packages/vorplex/api/client/index.ts"
+            ],
+            "@vorplex/node": [
+                "./packages/vorplex/node/src/index.ts"
+            ],
+            "@vorplex/database": [
+                "./packages/vorplex/database/src/index.ts"
+            ],
+            "@vorplex/compiler": [
+                "./packages/vorplex/compiler/src/index.ts"
+            ],
+            "@vorplex/chrome-extension": [
+                "./packages/vorplex/chrome-extension/src/index.ts"
+            ]
+        }
+    }
+}
