@@ -1,5 +1,5 @@
 import { execSync } from 'child_process';
-import { existsSync, readdirSync, readFileSync } from 'fs';
+import { readdirSync, readFileSync } from 'fs';
 import { join } from 'path';
 
 function exec(cmd: string): string {
@@ -28,7 +28,6 @@ const packageDirectories = readdirSync(join(process.cwd(), 'packages', 'vorplex'
 
 for (const packageDirectory of packageDirectories) {
     console.log(`Publishing @vorplex/${packageDirectory}...`);
-    console.log('dist exists:', existsSync(`./packages/vorplex/${packageDirectory}/dist`));
     exec(`cd "./packages/vorplex/${packageDirectory}" && pnpm publish --access public --no-git-checks`);
 }
 
