@@ -1,5 +1,5 @@
 import { execSync } from 'child_process';
-import { readdirSync, readFileSync } from 'fs';
+import { readdirSync, readFileSync, unlinkSync, writeFileSync } from 'fs';
 import { join } from 'path';
 
 function exec(cmd: string): string {
@@ -26,9 +26,14 @@ const packageDirectories = readdirSync(join(process.cwd(), 'packages', 'vorplex'
     .filter(entry => entry.isDirectory())
     .map(directory => directory.name);
 
-for (const packageDirectory of packageDirectories) {
-    console.log(`Publishing @vorplex/${packageDirectory}...`);
-    exec(`pnpm publish --filter "./packages/vorplex/${packageDirectory}" --access public --no-git-checks`);
+try {
+    for (const packageDirectory of packageDirectories) {
+        console.log(`Publishing @vorplex/${packageDirectory}...`);
+        writeFileSync(join('packages', 'vorplex', packageDirectory, '.npmignore'), '');
+        exec(`pnpm publish --filter "./packages/vorplex/${packageDirectory}" --access public --no-git-checks`);
+    }
+} finally {
+    for (const npmIgnorePath of npmIgnorePaths) unlinkSync(npmIgnorePath);
 }
 
 console.log(`\nDone. Published ${packageDirectories.length} package(s) at v${currentVersion}.`);
