@@ -9,7 +9,7 @@ export class Bundler {
             initialized.update('initializing');
             try {
                 await initialize({
-                    wasmURL: $Path.join(JsDelivr.url, 'esbuild-wasm@0.25.10', 'esbuild.wasm'),
+                    wasmURL: $Path.join(JsDelivr.url, 'esbuild-wasm@0.25.12', 'esbuild.wasm'),
                 });
                 initialized.update('initialized');
             } catch (error) {
