@@ -3,8 +3,7 @@
     "name": "mono",
     "version": "0.0.11",
     "scripts": {
-        "clean:modules": "npx rimraf@2 **/node_modules",
-        "clean:dist": "npx rimraf@2 **/dist",
+        "clean": "git clean -fdX",
         "compose": "docker-compose up -d --build --force-recreate",
         "compose:dry": "docker compose build --dry-run",
         "build": "pnpm -r --filter \"./packages/vorplex/**\" build",
