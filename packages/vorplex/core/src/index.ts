@@ -3,6 +3,7 @@ export * from './consts/mime-type.const';
 export * from './consts/unit.const';
 export * from './functions/debounce.function';
 export * from './functions/is-node-environment.function';
+export * from './functions/ok.function';
 export * from './functions/parse-path-selector.function';
 export * from './functions/parse-url.function';
 export * from './interfaces/group.interface';
