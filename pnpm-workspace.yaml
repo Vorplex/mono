@@ -2,7 +2,6 @@ packages:
   - apps/*
   - packages/*
   - packages/vorplex/*
-
 overrides:
   "@vorplex/core": "workspace:*"
   "@vorplex/web": "workspace:*"
