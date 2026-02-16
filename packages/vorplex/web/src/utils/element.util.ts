@@ -55,4 +55,14 @@ export class $Element {
         }
         return events.sort();
     }
+
+    public static getElementFromPoint(point: Point) {
+        let element = document.elementFromPoint(point.x, point.y);
+        while (element && element.shadowRoot) {
+            const inner = element.shadowRoot.elementFromPoint(point.x, point.y);
+            if (!inner || inner === element) break;
+            element = inner;
+        }
+        return element;
+    }
 }
