@@ -1,0 +1,16 @@
+name: Release
+description: Build packages and publish to NPM
+
+inputs:
+  npm-token:
+    description: NPM authentication token
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - uses: ./.github/actions/build
+
+    - uses: ./.github/actions/publish
+      with:
+        npm-token: ${{ inputs.npm-token }}

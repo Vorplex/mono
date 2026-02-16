@@ -8,19 +8,7 @@ function exec(cmd: string): string {
 
 const currentVersion: string = JSON.parse(readFileSync('package.json', 'utf8')).version;
 
-let previousVersion: string | null;
-try {
-    previousVersion = JSON.parse(exec(`git show HEAD~1:package.json`)).version;
-} catch {
-    previousVersion = null;
-}
-
-if (previousVersion !== null && currentVersion === previousVersion) {
-    console.log(`Version unchanged (v${currentVersion}). Nothing to publish.`);
-    process.exit(0);
-}
-
-console.log(previousVersion === null ? `First publish: v${currentVersion}` : `Version bump: ${previousVersion} -> ${currentVersion}`);
+console.log(`Publishing v${currentVersion}...`);
 
 const packageDirectories = readdirSync(join(process.cwd(), 'packages', 'vorplex'), { withFileTypes: true })
     .filter(entry => entry.isDirectory())
