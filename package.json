@@ -1,7 +1,7 @@
 {
     "private": true,
     "name": "mono",
-    "version": "0.0.13",
+    "version": "0.0.14",
     "scripts": {
         "clean": "git clean -fdX",
         "build": "pnpm -r --filter \"./packages/vorplex/**\" build",
