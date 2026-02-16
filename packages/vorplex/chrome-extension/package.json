@@ -8,21 +8,31 @@
     ],
     "exports": {
         ".": {
-            "types": "./dist/index.d.ts",
-            "import": "./dist/index.js"
+            "types": "./src/index.ts",
+            "import": "./src/index.ts"
         }
     },
-    "types": "./dist/index.d.ts",
-    "main": "./dist/index.js",
+    "types": "./src/index.ts",
+    "main": "./src/index.ts",
+    "publishConfig": {
+        "types": "./dist/index.d.ts",
+        "main": "./dist/index.js",
+        "exports": {
+            ".": {
+                "types": "./dist/index.d.ts",
+                "import": "./dist/index.js"
+            }
+        }
+    },
     "scripts": {
         "build": "tsc -b --force tsconfig.build.json",
         "test": "jest"
     },
     "dependencies": {
         "@vorplex/core": "workspace:*",
-        "tslib": "^2.8.1"
+        "tslib": "workspace:*"
     },
     "devDependencies": {
-        "@types/chrome": "^0.0.326"
+        "@types/chrome": "workspace:*"
     }
 }

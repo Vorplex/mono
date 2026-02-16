@@ -4,12 +4,10 @@
     "version": "0.0.11",
     "scripts": {
         "clean": "git clean -fdX",
-        "compose": "docker-compose up -d --build --force-recreate",
-        "compose:dry": "docker compose build --dry-run",
         "build": "pnpm -r --filter \"./packages/vorplex/**\" build",
         "version": "npx tsx .github/scripts/version.ts"
     },
     "devDependencies": {
-        "@types/node": "^25.2.3"
+        "@types/node": "workspace:*"
     }
 }

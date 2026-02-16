@@ -8,23 +8,33 @@
     ],
     "exports": {
         ".": {
-            "types": "./dist/index.d.ts",
-            "import": "./dist/index.js"
+            "types": "./src/index.ts",
+            "import": "./src/index.ts"
         }
     },
-    "types": "./dist/index.d.ts",
-    "main": "./dist/index.js",
+    "types": "./src/index.ts",
+    "main": "./src/index.ts",
+    "publishConfig": {
+        "types": "./dist/index.d.ts",
+        "main": "./dist/index.js",
+        "exports": {
+            ".": {
+                "types": "./dist/index.d.ts",
+                "import": "./dist/index.js"
+            }
+        }
+    },
     "scripts": {
         "build": "tsc -b --force tsconfig.build.json",
         "test": "jest"
     },
     "dependencies": {
-        "@types/node": "^22.15.17",
-        "tslib": "^2.8.1"
+        "@types/node": "workspace:*",
+        "tslib": "workspace:*"
     },
     "devDependencies": {
-        "@types/jest": "^29.5.2",
-        "jest": "^29.5.0",
-        "ts-jest": "^29.1.0"
+        "@types/jest": "workspace:*",
+        "jest": "workspace:*",
+        "ts-jest": "workspace:*"
     }
 }
