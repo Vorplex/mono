@@ -1,6 +1,7 @@
 // **/*.ts
 export * from './compiler.util';
 export * from './script-analyzer.util';
+export * from './style-analyzer.util';
 export * from './module-loader/bundler';
 export * from './module-loader/module-loader.util';
 export * from './npm/npm.util';

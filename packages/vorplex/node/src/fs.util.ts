@@ -80,12 +80,12 @@ export class $FileSystem {
         options?: {
             regex?: RegExp;
             type?: 'file' | 'directory';
-            recursive?: boolean;
+            recursive?: boolean | { depth?: number };
         },
     ): Promise<{ type: 'file' | 'directory'; path: string }[]> {
         const results: { type: 'file' | 'directory'; path: string }[] = [];
 
-        async function recurse(directory: string) {
+        async function recurse(directory: string, depth: number) {
             const entries = await fs.promises.readdir(directory, {
                 withFileTypes: true,
             });
@@ -100,7 +100,7 @@ export class $FileSystem {
                             });
                         }
                     }
-                    if (options?.recursive) await recurse(fullPath);
+                    if (typeof options?.recursive === 'boolean' && options.recursive || typeof options?.recursive === 'object' && options?.recursive != null && depth < options.recursive.depth) await recurse(fullPath, depth + 1);
                 } else if (options?.type == null || options?.type === 'file') {
                     if (options?.regex == null || options?.regex.test(entry.name)) {
                         results.push({
@@ -112,7 +112,7 @@ export class $FileSystem {
             }
         }
 
-        await recurse(directory);
+        await recurse(directory, 0);
         return results;
     }
 

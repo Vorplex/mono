@@ -1,6 +1,6 @@
 {
     "name": "@vorplex/api",
-    "version": "0.0.16",
+    "version": "0.0.17",
     "type": "module",
     "sideEffects": false,
     "files": [
@@ -30,7 +30,7 @@
     },
     "scripts": {
         "build": "tsc -b --force tsconfig.build.json",
-        "test": "jest"
+        "test": "vitest run"
     },
     "dependencies": {
         "@types/formidable": "workspace:*",
@@ -41,10 +41,8 @@
         "ws": "workspace:*"
     },
     "devDependencies": {
-        "@types/jest": "workspace:*",
         "@types/node": "workspace:*",
         "@types/ws": "workspace:*",
-        "jest": "workspace:*",
-        "ts-jest": "workspace:*"
+        "vitest": "workspace:*"
     }
 }

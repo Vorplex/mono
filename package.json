@@ -1,13 +1,19 @@
 {
     "private": true,
     "name": "mono",
-    "version": "0.0.16",
+    "version": "0.0.17",
     "scripts": {
         "clean": "git clean -fdX",
         "build": "pnpm -r --filter \"./packages/vorplex/**\" build",
-        "version": "npx tsx .github/scripts/version.ts"
+        "test": "pnpm -r --filter \"./packages/vorplex/**\" test",
+        "version": "npx tsx .github/scripts/version.ts",
+        "package-list": "npx tsx .github/scripts/package-list.mts"
     },
     "devDependencies": {
-        "@types/node": "workspace:*"
+        "@types/node": "workspace:*",
+        "@vorplex/core": "workspace:*",
+        "@vorplex/node": "workspace:*",
+        "vitest": "workspace:*",
+        "yaml": "workspace:*"
     }
 }

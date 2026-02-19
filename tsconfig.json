@@ -1,5 +1,6 @@
 {
     "compilerOptions": {
+        "types": ["vitest/globals", "node"],
         "target": "esnext",
         "module": "preserve",
         "lib": [
