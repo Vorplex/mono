@@ -66,15 +66,15 @@ describe($Changes.rebase.name, () => {
         remote: { a: 3 },
         result: {
             result: { a: 2 },
-            conflicts: {
-                local: { conflicts: { a: 2 }, differences: undefined },
-                remote: { conflicts: { a: 3 }, differences: undefined }
-            },
-            merge: {
-                source: { a: 1 },
-                remote: { a: 3 },
-                local: { a: 2 },
-                result: { a: 3 }
+            conflict: {
+                local: { similarities: undefined, conflicts: { a: 2 }, differences: undefined },
+                remote: { similarities: undefined, conflicts: { a: 3 }, differences: undefined },
+                merge: {
+                    source: { a: 1 },
+                    remote: { a: 3 },
+                    local: { a: 2 },
+                    result: { a: 3 }
+                }
             }
         }
     });
@@ -84,15 +84,15 @@ describe($Changes.rebase.name, () => {
         remote: { x: { a: 3 } },
         result: {
             result: { x: { a: 2 } },
-            conflicts: {
-                local: { conflicts: { x: { a: 2 } }, differences: undefined },
-                remote: { conflicts: { x: { a: 3 } }, differences: undefined }
-            },
-            merge: {
-                source: { x: { a: 1 } },
-                remote: { x: { a: 3 } },
-                local: { x: { a: 2 } },
-                result: { x: { a: 3 } }
+            conflict: {
+                local: { similarities: undefined, conflicts: { x: { a: 2 } }, differences: undefined },
+                remote: { similarities: undefined, conflicts: { x: { a: 3 } }, differences: undefined },
+                merge: {
+                    source: { x: { a: 1 } },
+                    remote: { x: { a: 3 } },
+                    local: { x: { a: 2 } },
+                    result: { x: { a: 3 } }
+                }
             }
         }
     });
@@ -102,15 +102,15 @@ describe($Changes.rebase.name, () => {
         remote: { a: { b: 2 } },
         result: {
             result: {},
-            conflicts: {
-                local: { conflicts: { a: $Changes.deleted }, differences: undefined },
-                remote: { conflicts: { a: { b: 2 } }, differences: undefined }
-            },
-            merge: {
-                source: { a: { b: 1 } },
-                remote: { a: { b: 2 } },
-                local: {},
-                result: { a: { b: 2 } }
+            conflict: {
+                local: { similarities: undefined, conflicts: { a: $Changes.deleted }, differences: undefined },
+                remote: { similarities: undefined, conflicts: { a: { b: 2 } }, differences: undefined },
+                merge: {
+                    source: { a: { b: 1 } },
+                    remote: { a: { b: 2 } },
+                    local: {},
+                    result: { a: { b: 2 } }
+                }
             }
         }
     });
@@ -120,33 +120,33 @@ describe($Changes.rebase.name, () => {
         remote: {},
         result: {
             result: { a: { b: 2 } },
-            conflicts: {
-                local: { conflicts: { a: { b: 2 } }, differences: undefined },
-                remote: { conflicts: { a: $Changes.deleted }, differences: undefined }
-            },
-            merge: {
-                source: { a: { b: 1 } },
-                remote: {},
-                local: { a: { b: 2 } },
-                result: {}
+            conflict: {
+                local: { similarities: undefined, conflicts: { a: { b: 2 } }, differences: undefined },
+                remote: { similarities: undefined, conflicts: { a: $Changes.deleted }, differences: undefined },
+                merge: {
+                    source: { a: { b: 1 } },
+                    remote: {},
+                    local: { a: { b: 2 } },
+                    result: {}
+                }
             }
         }
     });
     test('should merge non-conflicting changes while flagging conflicts', {
         source: { a: 1, b: 1, c: 1 },
-        local: { a: 2, b: 1, c: 2 },
-        remote: { a: 3, b: 2, c: 1 },
+        local: { a: 2, b: 1, c: 2, x: true },
+        remote: { a: 3, b: 2, c: 1, x: true },
         result: {
-            result: { a: 2, b: 2, c: 2 },
-            conflicts: {
-                local: { conflicts: { a: 2 }, differences: { c: 2 } },
-                remote: { conflicts: { a: 3 }, differences: { b: 2 } }
-            },
-            merge: {
-                source: { a: 1, b: 2, c: 2 },
-                remote: { a: 3, b: 2, c: 2 },
-                local: { a: 2, b: 2, c: 2 },
-                result: { a: 3, b: 2, c: 2 }
+            result: { a: 2, b: 2, c: 2, x: true },
+            conflict: {
+                local: { similarities: { x: true }, conflicts: { a: 2 }, differences: { c: 2 } },
+                remote: { similarities: { x: true }, conflicts: { a: 3 }, differences: { b: 2 } },
+                merge: {
+                    source: { a: 1, b: 2, c: 2, x: true },
+                    remote: { a: 3, b: 2, c: 2, x: true },
+                    local: { a: 2, b: 2, c: 2, x: true },
+                    result: { a: 3, b: 2, c: 2, x: true }
+                }
             }
         }
     });

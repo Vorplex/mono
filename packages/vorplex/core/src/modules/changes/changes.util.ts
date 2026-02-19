@@ -4,23 +4,43 @@ import { $Value } from '../value/value.util';
 
 export type ArrayChange = Record<`$${number}` | `$${number}+`, any | typeof $Changes.deleted>;
 
-export interface ChangeConflicts {
+export interface ChangeCompareResult {
+    similarities: any;
     conflicts: any;
     differences: any;
 }
 
 export interface ChangeRebase<T = any> {
+    /**
+     * The remote with local changes
+     */
     result: T;
-    conflicts?: {
-        local: ChangeConflicts;
-        remote: ChangeConflicts;
+    /**
+     * Only defined when the rebase contains conflicts.
+     * Contains rebase conflicts and merge
+     */
+    conflict?: {
+        local: ChangeCompareResult,
+        remote: ChangeCompareResult,
+        merge?: {
+            /**
+             * The source with remote and local none conflicting changes
+             */
+            source: T,
+            /**
+             * The `.source` with remote conflict changes
+             */
+            remote: T,
+            /**
+             * The `.source` with local conflict changes
+             */
+            local: T
+            /**
+             * The remote with local none conflicting changes
+             */
+            result: T
+        }
     };
-    merge?: {
-        source: T,
-        remote: T,
-        local: T
-        result: T
-    }
 }
 
 export class $Changes {
@@ -124,30 +144,28 @@ export class $Changes {
         return $Changes.getObjectChanges(a, b);
     }
 
-    public static classifyPathsByOverlap(changesA: any, changesB: any): { conflicts: string[], differences: string[] } {
+    public static compareChanges(changesA: any, changesB: any): ChangeCompareResult {
         const aPaths = $Object.getPaths(changesA);
         const bPaths = $Object.getPaths(changesB);
+        const similarities = new Set<string>();
         const conflicts = new Set<string>();
         const differences = new Set<string>();
-        for (const aPath of aPaths) {
-            if (bPaths.some(bPath => this.pathsOverlap(aPath, bPath))) conflicts.add(aPath);
-            else differences.add(aPath);
-        }
         for (const bPath of bPaths) {
-            if (aPaths.some(aPath => this.pathsOverlap(aPath, bPath))) conflicts.add(bPath);
-            else differences.add(bPath);
+            let overlapped: boolean;
+            for (const aPath of aPaths) {
+                if (this.pathsOverlap(aPath, bPath)) {
+                    overlapped = true;
+                    const longestPath = aPath.length > bPath.length ? aPath : bPath;
+                    if ($Value.equals($Value.get(changesA, longestPath), $Value.get(changesB, longestPath))) similarities.add(bPath);
+                    else conflicts.add(bPath);
+                }
+            }
+            if (!overlapped) differences.add(bPath);
         }
         return {
-            conflicts: Array.from(conflicts),
-            differences: Array.from(differences)
-        };
-    }
-
-    public static resolveConflicts(changesA: any, changesB: any): ChangeConflicts {
-        const { conflicts, differences } = this.classifyPathsByOverlap(changesA, changesB);
-        return {
-            differences: $Changes.excludeChanges(changesB, conflicts),
-            conflicts: $Changes.excludeChanges(changesB, differences)
+            similarities: $Changes.excludeChanges(changesB, [...conflicts, ...differences]),
+            differences: $Changes.excludeChanges(changesB, [...similarities, ...conflicts]),
+            conflicts: $Changes.excludeChanges(changesB, [...similarities, ...differences])
         };
     }
 
@@ -166,7 +184,10 @@ export class $Changes {
         const bPaths = $Object.getPaths(changesB);
         for (const bPath of bPaths) {
             for (const aPath of aPaths) {
-                if (this.pathsOverlap(aPath, bPath)) return true;
+                if (this.pathsOverlap(aPath, bPath)) {
+                    const longestPath = aPath.length > bPath.length ? aPath : bPath;
+                    if (!$Value.equals($Value.get(changesA, longestPath), $Value.get(changesB, longestPath))) return true;
+                }
             }
         }
         return false;
@@ -180,7 +201,6 @@ export class $Changes {
         }
 
         if (typeof changes === 'object' && changes !== null) {
-            // cannot materialize array index changes without a base; strip them
             if ($Changes.isArrayIndexChange(changes)) return undefined;
 
             const result: Record<string, any> = {};
@@ -194,74 +214,82 @@ export class $Changes {
         return changes;
     }
 
-    public static apply(value: any, changes: any): any {
-        function applyArrayChange(originalArray: any[], change: any): any[] {
-            if (!$Changes.isArrayIndexChange(change)) return $Value.clone(change);
+    public static apply(value: any, ...changes: any[]): any {
+        function apply(value: any, changes: any): any {
+            function applyArrayChange(originalArray: any[], change: any): any[] {
+                if (!$Changes.isArrayIndexChange(change)) return $Value.clone(change);
 
-            const result = $Value.clone(originalArray);
+                const result = $Value.clone(originalArray);
 
-            const entries = Object.entries(change)
-                .map(([k, v]) => {
-                    const isInsert = k.endsWith('+');
-                    const nStr = isInsert ? k.slice(1, -1) : k.slice(1);
-                    return [Number.parseInt(nStr, 10), isInsert, v] as const;
-                })
-                .filter(([i]) => !Number.isNaN(i))
-                .sort(([iA, insA, vA], [iB, insB, vB]) => {
-                    const aDel = vA === $Changes.deleted;
-                    const bDel = vB === $Changes.deleted;
+                const entries = Object.entries(change)
+                    .map(([k, v]) => {
+                        const isInsert = k.endsWith('+');
+                        const nStr = isInsert ? k.slice(1, -1) : k.slice(1);
+                        return [Number.parseInt(nStr, 10), isInsert, v] as const;
+                    })
+                    .filter(([i]) => !Number.isNaN(i))
+                    .sort(([iA, insA, vA], [iB, insB, vB]) => {
+                        const aDel = vA === $Changes.deleted;
+                        const bDel = vB === $Changes.deleted;
 
-                    // deletes first, highest -> lowest
-                    if (aDel !== bDel) return aDel ? -1 : 1;
-                    if (aDel && bDel) return iB - iA;
+                        // deletes first, highest -> lowest
+                        if (aDel !== bDel) return aDel ? -1 : 1;
+                        if (aDel && bDel) return iB - iA;
 
-                    // inserts next, lowest -> highest
-                    if (insA !== insB) return insA ? -1 : 1;
-                    if (insA && insB) return iA - iB;
+                        // inserts next, lowest -> highest
+                        if (insA !== insB) return insA ? -1 : 1;
+                        if (insA && insB) return iA - iB;
 
-                    // sets last, lowest -> highest
-                    return iA - iB;
-                });
+                        // sets last, lowest -> highest
+                        return iA - iB;
+                    });
 
-            for (const [index, isInsert, op] of entries) {
-                if (op === $Changes.deleted) {
-                    if (index >= 0 && index < result.length) result.splice(index, 1);
-                } else if (isInsert) {
-                    const v = $Value.clone(op);
-                    const idx = Math.min(Math.max(index, 0), result.length);
-                    result.splice(idx, 0, v);
-                } else {
-                    if (index >= result.length) result.length = index + 1;
-                    result[index] = $Changes.apply(result[index], op);
+                for (const [index, isInsert, op] of entries) {
+                    if (op === $Changes.deleted) {
+                        if (index >= 0 && index < result.length) result.splice(index, 1);
+                    } else if (isInsert) {
+                        const v = $Value.clone(op);
+                        const idx = Math.min(Math.max(index, 0), result.length);
+                        result.splice(idx, 0, v);
+                    } else {
+                        if (index >= result.length) result.length = index + 1;
+                        result[index] = $Changes.apply(result[index], op);
+                    }
                 }
+
+                return result;
             }
 
-            return result;
-        }
+            if (changes === undefined) return value;
+            if (value == null || typeof changes !== 'object') return $Changes.asValue(changes);
 
-        if (changes === undefined) return value;
-        if (value == null || typeof changes !== 'object') return $Changes.asValue(changes);
-
-        if (Array.isArray(value)) {
-            return applyArrayChange(value, changes);
-        } else if (typeof value === 'object') {
-            if (Array.isArray(changes)) return $Changes.asValue(changes);
-            const result = { ...value };
-            for (const [key, change] of Object.entries(changes)) {
-                if (change === $Changes.deleted) {
-                    delete result[key];
-                } else if (Array.isArray(result[key])) {
-                    result[key] = applyArrayChange(result[key] || [], change);
-                } else if (typeof change === 'object' && change !== null) {
-                    result[key] = $Changes.apply(result[key], change);
-                } else {
-                    result[key] = change;
+            if (Array.isArray(value)) {
+                return applyArrayChange(value, changes);
+            } else if (typeof value === 'object') {
+                if (Array.isArray(changes)) return $Changes.asValue(changes);
+                const result = { ...value };
+                for (const [key, change] of Object.entries(changes)) {
+                    if (change === $Changes.deleted) {
+                        delete result[key];
+                    } else if (Array.isArray(result[key])) {
+                        result[key] = applyArrayChange(result[key] || [], change);
+                    } else if (typeof change === 'object' && change !== null) {
+                        result[key] = $Changes.apply(result[key], change);
+                    } else {
+                        result[key] = change;
+                    }
                 }
+                return result;
             }
-            return result;
+
+            return $Changes.asValue(changes);
         }
 
-        return $Changes.asValue(changes);
+        for (const change of changes) {
+            value = apply(value, change);
+        }
+
+        return value;
     }
 
     public static rebase(source: any, local: any, remote: any): ChangeRebase {
@@ -276,20 +304,20 @@ export class $Changes {
             result = $Changes.apply(result, remoteChanges);
             return { result };
         } else {
-            const localConflict = $Changes.resolveConflicts(remoteChanges, localChanges);
-            const remoteConflict = $Changes.resolveConflicts(localChanges, remoteChanges);
-            const sourceWithDifferences = $Changes.apply($Changes.apply(source, remoteConflict.differences), localConflict.differences);
+            const localConflict = $Changes.compareChanges(remoteChanges, localChanges);
+            const remoteConflict = $Changes.compareChanges(localChanges, remoteChanges);
+            const sourceWithDifferences = $Changes.apply(source, remoteConflict.differences, localConflict.differences, remoteConflict.similarities, localConflict.similarities);
             const mergedWithLocalDifferences = $Changes.apply(remote, localConflict.differences);
             return {
-                conflicts: {
+                conflict: {
                     local: localConflict,
                     remote: remoteConflict,
-                },
-                merge: {
-                    source: sourceWithDifferences,
-                    remote: $Changes.apply(sourceWithDifferences, remoteConflict.conflicts),
-                    local: $Changes.apply(sourceWithDifferences, localConflict.conflicts),
-                    result: mergedWithLocalDifferences
+                    merge: {
+                        source: sourceWithDifferences,
+                        remote: $Changes.apply(sourceWithDifferences, remoteConflict.conflicts),
+                        local: $Changes.apply(sourceWithDifferences, localConflict.conflicts),
+                        result: mergedWithLocalDifferences
+                    },
                 },
                 result: $Changes.apply(mergedWithLocalDifferences, localConflict.conflicts)
             };
