@@ -18,6 +18,7 @@ overrides:
   'mssql': '^11.0.1'
   'pg': '^8.16.3'
   'semver': '^7.7.3'
+  'tsx': '^4.21.0'
   'vitest': '^3.0.5'
   'tslib': '^2.8.1'
   'typescript': '^5.9.3'
