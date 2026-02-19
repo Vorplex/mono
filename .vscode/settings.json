@@ -5,5 +5,8 @@
         "source.organizeImports": "explicit"
     },
     "editor.formatOnSave": true,
-    "yaml.format.singleQuote": true
+    "yaml.format.singleQuote": true,
+    "explorer.fileNesting.patterns": {
+        "package.json": "vitest.config.ts, esbuild.config.mts, package-lock.json, yarn.lock, pnpm-lock.yaml, pnpm-workspace.yaml, tsconfig.json, readme.md, .gitignore, indexer.config.json, .npmignore, jest.config.js, nodemon.json, vite.config.ts, webpack.config.ts, dockerfile"
+    }
 }
