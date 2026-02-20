@@ -45,7 +45,7 @@ export class Bundler {
                             const importerPath = args.importer === '<stdin>' ? options.path : args.importer;
                             const importPath = relative ? $Path.join(importerPath, `../${args.path}`) : args.path;
 
-                            importParent[importPath] = importerPath;
+                            importParent[importPath] ??= importerPath;
                             let importStack = [];
                             let parentPath = importerPath;
                             while (parentPath) {

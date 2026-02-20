@@ -1,103 +1,66 @@
-export class IndexedDB {
-    public static async getDatabaseInfo(name: string): Promise<IDBDatabaseInfo | undefined> {
-        const databases = await indexedDB.databases();
-        return databases.find((database) => database.name === name);
-    }
+import { StorageProvider } from '@vorplex/core';
 
-    public static async openDatabase(name: string, version?: number): Promise<IDBDatabase & Disposable> {
-        const db = await new Promise<IDBDatabase>((resolve, reject) => {
-            const request = indexedDB.open(name, version);
+export class IndexedDbStorage implements StorageProvider {
+
+    private static promisify<T>(request: IDBRequest<T>): Promise<T> {
+        return new Promise((resolve, reject) => {
             request.onsuccess = () => resolve(request.result);
             request.onerror = (event: any) => reject(event.target.error);
         });
-        return Object.assign(db, {
-            [Symbol.dispose]() {
-                db.close();
-            },
-        });
     }
 
-    public static async getDatabaseStores(name: string): Promise<string[]> {
-        using database = await IndexedDB.openDatabase(name);
-        return Array.from(database.objectStoreNames);
+    private static async connect<T>(databaseName: string, storeName: string, mode: IDBTransactionMode, callback: (store: IDBObjectStore) => IDBRequest<T>): Promise<T> {
+        let database: IDBDatabase = await this.promisify(indexedDB.open(databaseName));
+
+        if (!database.objectStoreNames.contains(storeName)) {
+            const version = database.version;
+            database.close();
+            database = await new Promise<IDBDatabase>((resolve, reject) => {
+                const request = indexedDB.open(databaseName, version + 1);
+                request.onupgradeneeded = () => request.result.createObjectStore(storeName);
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = (event: any) => reject(event.target.error);
+            });
+        }
+
+        try {
+            const store = database.transaction(storeName, mode).objectStore(storeName);
+            return await this.promisify(callback(store));
+        } finally {
+            database.close();
+        }
     }
 
-    public static async createDatabaseStore(databaseName: string, storeName: string): Promise<void> {
-        const existingStores = await IndexedDB.getDatabaseStores(databaseName);
-        if (existingStores.find((store) => store === storeName)) return;
-        const databaseInfo = await IndexedDB.getDatabaseInfo(databaseName);
-        const currentVersion = databaseInfo?.version || 1;
-
-        return new Promise<void>((resolve, reject) => {
-            const request = indexedDB.open(databaseName, currentVersion + 1);
-            request.onupgradeneeded = () => {
-                const db = request.result;
-                if (!db.objectStoreNames.contains(storeName)) {
-                    db.createObjectStore(storeName);
-                }
-            };
-            request.onsuccess = () => {
-                request.result.close();
-                resolve();
-            };
-            request.onerror = (event: any) => reject(event.target.error);
-        });
+    public static async get<T = any>(database: string, store: string, key: string): Promise<T | null> {
+        const result = await this.connect(database, store, 'readonly', (store) => store.get(key));
+        return result ?? null;
     }
 
-    public static async openStore(databaseName: string, storeName: string, mode: IDBTransactionMode = 'readwrite'): Promise<IDBObjectStore & Disposable> {
-        await IndexedDB.createDatabaseStore(databaseName, storeName);
-        const db = await IndexedDB.openDatabase(databaseName);
-        const transaction = db.transaction(storeName, mode);
-        const objectStore = transaction.objectStore(storeName);
-        return Object.assign(objectStore, {
-            [Symbol.dispose]() {
-                db.close();
-            },
-        });
+    public static async set(database: string, store: string, key: string, value: any): Promise<void> {
+        await this.connect(database, store, 'readwrite', (store) => store.put(value, key));
     }
 
-    public static async set(databaseName: string, storeName: string, key: string, value: any): Promise<void> {
-        using store = await IndexedDB.openStore(databaseName, storeName);
-        const request = store.put(value, key);
-        return new Promise<void>((resolve, reject) => {
-            request.onsuccess = () => resolve();
-            request.onerror = (event: any) => reject(event.target.error);
-        });
+    public static async delete(database: string, store: string, key: string): Promise<void> {
+        await this.connect(database, store, 'readwrite', (store) => store.delete(key));
     }
 
-    public static async get<T = any>(databaseName: string, storeName: string, key: IDBValidKey | IDBKeyRange): Promise<T | null> {
-        using store = await IndexedDB.openStore(databaseName, storeName, 'readonly');
-        const request = store.get(key);
-        return new Promise<T | null>((resolve, reject) => {
-            request.onsuccess = () => resolve(request.result ?? null);
-            request.onerror = (event: any) => reject(event.target.error);
-        });
+    public static async clear(database: string, store: string): Promise<void> {
+        await this.connect(database, store, 'readwrite', (store) => store.clear());
     }
 
-    public static async getAllKeys(databaseName: string, storeName: string): Promise<string[] | null> {
-        using store = await IndexedDB.openStore(databaseName, storeName, 'readonly');
-        const request = store.getAllKeys();
-        return new Promise<string[] | null>((resolve, reject) => {
-            request.onsuccess = () => resolve((request.result as string[]) ?? null);
-            request.onerror = (event: any) => reject(event.target.error);
-        });
+    public static async keys(database: string, store: string): Promise<string[]> {
+        return await this.connect(database, store, 'readonly', (store) => store.getAllKeys()) as string[];
     }
 
-    public static async getAll<T = any>(databaseName: string, storeName: string, key?: IDBValidKey | IDBKeyRange): Promise<T[] | null> {
-        using store = await IndexedDB.openStore(databaseName, storeName, 'readonly');
-        const request = store.getAll(key);
-        return new Promise<T[] | null>((resolve, reject) => {
-            request.onsuccess = () => resolve(request.result ?? null);
-            request.onerror = (event: any) => reject(event.target.error);
-        });
+    public static async getAll<T = any>(database: string, store: string): Promise<T[]> {
+        return await this.connect(database, store, 'readonly', (store) => store.getAll()) ?? [];
     }
 
-    public static async clear(databaseName: string, storeName: string): Promise<void> {
-        using store = await IndexedDB.openStore(databaseName, storeName);
-        return new Promise<void>((resolve, reject) => {
-            const request = store.clear();
-            request.onsuccess = () => resolve();
-            request.onerror = (event: any) => reject(event.target.error);
-        });
-    }
+    async get<T = any>(database: string, store: string, key: string): Promise<T | null> { return IndexedDbStorage.get<T>(database, store, key); }
+    async set(database: string, store: string, key: string, value: any): Promise<void> { return IndexedDbStorage.set(database, store, key, value); }
+    async delete(database: string, store: string, key: string): Promise<void> { return IndexedDbStorage.delete(database, store, key); }
+    async clear(database: string, store: string): Promise<void> { return IndexedDbStorage.clear(database, store); }
+    async keys(database: string, store: string): Promise<string[]> { return IndexedDbStorage.keys(database, store); }
+    async getAll<T = any>(database: string, store: string): Promise<T[]> { return IndexedDbStorage.getAll<T>(database, store); }
+
 }

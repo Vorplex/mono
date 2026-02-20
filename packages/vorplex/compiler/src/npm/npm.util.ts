@@ -65,17 +65,17 @@ export class NPM {
 
                 if (pkg.dependencies) {
                     task.log('Resolving packages dependencies.');
-                    for (const [depName, depRange] of Object.entries(pkg.dependencies)) {
+                    await Promise.all(Object.entries(pkg.dependencies).map(async ([depName, depRange]) =>
                         await task.do(`${depName}@${depRange}`, async (task) => {
                             node.dependencies[depName] = await resolvePackage(depName, depRange, [node, ...ancestors], task);
-                        });
-                    }
+                        })
+                    ));
                     task.log('Done resolving packages dependencies.');
                 }
 
                 if (pkg.peerDependencies) {
                     task.log('Resolving packages peer-dependencies.');
-                    for (const [peerName, peerRange] of Object.entries(pkg.peerDependencies)) {
+                    await Promise.all(Object.entries(pkg.peerDependencies).map(async ([peerName, peerRange]) =>
                         await task.do(`${peerName}@${peerRange}`, async (task) => {
                             node.dependencies[peerName] = await resolvePackage(
                                 peerName,
@@ -83,8 +83,8 @@ export class NPM {
                                 ancestors,
                                 task
                             );
-                        });
-                    }
+                        })
+                    ));
                     task.log('Done resolving packages peer-dependencies.');
                 }
 
@@ -93,11 +93,11 @@ export class NPM {
 
             const tree: DependencyTree = {};
             task.log('Resolving packages');
-            for (const [name, range] of Object.entries(packages)) {
+            await Promise.all(Object.entries(packages).map(async ([name, range]) =>
                 await task.do(`${name}@${range}`, async (task) => {
                     tree[name] = await resolvePackage(name, range, [], task);
                 })
-            }
+            ));
             task.log('Done resolving packages');
 
             task.log('Done resolving dependency tree');
