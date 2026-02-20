@@ -300,26 +300,26 @@ export class $Changes {
         } if (remoteChanges === undefined) {
             return { result: $Changes.apply(source, localChanges) };
         } else if (!$Changes.hasConflict(remoteChanges, localChanges)) {
-            let result = $Changes.apply(source, localChanges);
-            result = $Changes.apply(result, remoteChanges);
+            const localCompare = $Changes.compareChanges(remoteChanges, localChanges);
+            const result = $Changes.apply(source, remoteChanges, localCompare.differences);
             return { result };
         } else {
-            const localConflict = $Changes.compareChanges(remoteChanges, localChanges);
-            const remoteConflict = $Changes.compareChanges(localChanges, remoteChanges);
-            const sourceWithDifferences = $Changes.apply(source, remoteConflict.differences, localConflict.differences, remoteConflict.similarities, localConflict.similarities);
-            const mergedWithLocalDifferences = $Changes.apply(remote, localConflict.differences);
+            const localCompare = $Changes.compareChanges(remoteChanges, localChanges);
+            const remoteCompare = $Changes.compareChanges(localChanges, remoteChanges);
+            const sourceWithDifferences = $Changes.apply(source, remoteCompare.differences, localCompare.differences, remoteCompare.similarities, localCompare.similarities);
+            const mergedWithLocalDifferences = $Changes.apply(remote, localCompare.differences);
             return {
                 conflict: {
-                    local: localConflict,
-                    remote: remoteConflict,
+                    local: localCompare,
+                    remote: remoteCompare,
                     merge: {
                         source: sourceWithDifferences,
-                        remote: $Changes.apply(sourceWithDifferences, remoteConflict.conflicts),
-                        local: $Changes.apply(sourceWithDifferences, localConflict.conflicts),
+                        remote: $Changes.apply(sourceWithDifferences, remoteCompare.conflicts),
+                        local: $Changes.apply(sourceWithDifferences, localCompare.conflicts),
                         result: mergedWithLocalDifferences
                     },
                 },
-                result: $Changes.apply(mergedWithLocalDifferences, localConflict.conflicts)
+                result: $Changes.apply(mergedWithLocalDifferences, localCompare.conflicts)
             };
         }
     }
