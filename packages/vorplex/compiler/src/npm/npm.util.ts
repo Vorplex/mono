@@ -145,8 +145,7 @@ export class NPM {
     }
 
     public static parseImportString(string: string) {
-        if (!string) throw new Error('Invalid import string');
-        const match = string.match(/^(?<packageName>(?:@[\w-]+\/[\w-]+|[\w-]+))(?:\/(?<subpath>.+?))?(?:\/?@(?<version>\d+(?:\.\d+)*(?:-[\w.]+)?(?:\+[\w.]+)?))?$/);
+        const match = string.match(/^(?<packageName>(?:@[\w.-]+\/[\w.-]+|[\w.-]+))(?:\/(?<subpath>.+?))?(?:\/?@(?<version>\d+(?:\.\d+)*(?:-[\w.]+)?(?:\+[\w.]+)?))?$/);
         if (!match) throw new Error(`Invalid import string (${string})`);
         return match?.groups as {
             packageName: string;
