@@ -1,6 +1,6 @@
-import { StorageProvider } from '@vorplex/core';
+import { StorageDefinition, StorageProvider } from '@vorplex/core';
 
-export class IndexedDbStorage implements StorageProvider {
+export class IndexedDbStorage<T extends StorageDefinition = StorageDefinition> implements StorageProvider<T> {
 
     private static promisify<T>(request: IDBRequest<T>): Promise<T> {
         return new Promise((resolve, reject) => {
@@ -56,11 +56,23 @@ export class IndexedDbStorage implements StorageProvider {
         return await this.connect(database, store, 'readonly', (store) => store.getAll()) ?? [];
     }
 
-    async get<T = any>(database: string, store: string, key: string): Promise<T | null> { return IndexedDbStorage.get<T>(database, store, key); }
-    async set(database: string, store: string, key: string, value: any): Promise<void> { return IndexedDbStorage.set(database, store, key, value); }
-    async delete(database: string, store: string, key: string): Promise<void> { return IndexedDbStorage.delete(database, store, key); }
-    async clear(database: string, store: string): Promise<void> { return IndexedDbStorage.clear(database, store); }
-    async keys(database: string, store: string): Promise<string[]> { return IndexedDbStorage.keys(database, store); }
-    async getAll<T = any>(database: string, store: string): Promise<T[]> { return IndexedDbStorage.getAll<T>(database, store); }
+    public async get<TDatabase extends keyof T & string, TStore extends keyof T[TDatabase] & string>(database: TDatabase, store: TStore, key: string): Promise<T[TDatabase][TStore] | null> {
+        return IndexedDbStorage.get<T[TDatabase][TStore]>(database, store, key);
+    }
+    public async set<TDatabase extends keyof T & string, TStore extends keyof T[TDatabase] & string>(database: TDatabase, store: TStore, key: string, value: T[TDatabase][TStore]): Promise<void> {
+        return IndexedDbStorage.set(database, store, key, value);
+    }
+    public async delete<TDatabase extends keyof T & string, TStore extends keyof T[TDatabase] & string>(database: TDatabase, store: TStore, key: string): Promise<void> {
+        return IndexedDbStorage.delete(database, store, key);
+    }
+    public async clear<TDatabase extends keyof T & string, TStore extends keyof T[TDatabase] & string>(database: TDatabase, store: TStore): Promise<void> {
+        return IndexedDbStorage.clear(database, store);
+    }
+    public async keys<TDatabase extends keyof T & string, TStore extends keyof T[TDatabase] & string>(database: TDatabase, store: TStore): Promise<string[]> {
+        return IndexedDbStorage.keys(database, store);
+    }
+    public async getAll<TDatabase extends keyof T & string, TStore extends keyof T[TDatabase] & string>(database: TDatabase, store: TStore): Promise<T[TDatabase][TStore][]> {
+        return IndexedDbStorage.getAll<T[TDatabase][TStore]>(database, store);
+    }
 
 }
