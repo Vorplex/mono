@@ -128,10 +128,11 @@ export class $Tson {
     public static generateJsonSchema(definition: TsonDefinition): object {
         const buildDefs = (definition: TsonDefinition, $defs = new Map<TsonDefinition, { name: string, schema: { $ref: string } }>(), seen = new Set<TsonDefinition>()) => {
             if (definition == null) return;
+            if ($defs.has(definition)) return $defs;
             if (seen.has(definition)) {
                 const name = `def${$defs.size}`;
                 $defs.set(definition, { name, schema: { $ref: `#/$defs/${name}` } });
-                return;
+                return $defs;
             }
             seen.add(definition);
             if (definition.type === 'object') {
@@ -152,9 +153,9 @@ export class $Tson {
         };
         const $defs = buildDefs(definition);
 
-        const build = (definition: TsonDefinition, $defs = new Map<TsonDefinition, { name: string, schema: { $ref: string } }>()): object => {
+        const build = (definition: TsonDefinition, $defs: Map<TsonDefinition, { name: string, schema: { $ref: string } }>, inline?: boolean): object => {
             if (definition == null) return {};
-            if ($defs.has(definition)) return $defs.get(definition).schema;
+            if (!inline && $defs.has(definition)) return $defs.get(definition).schema;
             const meta = (schema: any) => {
                 if (definition.description) schema.description = definition.description;
                 if ('default' in definition) schema.default = definition.default;
@@ -164,14 +165,14 @@ export class $Tson {
                 case 'any': return {};
                 case 'string': return meta({
                     type: 'string',
-                    minLength: definition.min,
-                    maxLength: definition.max,
-                    pattern: definition.match
+                    ...(definition.min != null && { minLength: definition.min }),
+                    ...(definition.max != null && { maxLength: definition.max }),
+                    ...(definition.match != null && { pattern: definition.match }),
                 });
                 case 'number': return meta({
                     type: definition.integer ? 'integer' : 'number',
-                    minimum: definition.min,
-                    maximum: definition.max
+                    ...(definition.min != null && { minimum: definition.min }),
+                    ...(definition.max != null && { maximum: definition.max }),
                 });
                 case 'boolean': return meta({ type: 'boolean' });
                 case 'object': {
@@ -182,15 +183,19 @@ export class $Tson {
                     if (definition.properties) {
                         const required: string[] = [];
                         const properties = Object.fromEntries(Object.entries(definition.properties).map(([k, v]) => { if (!('default' in (v as any))) required.push(k); return [k, build(v, $defs)]; }));
-                        return meta({ type: 'object', properties, ...(required.length > 0 && { required }) });
+                        return meta({
+                            type: 'object',
+                            properties,
+                            ...(required.length > 0 && { required })
+                        });
                     }
                     return { type: 'object' };
                 }
                 case 'array': return meta({
                     type: 'array',
                     items: build(definition.itemDefinition, $defs),
-                    minItems: definition.min,
-                    maxItems: definition.max
+                    ...(definition.min != null && { minItems: definition.min }),
+                    ...(definition.max != null && { maxItems: definition.max }),
                 });
                 case 'enum': return meta({ enum: definition.flags });
                 case 'union': return meta({ oneOf: definition.union.map(item => build(item, $defs)) });
@@ -198,7 +203,7 @@ export class $Tson {
         };
 
         return {
-            $defs: $defs.size ? $defs.entries().reduce((defs, [definition, ref]) => ({ ...defs, [ref.name]: build(definition) }), {}) : undefined,
+            ...($defs.size ? { $defs: $defs.entries().reduce((defs, [def, ref]) => ({ ...defs, [ref.name]: build(def, $defs, true) }), {}) } : {}),
             ...build(definition, $defs)
         };
     }
