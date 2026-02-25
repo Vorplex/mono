@@ -125,6 +125,84 @@ export class $Tson {
         }
     }
 
+    public static generateJsonSchema(definition: TsonDefinition): object {
+        const buildDefs = (definition: TsonDefinition, $defs = new Map<TsonDefinition, { name: string, schema: { $ref: string } }>(), seen = new Set<TsonDefinition>()) => {
+            if (definition == null) return;
+            if (seen.has(definition)) {
+                const name = `def${$defs.size}`;
+                $defs.set(definition, { name, schema: { $ref: `#/$defs/${name}` } });
+                return;
+            }
+            seen.add(definition);
+            if (definition.type === 'object') {
+                if (definition.property) buildDefs(definition.property, $defs, seen);
+                else if (definition.properties) {
+                    for (const property of Object.values(definition.properties)) {
+                        buildDefs(property, $defs, seen);
+                    }
+                }
+            }
+            else if (definition.type === 'array') buildDefs(definition.itemDefinition, $defs, seen);
+            else if (definition.type === 'union') {
+                for (const item of definition.union) {
+                    buildDefs(item, $defs, seen);
+                }
+            }
+            return $defs;
+        };
+        const $defs = buildDefs(definition);
+
+        const build = (definition: TsonDefinition, $defs = new Map<TsonDefinition, { name: string, schema: { $ref: string } }>()): object => {
+            if (definition == null) return {};
+            if ($defs.has(definition)) return $defs.get(definition).schema;
+            const meta = (schema: any) => {
+                if (definition.description) schema.description = definition.description;
+                if ('default' in definition) schema.default = definition.default;
+                return schema;
+            };
+            switch (definition.type) {
+                case 'any': return {};
+                case 'string': return meta({
+                    type: 'string',
+                    minLength: definition.min,
+                    maxLength: definition.max,
+                    pattern: definition.match
+                });
+                case 'number': return meta({
+                    type: definition.integer ? 'integer' : 'number',
+                    minimum: definition.min,
+                    maximum: definition.max
+                });
+                case 'boolean': return meta({ type: 'boolean' });
+                case 'object': {
+                    if (definition.property) return meta({
+                        type: 'object',
+                        additionalProperties: build(definition.property, $defs)
+                    });
+                    if (definition.properties) {
+                        const required: string[] = [];
+                        const properties = Object.fromEntries(Object.entries(definition.properties).map(([k, v]) => { if (!('default' in (v as any))) required.push(k); return [k, build(v, $defs)]; }));
+                        return meta({ type: 'object', properties, ...(required.length > 0 && { required }) });
+                    }
+                    return { type: 'object' };
+                }
+                case 'array': return meta({
+                    type: 'array',
+                    items: build(definition.itemDefinition, $defs),
+                    minItems: definition.min,
+                    maxItems: definition.max
+                });
+                case 'enum': return meta({ enum: definition.flags });
+                case 'union': return meta({ oneOf: definition.union.map(item => build(item, $defs)) });
+            }
+        };
+
+        return {
+            $defs: $defs.size ? $defs.entries().reduce((defs, [definition, ref]) => ({ ...defs, [ref.name]: build(definition) }), {}) : undefined,
+            ...build(definition, $defs)
+        };
+    }
+
     public static generate(value: any): TsonDefinition {
         if (typeof value === 'string') return $Tson.string();
         if (typeof value === 'number') return $Tson.number();
