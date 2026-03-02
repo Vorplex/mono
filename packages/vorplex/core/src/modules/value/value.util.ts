@@ -5,6 +5,14 @@ import { $String } from '../string/string.util';
 
 export class $Value {
 
+    public static isPrimitive(value: any) {
+        return value == null || typeof value !== 'object';
+    }
+
+    public static isObject(value: any) {
+        return value != null && typeof value === 'object' && !Array.isArray(value);
+    }
+
     public static isNumeric(value: any) {
         return !isNaN(parseInt(value));
     }
@@ -85,8 +93,9 @@ export class $Value {
                 if (!refs.has(a)) refs.set(a, new Set());
                 refs.get(a).add(b);
             }
+            if (Array.isArray(a) !== Array.isArray(b)) return false;
             if (Array.isArray(a)) {
-                if (!Array.isArray(b) || a.length !== b.length) return false;
+                if (a.length !== b.length) return false;
                 for (let i = 0; i < a.length; i++) {
                     if (!recurse(a[i], b[i], refs)) return false;
                 }

@@ -18,7 +18,7 @@ describe($Changes.apply.name, () => {
     test('should return object with updated property', { name: 'foo', age: 23 }, { name: 'bar' }, { name: 'bar', age: 23 });
     test('should return object with deleted property', { name: 'foo', age: 23 }, { age: $Changes.deleted }, { name: 'foo' });
     test('should return object with added property', { name: 'foo' }, { age: 23 }, { name: 'foo', age: 23 });
-    test('should return object with added property', { }, { property: {} }, { property: {} });
+    test('should return object with added property', {}, { property: {} }, { property: {} });
     test('should return object with added property', { property: undefined }, { property: {} }, { property: {} });
     // array
     test('should return array with appended item', [0, 1], { '$2+': 2 }, [0, 1, 2]);
@@ -35,4 +35,6 @@ describe($Changes.apply.name, () => {
     test('should return nested object with updated property', { gender: 'male', child: { name: 'foo' } }, { child: { name: 'bar' } }, { gender: 'male', child: { name: 'bar' } });
     test('should return nested object with added property', { gender: 'male', child: { name: 'foo' } }, { child: { age: 23 } }, { gender: 'male', child: { name: 'foo', age: 23 } });
     test('should return nested object with deleted property', { gender: 'male', child: { name: 'foo' } }, { child: { name: $Changes.deleted } }, { gender: 'male', child: {} });
+    // null base
+    test('should return changes when base is null', null, { a: 1 }, { a: 1 });
 });

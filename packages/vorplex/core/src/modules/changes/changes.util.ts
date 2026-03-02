@@ -1,362 +1,315 @@
-import { parsePath } from '../../functions/parse-path-selector.function';
-import { $Object } from '../object/object.util';
 import { $Value } from '../value/value.util';
 
 export type ArrayChange = Record<`$${number}` | `$${number}+`, any | typeof $Changes.deleted>;
 
 export interface ChangeCompareResult {
+    differences: any;
     similarities: any;
     conflicts: any;
-    differences: any;
 }
 
 export interface ChangeRebase<T = any> {
     /**
-     * The remote with local changes
+     * The remote with local changes applied
      */
     result: T;
     /**
      * Only defined when the rebase contains conflicts.
-     * Contains rebase conflicts and merge
+     * Contains rebase conflicts and merge context.
      */
     conflict?: {
-        local: ChangeCompareResult,
-        remote: ChangeCompareResult,
+        local: ChangeCompareResult;
+        remote: ChangeCompareResult;
         merge?: {
             /**
-             * The source with remote and local none conflicting changes
+             * The source with all non-conflicting changes from both sides applied
              */
-            source: T,
+            source: T;
             /**
-             * The `.source` with remote conflict changes
+             * The `.source` with remote conflicting changes applied
              */
-            remote: T,
+            remote: T;
             /**
-             * The `.source` with local conflict changes
+             * The `.source` with local conflicting changes applied
              */
-            local: T
+            local: T;
             /**
-             * The remote with local none conflicting changes
+             * The remote with local non-conflicting changes applied
              */
-            result: T
-        }
+            result: T;
+        };
     };
 }
+
+type ArrayOperation =
+    | { type: 'keep'; sourceIndex: number; targetIndex: number }
+    | { type: 'delete'; sourceIndex: number }
+    | { type: 'insert'; targetIndex: number; value: any }
+    | { type: 'update'; sourceIndex: number; targetIndex: number; value: any };
 
 export class $Changes {
 
     public static readonly deleted = '[deleted]' as const;
 
-    private static isArrayIndexChange(change: any): change is ArrayChange {
-        if (change == null || typeof change !== 'object' || Array.isArray(change)) return false;
-        if (!Object.keys(change).length) return;
-        for (const k of Object.keys(change)) {
-            if (!k.startsWith('$')) return false;
-            const key = k.endsWith('+') ? k.slice(1, -1) : k.slice(1);
-            const index = Number.parseInt(key, 10);
-            if (Number.isNaN(index)) return false;
-        }
-        return true;
-    }
+    /**
+     * Compute a minimal change object between `a` (base) and `b` (target).
+     * Returns `undefined` when there is no difference.
+     */
+    public static get(a: any, b: any): any {
+        function getObjectChanges(a: Record<string, any>, b: Record<string, any>): any {
+            const changes: Record<string, any> = {};
+            const keys = new Set([...Object.keys(a), ...Object.keys(b)]);
 
-    public static getArrayChanges(a: any[], b: any[]): ArrayChange | undefined {
-        if ($Value.equals(a, b)) return;
-
-        const result: ArrayChange = {};
-        let i = 0; // index in a
-        let j = 0; // index in b
-
-        while (i < a.length && j < b.length) {
-            if ($Value.equals(a[i], b[j])) {
-                i++; j++;
-                continue;
+            for (const key of keys) {
+                if (!(key in b)) {
+                    changes[key] = $Changes.deleted;
+                } else if (!(key in a)) {
+                    changes[key] = b[key];
+                } else {
+                    const change = $Changes.get(a[key], b[key]);
+                    if (change !== undefined) changes[key] = change;
+                }
             }
 
-            // Look for matches further ahead to detect multiple deletions/insertions
-            let foundDeletion = false;
-            for (let lookAhead = i + 1; lookAhead < a.length; lookAhead++) {
-                if ($Value.equals(a[lookAhead], b[j])) {
-                    // Found a match - mark all items between as deleted
-                    for (let k = i; k < lookAhead; k++) {
-                        result[`$${k}`] = $Changes.deleted;
+            return Object.keys(changes).length ? changes : undefined;
+        }
+        function getArrayChanges(base: any[], target: any[]): ArrayChange | undefined {
+            function getArrayOperations(base: any[], target: any[]): ArrayOperation[] {
+                function getLcsMatrix(a: any[], b: any[]): number[][] {
+                    const matrix: number[][] = Array.from({ length: a.length + 1 }, () => new Array(b.length + 1).fill(0));
+                    for (let i = 1; i <= a.length; i++) {
+                        for (let j = 1; j <= b.length; j++) {
+                            matrix[i][j] = $Value.equals(a[i - 1], b[j - 1])
+                                ? matrix[i - 1][j - 1] + 1
+                                : Math.max(matrix[i - 1][j], matrix[i][j - 1]);
+                        }
                     }
-                    i = lookAhead;
-                    foundDeletion = true;
-                    break;
+                    return matrix;
                 }
-            }
-            if (foundDeletion) continue;
-
-            // Look for insertions
-            let foundInsertion = false;
-            for (let lookAhead = j + 1; lookAhead < b.length; lookAhead++) {
-                if ($Value.equals(a[i], b[lookAhead])) {
-                    // Found a match - mark all items between as insertions
-                    for (let k = j; k < lookAhead; k++) {
-                        result[`$${k}+`] = b[k];
+                const matrix = getLcsMatrix(base, target);
+                const operations: ArrayOperation[] = [];
+                let i = base.length;
+                let j = target.length;
+                while (i > 0 || j > 0) {
+                    if (i > 0 && j > 0 && $Value.equals(base[i - 1], target[j - 1])) {
+                        operations.push({ type: 'keep', sourceIndex: i - 1, targetIndex: j - 1 });
+                        i--;
+                        j--;
+                    } else if (j > 0 && (i === 0 || matrix[i][j - 1] >= matrix[i - 1][j])) {
+                        operations.push({ type: 'insert', targetIndex: j - 1, value: target[j - 1] });
+                        j--;
+                    } else {
+                        operations.push({ type: 'delete', sourceIndex: i - 1 });
+                        i--;
                     }
-                    j = lookAhead;
-                    foundInsertion = true;
-                    break;
+                }
+                return operations.reverse();
+            }
+            if (!target.length) return [] as any;
+            const operations = getArrayOperations(base, target);
+            const paired: ArrayOperation[] = [];
+            for (let i = 0; i < operations.length; i++) {
+                const current = operations[i];
+                const next = operations[i + 1];
+                if (current.type === 'delete' && next?.type === 'insert') {
+                    paired.push({ type: 'update', sourceIndex: current.sourceIndex, targetIndex: next.targetIndex, value: next.value });
+                    i++;
+                } else {
+                    paired.push(current);
                 }
             }
-            if (foundInsertion) continue;
-
-            // Replace
-            result[`$${i}`] = $Changes.get(a[i], b[j]);
-            i++; j++;
-        }
-
-        // Remaining items in a were deleted
-        for (; i < a.length; i++) result[`$${i}`] = $Changes.deleted;
-
-        // Remaining items in b were appended (inserts at end)
-        for (; j < b.length; j++) result[`$${j}+`] = b[j];
-
-        return Object.keys(result).length ? result : undefined;
-    }
-
-    public static getObjectChanges(a: Record<string, any>, b: Record<string, any>): Record<string, any | typeof $Changes.deleted> {
-        const changes: Record<string, any | typeof $Changes.deleted> = {};
-        const keys = new Set([...Object.keys(a), ...Object.keys(b)]);
-        for (const key of keys) {
-            if (!(key in b)) {
-                changes[key] = $Changes.deleted;
-            } else if (!(key in a)) {
-                changes[key] = b[key];
-            } else {
-                const change = $Changes.get(a[key], b[key]);
-                if (change !== undefined) {
-                    changes[key] = change;
+            const changes: Record<string, any> = {};
+            let baseIdx = 0;
+            let targetIdx = 0;
+            for (const op of paired) {
+                if (op.type === 'keep') {
+                    baseIdx++;
+                    targetIdx++;
+                } else if (op.type === 'delete') {
+                    changes[`$${op.sourceIndex}`] = $Changes.deleted;
+                    baseIdx++;
+                } else if (op.type === 'update') {
+                    const d = $Changes.get(base[op.sourceIndex], op.value);
+                    changes[`$${op.sourceIndex}`] = d !== undefined ? d : op.value;
+                    baseIdx++;
+                    targetIdx++;
+                } else {
+                    changes[`$${op.targetIndex}+`] = op.value;
+                    targetIdx++;
                 }
             }
+            return Object.keys(changes).length ? changes as ArrayChange : undefined;
         }
-        return Object.keys(changes).length ? changes : undefined;
-    }
-
-    public static get(a: any, b: any): undefined | any | Record<string, any | typeof $Changes.deleted> | ArrayChange {
-        if (a === b) return;
+        if ($Value.equals(a, b)) return undefined;
         if (a == null || b == null) return b;
-        if (typeof a !== 'object') return b;
         if (typeof a !== typeof b) return b;
         if (Array.isArray(a) !== Array.isArray(b)) return b;
-        if (Array.isArray(a) && Array.isArray(b)) return $Changes.getArrayChanges(a, b);
-        return $Changes.getObjectChanges(a, b);
-    }
-
-    public static compareChanges(changesA: any, changesB: any): ChangeCompareResult {
-        const aPaths = $Object.getPaths(changesA);
-        const bPaths = $Object.getPaths(changesB);
-        const similarities = new Set<string>();
-        const conflicts = new Set<string>();
-        const differences = new Set<string>();
-        for (const bPath of bPaths) {
-            let overlapped: boolean;
-            for (const aPath of aPaths) {
-                if (this.pathsOverlap(aPath, bPath)) {
-                    overlapped = true;
-                    const longestPath = aPath.length > bPath.length ? aPath : bPath;
-                    if ($Value.equals($Value.get(changesA, longestPath), $Value.get(changesB, longestPath))) similarities.add(bPath);
-                    else conflicts.add(bPath);
-                }
-            }
-            if (!overlapped) differences.add(bPath);
-        }
-        return {
-            similarities: $Changes.excludeChanges(changesB, [...conflicts, ...differences]),
-            differences: $Changes.excludeChanges(changesB, [...similarities, ...conflicts]),
-            conflicts: $Changes.excludeChanges(changesB, [...similarities, ...differences])
-        };
-    }
-
-    private static pathsOverlap(a: string, b: string): boolean {
-        const selectorsA = parsePath(a);
-        const selectorsB = parsePath(b);
-        const length = Math.min(selectorsA.length, selectorsB.length);
-        for (let i = 0; i < length; i++) {
-            if (selectorsA[i] !== selectorsB[i]) return false;
-        }
-        return true;
-    }
-
-    public static hasConflict(changesA: any, changesB: any): boolean {
-        const aPaths = $Object.getPaths(changesA);
-        const bPaths = $Object.getPaths(changesB);
-        for (const bPath of bPaths) {
-            for (const aPath of aPaths) {
-                if (this.pathsOverlap(aPath, bPath)) {
-                    const longestPath = aPath.length > bPath.length ? aPath : bPath;
-                    if (!$Value.equals($Value.get(changesA, longestPath), $Value.get(changesB, longestPath))) return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    public static asValue(changes: any): any {
-        if (changes === undefined) return undefined;
-
-        if (Array.isArray(changes)) {
-            return changes.map(item => $Changes.asValue(item));
-        }
-
-        if (typeof changes === 'object' && changes !== null) {
-            if ($Changes.isArrayIndexChange(changes)) return undefined;
-
-            const result: Record<string, any> = {};
-            for (const [key, value] of Object.entries(changes)) {
-                if (value === $Changes.deleted) continue;
-                result[key] = $Changes.asValue(value);
-            }
-            return result;
-        }
-
-        return changes;
-    }
-
-    public static apply(value: any, ...changes: any[]): any {
-        function apply(value: any, changes: any): any {
-            function applyArrayChange(originalArray: any[], change: any): any[] {
-                if (!$Changes.isArrayIndexChange(change)) return $Value.clone(change);
-
-                const result = $Value.clone(originalArray);
-
-                const entries = Object.entries(change)
-                    .map(([k, v]) => {
-                        const isInsert = k.endsWith('+');
-                        const nStr = isInsert ? k.slice(1, -1) : k.slice(1);
-                        return [Number.parseInt(nStr, 10), isInsert, v] as const;
-                    })
-                    .filter(([i]) => !Number.isNaN(i))
-                    .sort(([iA, insA, vA], [iB, insB, vB]) => {
-                        const aDel = vA === $Changes.deleted;
-                        const bDel = vB === $Changes.deleted;
-
-                        // deletes first, highest -> lowest
-                        if (aDel !== bDel) return aDel ? -1 : 1;
-                        if (aDel && bDel) return iB - iA;
-
-                        // inserts next, lowest -> highest
-                        if (insA !== insB) return insA ? -1 : 1;
-                        if (insA && insB) return iA - iB;
-
-                        // sets last, lowest -> highest
-                        return iA - iB;
-                    });
-
-                for (const [index, isInsert, op] of entries) {
-                    if (op === $Changes.deleted) {
-                        if (index >= 0 && index < result.length) result.splice(index, 1);
-                    } else if (isInsert) {
-                        const v = $Value.clone(op);
-                        const idx = Math.min(Math.max(index, 0), result.length);
-                        result.splice(idx, 0, v);
-                    } else {
-                        if (index >= result.length) result.length = index + 1;
-                        result[index] = $Changes.apply(result[index], op);
-                    }
-                }
-
-                return result;
-            }
-
-            if (changes === undefined) return value;
-            if (value == null || typeof changes !== 'object') return $Changes.asValue(changes);
-
-            if (Array.isArray(value)) {
-                return applyArrayChange(value, changes);
-            } else if (typeof value === 'object') {
-                if (Array.isArray(changes)) return $Changes.asValue(changes);
-                const result = { ...value };
-                for (const [key, change] of Object.entries(changes)) {
-                    if (change === $Changes.deleted) {
-                        delete result[key];
-                    } else if (Array.isArray(result[key])) {
-                        result[key] = applyArrayChange(result[key] || [], change);
-                    } else if (typeof change === 'object' && change !== null) {
-                        result[key] = $Changes.apply(result[key], change);
-                    } else {
-                        result[key] = change;
-                    }
-                }
-                return result;
-            }
-
-            return $Changes.asValue(changes);
-        }
-
-        for (const change of changes) {
-            value = apply(value, change);
-        }
-
-        return value;
-    }
-
-    public static rebase(source: any, local: any, remote: any): ChangeRebase {
-        const localChanges = $Changes.get(source, local);
-        const remoteChanges = $Changes.get(source, remote);
-        if (localChanges === undefined || $Value.equals(localChanges, remoteChanges)) {
-            return { result: $Changes.apply(source, remoteChanges) };
-        } if (remoteChanges === undefined) {
-            return { result: $Changes.apply(source, localChanges) };
-        } else if (!$Changes.hasConflict(remoteChanges, localChanges)) {
-            const localCompare = $Changes.compareChanges(remoteChanges, localChanges);
-            const result = $Changes.apply(source, remoteChanges, localCompare.differences);
-            return { result };
-        } else {
-            const localCompare = $Changes.compareChanges(remoteChanges, localChanges);
-            const remoteCompare = $Changes.compareChanges(localChanges, remoteChanges);
-            const sourceWithDifferences = $Changes.apply(source, remoteCompare.differences, localCompare.differences, remoteCompare.similarities, localCompare.similarities);
-            const mergedWithLocalDifferences = $Changes.apply(remote, localCompare.differences);
-            return {
-                conflict: {
-                    local: localCompare,
-                    remote: remoteCompare,
-                    merge: {
-                        source: sourceWithDifferences,
-                        remote: $Changes.apply(sourceWithDifferences, remoteCompare.conflicts),
-                        local: $Changes.apply(sourceWithDifferences, localCompare.conflicts),
-                        result: mergedWithLocalDifferences
-                    },
-                },
-                result: $Changes.apply(mergedWithLocalDifferences, localCompare.conflicts)
-            };
-        }
+        if (Array.isArray(a) && Array.isArray(b)) return getArrayChanges(a, b);
+        if (typeof a === 'object' && typeof b === 'object') return getObjectChanges(a, b);
+        return b;
     }
 
     /**
-     * Excludes specific paths from a changes object and cleans up empty containers.
-     * Empty objects {} left behind after exclusion are recursively cleaned up,
-     * unless they existed in the original changes (intentional {} changes are preserved).
-     *
-     * @param changes - The changes object to filter
-     * @param paths - Array of dot-notation paths to exclude (e.g., ['user.name', 'config.theme'])
-     * @returns The filtered changes object with empty containers cleaned up
+     * Compare two change sets and split `a` into three buckets:
+     * - `differences`  — entries in `a` absent in `b`
+     * - `similarities` — entries in `a` identical to corresponding entries in `b`
+     * - `conflicts`    — entries in `a` that clash with `b`
      */
-    public static excludeChanges(changes: any, paths: string[]): any {
-        if (!paths.length) return changes;
-        if (typeof changes !== 'object' || changes == null || Array.isArray(changes)) return changes;
-        const result = $Value.clone(changes);
-        for (const pathString of paths) {
-            $Value.unset(result, pathString);
+    public static compareChanges(a: any, b: any): ChangeCompareResult {
+        if (a === undefined && b === undefined) return { differences: undefined, similarities: undefined, conflicts: undefined };
+        if (a === undefined) return { differences: undefined, similarities: undefined, conflicts: undefined };
+        if (b === undefined) return { differences: a, similarities: undefined, conflicts: undefined };
+        if ($Value.isPrimitive(a) || $Value.isPrimitive(b) || Array.isArray(a) !== Array.isArray(b)) {
+            if ($Value.equals(a, b)) return { differences: undefined, similarities: a, conflicts: undefined };
+            return { differences: undefined, similarities: undefined, conflicts: a };
         }
-        function cleanupEmptyObjects(current: any, original: any): any {
-            if (current == null || typeof current !== 'object') return current;
-            if (Array.isArray(current)) return current.map((item, index) => cleanupEmptyObjects(item, original?.[index]));
-            const cleaned: Record<string, any> = {};
-            for (const [key, value] of Object.entries(current)) {
-                if (value === $Changes.deleted) {
-                    cleaned[key] = value;
-                    continue;
-                }
-                const cleanedValue = cleanupEmptyObjects(value, original?.[key]);
-                if (cleanedValue === undefined) continue;
-                if (!$Object.isEmptyObject(cleanedValue) || $Object.isEmptyObject(original?.[key])) cleaned[key] = cleanedValue;
+        const aChanges = a as Record<string, any>;
+        const bChanges = b as Record<string, any>;
+        const allKeys = new Set([...Object.keys(aChanges), ...Object.keys(bChanges)]);
+        const differences: Record<string, any> = {};
+        const similarities: Record<string, any> = {};
+        const conflicts: Record<string, any> = {};
+        for (const key of allKeys) {
+            const aValue = aChanges[key];
+            const bValue = bChanges[key];
+            if (aValue === undefined) continue;
+            if (bValue === undefined) {
+                differences[key] = aValue;
+            } else if ($Value.equals(aValue, bValue)) {
+                similarities[key] = aValue;
+            } else if ($Value.isObject(aValue) && $Value.isObject(bValue)) {
+                const nested = $Changes.compareChanges(aValue, bValue);
+                if (nested.differences !== undefined) differences[key] = nested.differences;
+                if (nested.similarities !== undefined) similarities[key] = nested.similarities;
+                if (nested.conflicts !== undefined) conflicts[key] = nested.conflicts;
+            } else {
+                conflicts[key] = aValue;
             }
-            if (Object.keys(cleaned).length === 0) return $Object.isEmptyObject(original) ? {} : undefined;
-            return cleaned;
         }
-        return cleanupEmptyObjects(result, changes);
+        return {
+            differences: Object.keys(differences).length ? differences : undefined,
+            similarities: Object.keys(similarities).length ? similarities : undefined,
+            conflicts: Object.keys(conflicts).length ? conflicts : undefined,
+        };
+    }
+
+    public static apply(base: any, ...changes: any[]): any {
+        function applyArrayChanges(base: any[], changes: any): any[] {
+            base = [...base];
+            const deletes: number[] = [];
+            const updates: Map<number, any> = new Map();
+            const inserts: Map<number, any> = new Map();
+            for (const [key, value] of Object.entries(changes)) {
+                const insertMatch = key.match(/^\$(?<index>\d+)\+$/);
+                const updateMatch = key.match(/^\$(?<index>\d+)$/);
+                if (insertMatch) {
+                    inserts.set(Number.parseInt(insertMatch.groups.index, 10), value);
+                } else if (updateMatch) {
+                    const index = Number.parseInt(updateMatch.groups.index, 10);
+                    if (value === $Changes.deleted) deletes.push(index);
+                    else updates.set(index, value);
+                }
+            }
+            const sortedDeletes = deletes.sort((a, b) => b - a);
+            for (const index of sortedDeletes) {
+                if (index >= base.length) throw new Error(`Delete index ${index} out of bounds`);
+                base.splice(index, 1);
+            }
+            for (const [index, value] of updates) {
+                const deletedBefore = sortedDeletes.filter((d) => d < index).length;
+                const adjustedIdx = index - deletedBefore;
+                if (adjustedIdx >= base.length) throw new Error(`Update index ${index} out of bounds`);
+                base[adjustedIdx] = $Changes.apply(base[adjustedIdx], value);
+            }
+            const sortedInserts = [...inserts.entries()].sort((a, b) => a[0] - b[0]);
+            for (const [index, value] of sortedInserts) {
+                base.splice(index, 0, value);
+            }
+            return base;
+        }
+        function isArrayChange(change: any): change is ArrayChange {
+            if (change == null || typeof change !== 'object' || Array.isArray(change)) return false;
+            if (!Object.keys(change).length) return false;
+            for (const k of Object.keys(change)) {
+                if (!k.startsWith('$')) return false;
+                const key = k.endsWith('+') ? k.slice(1, -1) : k.slice(1);
+                if (Number.isNaN(Number.parseInt(key, 10))) return false;
+            }
+            return true;
+        }
+        function apply(base: any, changes: any) {
+            if (changes === undefined) return base;
+            if (Array.isArray(changes)) return changes;
+            if (typeof changes !== 'object' || changes === null) return changes;
+
+            if (isArrayChange(changes)) {
+                if (!Array.isArray(base)) throw new Error('Cannot apply array changes to non-array');
+                return applyArrayChanges(base, changes);
+            }
+
+            if (Array.isArray(base)) return applyArrayChanges(base, changes);
+
+            if (typeof base !== 'object' || base === null) return changes;
+
+            const result = { ...base };
+            for (const [key, value] of Object.entries(changes)) {
+                if (value === $Changes.deleted) {
+                    delete result[key];
+                } else {
+                    result[key] = $Changes.apply(result[key] !== undefined ? result[key] : null, value);
+                }
+            }
+            return result;
+        }
+        for (const change of changes) {
+            base = apply(base, change);
+        }
+        return base;
+    }
+
+    /**
+     * 3-way rebase of source, remote and local
+     *
+     * Applies remote changes onto source, then rebases local on top.
+     * Local always wins on conflict.
+     *
+     * Returns a `ChangeRebase` with:
+     * - `result` — the final merged value
+     * - `conflict` — present only when overlapping changes are detected
+     */
+    public static rebase<T = any>(source: T, remote: T, local: T): ChangeRebase<T> {
+        const remoteChanges = $Changes.get(source, remote);
+        const localChanges = $Changes.get(source, local);
+        if (localChanges === undefined || $Value.equals(localChanges, remoteChanges)) return { result: $Changes.apply(source, remoteChanges) };
+        if (remoteChanges === undefined) return { result: $Changes.apply(source, localChanges) };
+        const localCompare = $Changes.compareChanges(localChanges, remoteChanges);
+        const remoteCompare = $Changes.compareChanges(remoteChanges, localChanges);
+        const hasConflicts = localCompare.conflicts !== undefined || remoteCompare.conflicts !== undefined;
+        if (!hasConflicts) {
+            const result = $Changes.apply(source, remoteChanges, localCompare.differences);
+            return { result };
+        }
+        const sourceWithDifferences = $Changes.apply(
+            source,
+            remoteCompare.differences,
+            localCompare.differences,
+            remoteCompare.similarities,
+            localCompare.similarities
+        );
+        const mergedWithLocalDifferences = $Changes.apply(remote, localCompare.differences);
+        return {
+            result: $Changes.apply(mergedWithLocalDifferences, localCompare.conflicts),
+            conflict: {
+                local: localCompare,
+                remote: remoteCompare,
+                merge: {
+                    source: sourceWithDifferences,
+                    remote: $Changes.apply(sourceWithDifferences, remoteCompare.conflicts),
+                    local: $Changes.apply(sourceWithDifferences, localCompare.conflicts),
+                    result: mergedWithLocalDifferences,
+                },
+            },
+        };
     }
 
 }

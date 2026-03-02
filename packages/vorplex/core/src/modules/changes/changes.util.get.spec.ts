@@ -25,8 +25,11 @@ describe($Changes.get.name, () => {
     test('should only return changed property of nested object', { gender: 'male', child: { name: 'foo', age: 23 } }, { gender: 'male', child: { name: 'bar', age: 23 } }, { child: { name: 'bar' } });
     test('should only return added property of nested object', { gender: 'male', child: { name: 'foo' } }, { gender: 'male', child: { name: 'foo', age: 23 } }, { child: { age: 23 } });
     test('should only return deleted property of nested object', { gender: 'male', child: { name: 'foo', age: 23 } }, { gender: 'male', child: { name: 'foo' } }, { child: { age: $Changes.deleted } });
+    // null base
+    test('should return b when a is null', null, 'value', 'value');
     // array
     test('should return undefined if no changes to array', [0, 1, 2], [0, 1, 2], undefined);
+    test('should return empty array when target array is empty', [1, 2], [], []);
     test('should return appended value to array', [0, 1], [0, 1, 2], { '$2+': 2 });
     test('should return prepended value to array', [1, 2], [0, 1, 2], { '$0+': 0 });
     test('should return inserted value to array', [0, 2], [0, 1, 2], { '$1+': 1 });

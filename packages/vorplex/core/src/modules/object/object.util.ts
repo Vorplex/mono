@@ -1,3 +1,4 @@
+
 export class $Object {
 
     public static hasKeys<T = any>(value: any, ...keys: Extract<keyof T, string>[]): boolean {
@@ -54,10 +55,4 @@ export class $Object {
         return paths;
     }
 
-    public static isEmptyObject(value: any): boolean {
-        return typeof value === 'object'
-            && value !== null
-            && !Array.isArray(value)
-            && Object.keys(value).length === 0;
-    }
 }
