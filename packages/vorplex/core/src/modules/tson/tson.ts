@@ -203,7 +203,7 @@ export class $Tson {
         };
 
         return {
-            ...($defs.size ? { $defs: $defs.entries().reduce((defs, [def, ref]) => ({ ...defs, [ref.name]: build(def, $defs, true) }), {}) } : {}),
+            ...($defs.size ? { $defs: Array.from($defs.entries()).reduce((defs, [def, ref]) => ({ ...defs, [ref.name]: build(def, $defs, true) }), {}) } : {}),
             ...build(definition, $defs)
         };
     }
