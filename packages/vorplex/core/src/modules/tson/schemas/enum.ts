@@ -26,7 +26,7 @@ export class TsonEnum<T extends string | number = any> extends TsonSchemaBase<T>
     }
 
     public getDefault(): T {
-        return this.definition.default ?? this.definition.flags[0];
+        return 'default' in this.definition ? this.definition.default : this.definition.flags[0];
     }
 
     public accepts(definition: TsonDefinition | null | undefined): boolean {

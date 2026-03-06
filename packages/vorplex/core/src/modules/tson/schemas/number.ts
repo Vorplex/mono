@@ -48,7 +48,7 @@ export class TsonNumber extends TsonSchemaBase<number> {
     }
 
     public getDefault(): number {
-        return this.definition.default ?? 0;
+        return 'default' in this.definition ? this.definition.default : 0;
     }
 
     public accepts(definition: TsonDefinition | null | undefined): boolean {

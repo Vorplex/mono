@@ -22,7 +22,7 @@ export class TsonObject<T extends { [key: string]: TsonDefinition } = {}> extend
     }
 
     public override getDefault(): { [P in keyof T]: TsonType<T[P]> } {
-        if (this.definition.default !== undefined) return this.definition.default;
+        if ('default' in this.definition) return this.definition.default;
         if (this.definition.property) return {} as { [P in keyof T]: TsonType<T[P]> };
         if (!this.definition.properties) return {} as { [P in keyof T]: TsonType<T[P]> };
         const result: Record<string, any> = {};

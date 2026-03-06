@@ -38,7 +38,7 @@ export class TsonString extends TsonSchemaBase<string> {
     }
 
     public getDefault(): string {
-        return this.definition.default ?? '';
+        return 'default' in this.definition ? this.definition.default : '';
     }
 
     public accepts(definition: TsonDefinition | null | undefined): boolean {

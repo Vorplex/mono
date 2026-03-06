@@ -50,7 +50,7 @@ export class TsonArray<T extends TsonDefinition = any> extends TsonSchemaBase<Ts
     }
 
     public getDefault(): TsonType<T>[] {
-        return (this.definition.default ?? this.definition.itemDefinition) ? ([$Tson.parse(this.definition.itemDefinition).getDefault()] as TsonType<T>[]) : [];
+        return 'default' in this.definition ? this.definition.default : this.definition.itemDefinition ? ([$Tson.parse(this.definition.itemDefinition).getDefault()] as TsonType<T>[]) : [];
     }
 
     public accepts(definition: TsonDefinition | null | undefined): boolean {

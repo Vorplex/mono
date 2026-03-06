@@ -12,7 +12,7 @@ export abstract class TsonSchemaBase<T = any> {
 
     protected parseDefault(value: any): boolean {
         if (value == null) {
-            if (this.definition.default === undefined) throw new TsonError(`${$String.upperCaseFirst(this.definition.type)} required`, value, this as any);
+            if (!('default' in this.definition)) throw new TsonError(`${$String.upperCaseFirst(this.definition.type)} required`, value, this as any);
             else return true;
         }
         return false;

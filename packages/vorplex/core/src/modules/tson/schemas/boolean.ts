@@ -24,7 +24,7 @@ export class TsonBoolean extends TsonSchemaBase<boolean> {
     }
 
     public getDefault(): boolean {
-        return this.definition.default ?? false;
+        return 'default' in this.definition ? this.definition.default : false;
     }
 
     public accepts(definition: TsonDefinition | null | undefined): boolean {
