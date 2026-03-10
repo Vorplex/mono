@@ -126,22 +126,12 @@ describe($Changes.rebase.name, () => {
         },
     });
     // concurrent array insertions at the same target position
-    test('should handle concurrent array insertions at the same position', {
+    test('should handle concurrent array insertions at the same position without conflict', {
         source: { nodes: [{ id: 'a', type: 'element' }] },
         remote: { nodes: [{ id: 'a', type: 'element' }, { id: 'b', type: 'element' }] },
         local:  { nodes: [{ id: 'a', type: 'element' }, { id: 'c', type: 'element' }] },
         result: {
             result: { nodes: [{ id: 'a', type: 'element' }, { id: 'c', type: 'element' }, { id: 'b', type: 'element' }] },
-            conflict: {
-                local:  { differences: undefined, similarities: undefined, conflicts: { nodes: { '$1+': { id: 'c', type: 'element' } } } },
-                remote: { differences: undefined, similarities: undefined, conflicts: { nodes: { '$1+': { id: 'b', type: 'element' } } } },
-                merge: {
-                    source: { nodes: [{ id: 'a', type: 'element' }] },
-                    remote: { nodes: [{ id: 'a', type: 'element' }, { id: 'b', type: 'element' }] },
-                    local:  { nodes: [{ id: 'a', type: 'element' }, { id: 'c', type: 'element' }] },
-                    result: { nodes: [{ id: 'a', type: 'element' }, { id: 'b', type: 'element' }] },
-                },
-            },
         },
     });
     test('should merge non-conflicting changes while flagging conflicts', {

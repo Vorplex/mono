@@ -26,6 +26,6 @@ describe($Changes.compareChanges.name, () => {
     test('should split into all three buckets', { similarity: 1, conflict: 'a', difference: 2 }, { similarity: 1, conflict: 'b' }, { differences: { difference: 2 }, similarities: { similarity: 1 }, conflicts: { conflict: 'a' } });
     // array insert keys ($N+)
     test('should treat equal array inserts as similarity', { '$1+': { id: 'a', type: 'x' } }, { '$1+': { id: 'a', type: 'x' } }, { differences: undefined, similarities: { '$1+': { id: 'a', type: 'x' } }, conflicts: undefined });
-    test('should treat unequal array inserts as conflict without partial decomposition', { '$1+': { id: 'a', type: 'x' } }, { '$1+': { id: 'b', type: 'x' } }, { differences: undefined, similarities: undefined, conflicts: { '$1+': { id: 'a', type: 'x' } } });
+    test('should treat unequal array inserts as difference not conflict', { '$1+': { id: 'a', type: 'x' } }, { '$1+': { id: 'b', type: 'x' } }, { differences: { '$1+': { id: 'a', type: 'x' } }, similarities: undefined, conflicts: undefined });
     test('should treat array insert only in `a` as difference', { '$1+': { id: 'a' } }, {}, { differences: { '$1+': { id: 'a' } }, similarities: undefined, conflicts: undefined });
 });
