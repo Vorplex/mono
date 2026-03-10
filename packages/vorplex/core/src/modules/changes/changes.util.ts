@@ -177,7 +177,7 @@ export class $Changes {
                 differences[key] = aValue;
             } else if ($Value.equals(aValue, bValue)) {
                 similarities[key] = aValue;
-            } else if ($Value.isObject(aValue) && $Value.isObject(bValue)) {
+            } else if ($Value.isObject(aValue) && $Value.isObject(bValue) && !/^\$\d+\+$/.test(key)) {
                 const nested = $Changes.compareChanges(aValue, bValue);
                 if (nested.differences !== undefined) differences[key] = nested.differences;
                 if (nested.similarities !== undefined) similarities[key] = nested.similarities;
