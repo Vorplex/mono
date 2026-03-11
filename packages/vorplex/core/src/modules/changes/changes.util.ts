@@ -328,7 +328,7 @@ export class $Changes {
             localCompare.similarities
         );
         return {
-            result: $Changes.apply(remote, local),
+            result: $Changes.apply(remote, localCompare.differences, localCompare.conflicts),
             conflict: {
                 local: localCompare,
                 remote: remoteCompare,

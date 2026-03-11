@@ -65,8 +65,7 @@ describe($Changes.rebase.name, () => {
                 merge: {
                     source: { a: 1 },
                     remote: { a: 3 },
-                    local: { a: 2 },
-                    result: { a: 3 }
+                    local: { a: 2 }
                 },
             },
         },
@@ -83,8 +82,7 @@ describe($Changes.rebase.name, () => {
                 merge: {
                     source: { x: { a: 1 } },
                     remote: { x: { a: 3 } },
-                    local: { x: { a: 2 } },
-                    result: { x: { a: 3 } }
+                    local: { x: { a: 2 } }
                 },
             },
         },
@@ -101,8 +99,7 @@ describe($Changes.rebase.name, () => {
                 merge: {
                     source: { a: { b: 1 } },
                     remote: { a: { b: 2 } },
-                    local: {},
-                    result: { a: { b: 2 } }
+                    local: {}
                 },
             },
         },
@@ -119,8 +116,7 @@ describe($Changes.rebase.name, () => {
                 merge: {
                     source: { a: { b: 1 } },
                     remote: {},
-                    local: { a: { b: 2 } },
-                    result: {}
+                    local: { a: { b: 2 } }
                 },
             },
         },
@@ -129,7 +125,7 @@ describe($Changes.rebase.name, () => {
     test('should handle concurrent array insertions at the same position without conflict', {
         source: { nodes: [{ id: 'a', type: 'element' }] },
         remote: { nodes: [{ id: 'a', type: 'element' }, { id: 'b', type: 'element' }] },
-        local:  { nodes: [{ id: 'a', type: 'element' }, { id: 'c', type: 'element' }] },
+        local: { nodes: [{ id: 'a', type: 'element' }, { id: 'c', type: 'element' }] },
         result: {
             result: { nodes: [{ id: 'a', type: 'element' }, { id: 'c', type: 'element' }, { id: 'b', type: 'element' }] },
         },
@@ -154,8 +150,7 @@ describe($Changes.rebase.name, () => {
                 merge: {
                     source: { a: 1, b: 2, c: 2, x: true },
                     remote: { a: 3, b: 2, c: 2, x: true },
-                    local: { a: 2, b: 2, c: 2, x: true },
-                    result: { a: 3, b: 2, c: 2, x: true },
+                    local: { a: 2, b: 2, c: 2, x: true }
                 },
             },
         },
