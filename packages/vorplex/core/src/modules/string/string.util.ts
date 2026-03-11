@@ -41,6 +41,13 @@ export class $String {
             .join('-');
     }
 
+    public static titleCase(string: string): string {
+        return $String
+            .getWords(string.replace(/[-_]/g, ' '))
+            .map(word => $String.upperCaseFirst(word.toLowerCase()))
+            .join(' ');
+    }
+
     public static isNullOrEmpty(value: string) {
         return value == null || value === '';
     }
