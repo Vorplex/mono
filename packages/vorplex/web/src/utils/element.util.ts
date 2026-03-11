@@ -39,8 +39,9 @@ export class $Element {
     }
 
     public static addEventListener<T extends Document | HTMLElement, TT extends T extends Document ? DocumentEventMap : HTMLElementEventMap, TTT extends string & keyof TT>(element: T, type: TTT, listener: (event: TT[TTT], listener: { remove: () => void }) => any, options?: boolean | AddEventListenerOptions) {
-        const remove = () => element.removeEventListener(type, handler);
+        const capture = typeof options === 'boolean' ? options : !!options?.capture;
         const handler = event => listener(event, { remove });
+        const remove = () => element.removeEventListener(type, handler, capture);
         element.addEventListener(type, handler, options);
         return remove;
     }
