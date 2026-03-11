@@ -31,6 +31,10 @@ describe($Changes.apply.name, () => {
     test('should return array with removed object', [{ i: 0, x: 'a' }, { i: 1, x: 'b' }, { i: 2, x: 'c' }], { $1: $Changes.deleted }, [{ i: 0, x: 'a' }, { i: 2, x: 'c' }]);
     test('should return array with inserted object', [{ i: 1, x: 'b' }, { i: 2, x: 'c' }], { '$0+': { i: 0, x: 'a' } }, [{ i: 0, x: 'a' }, { i: 1, x: 'b' }, { i: 2, x: 'c' }]);
     test('should return array with updated object', [{ i: 0, x: 'a' }, { i: 1, x: 'b' }, { i: 2, x: 'c' }], { $0: { x: 'x' } }, [{ i: 0, x: 'x' }, { i: 1, x: 'b' }, { i: 2, x: 'c' }]);
+    // id-based array
+    test('should delete item by id', [{ id: 0, x: 'a' }, { id: 1, x: 'b' }], { '${0}': $Changes.deleted }, [{ id: 1, x: 'b' }]);
+    test('should update item by id', [{ id: 0, x: 'a' }, { id: 1, x: 'b' }], { '${0}': { x: 'z' } }, [{ id: 0, x: 'z' }, { id: 1, x: 'b' }]);
+    test('should update item by id regardless of position', [{ id: 0, x: 'a' }, { id: 1, x: 'b' }], { '${1}': { x: 'z' } }, [{ id: 0, x: 'a' }, { id: 1, x: 'z' }]);
     // nested object
     test('should return nested object with updated property', { gender: 'male', child: { name: 'foo' } }, { child: { name: 'bar' } }, { gender: 'male', child: { name: 'bar' } });
     test('should return nested object with added property', { gender: 'male', child: { name: 'foo' } }, { child: { age: 23 } }, { gender: 'male', child: { name: 'foo', age: 23 } });

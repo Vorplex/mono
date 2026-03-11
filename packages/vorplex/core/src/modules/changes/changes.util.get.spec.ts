@@ -17,7 +17,7 @@ describe($Changes.get.name, () => {
     test('should only return changed property of object', { name: 'foo', age: 23 }, { name: 'bar', age: 23 }, { name: 'bar' });
     test('should only return added property of object', { name: 'foo' }, { name: 'foo', age: 23 }, { age: 23 });
     test('should only return deleted property of object', { name: 'foo', age: 23 }, { name: 'foo' }, { age: $Changes.deleted });
-    test('should only return added property of object of type object', {  }, { property: {} }, { property: {} });
+    test('should only return added property of object of type object', {}, { property: {} }, { property: {} });
     test('should only return changed property of object of type object', { property: undefined }, { property: {} }, { property: {} });
     test('should only return undefined for property of object of type object if no changes', { property: {} }, { property: {} }, undefined);
     test('should return return change when an array for objects', { '0': { property: null } }, [{ property: null }], [{ property: null }]);
@@ -39,7 +39,14 @@ describe($Changes.get.name, () => {
     test('should return removed values from array', [0, 1, 2], [2], { $0: $Changes.deleted, $1: $Changes.deleted });
     // array object
     test('should return appended array object', [{ tag: 'a' }, { tag: 'b' }], [{ tag: 'a' }, { tag: 'b' }, { tag: 'c' }], { '$2+': { tag: 'c' } });
-    test('should return inserted array object', [{ tag: 'a' }, { tag: 'b' }, { tag: 'c' }], [{ tag: 'a' }, { tag: 'f' }, { tag: 'c' }], { $1: { tag: 'f' } });
+    test('should return replaced array object', [{ tag: 'a' }, { tag: 'b' }, { tag: 'c' }], [{ tag: 'a' }, { tag: 'f' }, { tag: 'c' }], { $1: $Changes.deleted, '$1+': { tag: 'f' } });
     test('should return deleted array object', [{ tag: 'a' }, { tag: 'b' }, { tag: 'c' }], [{ tag: 'a' }, { tag: 'c' }], { $1: $Changes.deleted });
-    test('should return updated array object', [{ i: 0, tag: 'a' }, { i: 1, tag: 'b' }], [{ i: 0, tag: 'c' }, { i: 1, tag: 'b' }], { $0: { tag: 'c' } });
+    test('should return replaced array object at start', [{ i: 0, tag: 'a' }, { i: 1, tag: 'b' }], [{ i: 0, tag: 'c' }, { i: 1, tag: 'b' }], { $0: $Changes.deleted, '$0+': { i: 0, tag: 'c' } });
+    // id-based array
+    test('should delete item by id', [{ id: 0 }, { id: 1 }], [{ id: 1 }], { '${0}': $Changes.deleted });
+    test('should update item by id', [{ id: 0, name: 'A' }, { id: 1, name: 'B' }], [{ id: 0, name: 'C' }, { id: 1, name: 'B' }], { '${0}': { name: 'C' } });
+    test('should insert item by id', [{ id: 0 }, { id: 1 }], [{ id: 0 }, { id: 1 }, { id: 2 }], { '$2+': { id: 2 } });
+    test('should return undefined for id-based array with no changes', [{ id: 0, name: 'A' }, { id: 1, name: 'B' }], [{ id: 0, name: 'A' }, { id: 1, name: 'B' }], undefined);
+    test('should track update by id regardless of position', [{ id: 0, name: 'A' }, { id: 1, name: 'B' }], [{ id: 1, name: 'B' }, { id: 0, name: 'C' }], { '${0}': { name: 'C' } });
+    test('should delete and update by id in same change', [{ id: 0, name: 'A' }, { id: 1, name: 'B' }, { id: 2, name: 'C' }], [{ id: 0, name: 'A' }, { id: 2, name: 'Z' }], { '${1}': $Changes.deleted, '${2}': { name: 'Z' } });
 });

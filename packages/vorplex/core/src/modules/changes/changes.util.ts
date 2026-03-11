@@ -1,6 +1,6 @@
 import { $Value } from '../value/value.util';
 
-export type ArrayChange = Record<`$${number}` | `$${number}+`, any | typeof $Changes.deleted>;
+export type ArrayChange = Record<`$${number}` | `$${number}+` | `${'$'}{${string | number}}`, any | typeof $Changes.deleted>;
 
 export interface ChangeCompareResult {
     differences: any;
@@ -33,10 +33,6 @@ export interface ChangeRebase<T = any> {
              * The `.source` with local conflicting changes applied
              */
             local: T;
-            /**
-             * The remote with local non-conflicting changes applied
-             */
-            result: T;
         };
     };
 }
@@ -50,6 +46,10 @@ type ArrayOperation =
 export class $Changes {
 
     public static readonly deleted = '[deleted]' as const;
+
+    private static valueHasId(value: any): boolean {
+        return value !== null && typeof value === 'object' && !Array.isArray(value) && 'id' in value;
+    }
 
     /**
      * Compute a minimal change object between `a` (base) and `b` (target).
@@ -74,6 +74,26 @@ export class $Changes {
             return Object.keys(changes).length ? changes : undefined;
         }
         function getArrayChanges(base: any[], target: any[]): ArrayChange | undefined {
+            const idKey = (id: any) => '$' + '{' + id + '}';
+            function getIdBasedArrayChanges(base: any[], target: any[]): ArrayChange | undefined {
+                const changes: Record<string, any> = {};
+                const targetById = new Map(target.filter($Changes.valueHasId).map((item) => [item.id, item]));
+                const baseIds = new Set(base.filter($Changes.valueHasId).map((item) => item.id));
+                for (const item of base) {
+                    if (!$Changes.valueHasId(item)) continue;
+                    const targetItem = targetById.get(item.id);
+                    if (targetItem === undefined) {
+                        changes[idKey(item.id)] = $Changes.deleted;
+                    } else {
+                        const diff = $Changes.get(item, targetItem);
+                        if (diff !== undefined) changes[idKey(item.id)] = diff;
+                    }
+                }
+                for (let i = 0; i < target.length; i++) {
+                    if ($Changes.valueHasId(target[i]) && !baseIds.has(target[i].id)) changes[`$${i}+`] = target[i];
+                }
+                return Object.keys(changes).length ? (changes as ArrayChange) : undefined;
+            }
             function getArrayOperations(base: any[], target: any[]): ArrayOperation[] {
                 function getLcsMatrix(a: any[], b: any[]): number[][] {
                     const matrix: number[][] = Array.from({ length: a.length + 1 }, () => new Array(b.length + 1).fill(0));
@@ -106,12 +126,13 @@ export class $Changes {
                 return operations.reverse();
             }
             if (!target.length) return [] as any;
+            if (base.every($Changes.valueHasId) && target.every($Changes.valueHasId)) return getIdBasedArrayChanges(base, target);
             const operations = getArrayOperations(base, target);
             const paired: ArrayOperation[] = [];
             for (let i = 0; i < operations.length; i++) {
                 const current = operations[i];
                 const next = operations[i + 1];
-                if (current.type === 'delete' && next?.type === 'insert') {
+                if (current.type === 'delete' && next?.type === 'insert' && $Value.isPrimitive(base[current.sourceIndex])) {
                     paired.push({ type: 'update', sourceIndex: current.sourceIndex, targetIndex: next.targetIndex, value: next.value });
                     i++;
                 } else {
@@ -202,9 +223,16 @@ export class $Changes {
             const updates: Map<number, any> = new Map();
             const inserts: Map<number, any> = new Map();
             for (const [key, value] of Object.entries(changes)) {
+                const idMatch = key.match(/^\$\{(?<id>.+)\}$/);
                 const insertMatch = key.match(/^\$(?<index>\d+)\+$/);
                 const updateMatch = key.match(/^\$(?<index>\d+)$/);
-                if (insertMatch) {
+                if (idMatch) {
+                    const index = base.findIndex((item) => $Changes.valueHasId(item) && String(item.id) === idMatch.groups.id);
+                    if (index !== -1) {
+                        if (value === $Changes.deleted) deletes.push(index);
+                        else updates.set(index, value);
+                    }
+                } else if (insertMatch) {
                     inserts.set(Number.parseInt(insertMatch.groups.index, 10), value);
                 } else if (updateMatch) {
                     const index = Number.parseInt(updateMatch.groups.index, 10);
@@ -232,10 +260,11 @@ export class $Changes {
         function isArrayChange(change: any): change is ArrayChange {
             if (change == null || typeof change !== 'object' || Array.isArray(change)) return false;
             if (!Object.keys(change).length) return false;
-            for (const k of Object.keys(change)) {
-                if (!k.startsWith('$')) return false;
-                const key = k.endsWith('+') ? k.slice(1, -1) : k.slice(1);
-                if (Number.isNaN(Number.parseInt(key, 10))) return false;
+            for (const key of Object.keys(change)) {
+                if (!key.startsWith('$')) return false;
+                if (/^\$\{.+\}$/.test(key)) continue;
+                const index = key.endsWith('+') ? key.slice(1, -1) : key.slice(1);
+                if (Number.isNaN(Number.parseInt(index, 10))) return false;
             }
             return true;
         }
@@ -298,17 +327,15 @@ export class $Changes {
             remoteCompare.similarities,
             localCompare.similarities
         );
-        const mergedWithLocalDifferences = $Changes.apply(remote, localCompare.differences);
         return {
-            result: $Changes.apply(mergedWithLocalDifferences, localCompare.conflicts),
+            result: $Changes.apply(remote, local),
             conflict: {
                 local: localCompare,
                 remote: remoteCompare,
                 merge: {
                     source: sourceWithDifferences,
                     remote: $Changes.apply(sourceWithDifferences, remoteCompare.conflicts),
-                    local: $Changes.apply(sourceWithDifferences, localCompare.conflicts),
-                    result: mergedWithLocalDifferences,
+                    local: $Changes.apply(sourceWithDifferences, localCompare.conflicts)
                 },
             },
         };
