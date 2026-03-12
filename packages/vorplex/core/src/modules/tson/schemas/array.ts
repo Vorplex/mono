@@ -67,19 +67,19 @@ export class TsonArray<T extends TsonDefinition = any> extends TsonSchemaBase<Ts
     public parse(value: any): TsonType<T>[] {
         if (this.parseDefault(value)) return this.definition.default;
         if (value != null && !Array.isArray(value)) throw new TsonError('Array expected', value, this);
-        const array = value as any[];
-        if (this.definition.min != null && array.length < this.definition.min) throw new TsonError(`Array min length of ${this.definition.min} expected`, value, this);
-        if (this.definition.max != null && array.length > this.definition.max) throw new TsonError(`Array max length of ${this.definition.max} expected`, value, this);
+        let result = [] as TsonType<T>[];
+        if (this.definition.min != null && value.length < this.definition.min) throw new TsonError(`Array min length of ${this.definition.min} expected`, value, this);
+        if (this.definition.max != null && value.length > this.definition.max) throw new TsonError(`Array max length of ${this.definition.max} expected`, value, this);
         if (this.definition.itemDefinition) {
-            for (const [index, item] of array.entries()) {
+            for (const [index, item] of value.entries()) {
                 try {
-                    array[index] = $Tson.parse(this.definition.itemDefinition).parse(item);
+                    result[index] = $Tson.parse(this.definition.itemDefinition).parse(item);
                 } catch (error) {
                     if (!(error instanceof TsonError)) throw error;
                     throw new TsonError(`Invalid item in array. ${error.message}`, item, this, `[${index}]${error.path}`);
                 }
             }
         }
-        return value as TsonType<T>[];
+        return result;
     }
 }

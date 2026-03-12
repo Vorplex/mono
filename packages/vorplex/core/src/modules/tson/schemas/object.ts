@@ -58,10 +58,11 @@ export class TsonObject<T extends { [key: string]: TsonDefinition } = {}> extend
     public override parse(value: any): { [P in keyof T]: TsonType<T[P]> } {
         if (this.parseDefault(value)) return this.definition.default;
         if (value != null && typeof value !== 'object') throw new TsonError('Object expected', value, this);
+        let result = {} as Record<string, any>;
         if (this.definition.property) {
             for (const property in value) {
                 try {
-                    value[property] = $Tson.parse(this.definition.property).parse(value[property]);
+                    result[property] = $Tson.parse(this.definition.property).parse(value[property]);
                 } catch (error) {
                     if (error instanceof TsonError) {
                         error.path = `.${property}${error.path}`;
@@ -73,7 +74,7 @@ export class TsonObject<T extends { [key: string]: TsonDefinition } = {}> extend
         if (this.definition.properties) {
             for (const property in this.definition.properties) {
                 try {
-                    value[property] = $Tson.parse(this.definition.properties[property] as TsonDefinition).parse(value[property]);
+                    result[property] = $Tson.parse(this.definition.properties[property] as TsonDefinition).parse(value[property]);
                 } catch (error) {
                     if (error instanceof TsonError) {
                         error.path = `.${property}${error.path}`;
@@ -82,7 +83,7 @@ export class TsonObject<T extends { [key: string]: TsonDefinition } = {}> extend
                 }
             }
         }
-        if (this.definition.prototype) value = Object.setPrototypeOf(value, this.definition.prototype);
-        return value;
+        if (this.definition.prototype) Object.setPrototypeOf(result, this.definition.prototype);
+        return result as { [P in keyof T]: TsonType<T[P]> };
     }
 }
