@@ -21,7 +21,7 @@ export class $ScriptAnalyzer {
                     for (const member of node.members) {
                         if (ts.isMethodDeclaration(member) && member.name) {
                             const modifiers = member.modifiers ?? [];
-                            if (modifiers.find(modifier => modifier.kind === ts.SyntaxKind.ProtectedKeyword || modifier.kind === ts.SyntaxKind.PrivateKeyword)) return;
+                            if (modifiers.find(modifier => modifier.kind === ts.SyntaxKind.ProtectedKeyword || modifier.kind === ts.SyntaxKind.PrivateKeyword)) continue;
                             const name = ts.isIdentifier(member.name) ? member.name.text : member.name.getText(sourceFile);
                             methods.push(name);
                         }
