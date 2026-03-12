@@ -1,11 +1,11 @@
 import { execSync } from 'child_process';
-import { readFileSync, appendFileSync } from 'fs';
+import { appendFileSync, readFileSync } from 'fs';
 
 const current = JSON.parse(readFileSync('package.json', 'utf8')).version;
 
 let previous;
 try {
-    previous = JSON.parse(execSync('git show HEAD~1:package.json', { encoding: 'utf8' })).version;
+    previous = JSON.parse(execSync(`git show ${process.env.BEFORE_SHA}:package.json`, { encoding: 'utf8' })).version;
 } catch {
     previous = null;
 }

@@ -12,11 +12,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 2
+          fetch-depth: 0
 
       - name: Check version
         id: version-check
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
         run: node .github/scripts/version-changed.mjs
 
       - if: steps.version-check.outputs.changed == 'true'
