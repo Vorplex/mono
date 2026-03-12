@@ -48,6 +48,7 @@ export class Task extends Subscribable<Task> {
 
     public cancel() {
         if (this.status === TaskStatus.Busy) {
+            this.log('Task cancelled', { level: 'error' });
             this.status = TaskStatus.Cancelled;
             this.finishTimestamp = Date.now();
             this.emit(this);
