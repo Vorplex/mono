@@ -10,6 +10,7 @@ export const TaskStatus = {
     Busy: 'busy',
     Failed: 'failed',
     Done: 'done',
+    Cancelled: 'cancelled'
 } as const;
 
 export type TaskStatus = (typeof TaskStatus)[keyof typeof TaskStatus];
@@ -41,7 +42,20 @@ export class Task extends Subscribable<Task> {
         this.subscribe(task => task.parent?.emit(this.parent));
     }
 
+    public isCancelled() {
+        return this.status === TaskStatus.Cancelled || this.parent?.isCancelled() === true;
+    }
+
+    public cancel() {
+        if (this.status === TaskStatus.Busy) {
+            this.status = TaskStatus.Cancelled;
+            this.finishTimestamp = Date.now();
+            this.emit(this);
+        }
+    }
+
     public async do<T>(name: string, callback: (task: Task) => Promise<T> | T): Promise<T> {
+        if (this.isCancelled()) throw new Error('Task cancelled');
         const task = new Task(name, this);
         this.tasks.push(task);
         this.emit(this);
@@ -50,7 +64,7 @@ export class Task extends Subscribable<Task> {
             task.complete();
             return result;
         } catch (error) {
-            task.fail();
+            task.fail(error);
             throw error;
         }
     }
@@ -68,6 +82,7 @@ export class Task extends Subscribable<Task> {
     }
 
     public log(message: string, options?: { level?: 'info' | 'warning' | 'error', attachments?: Record<string, Attachment> }) {
+        if (this.isCancelled()) throw new Error('Task cancelled');
         this.logs.push({
             timestamp: Date.now(),
             message,
@@ -78,17 +93,17 @@ export class Task extends Subscribable<Task> {
     }
 
     public fail(error?: string | Error) {
-        if (this.status !== 'failed') {
+        if (this.status === TaskStatus.Busy) {
             if (error) this.log(error instanceof Error ? error.stack ?? error.message : error, { level: 'error' });
-            this.status = 'failed';
+            this.status = TaskStatus.Failed;
             this.finishTimestamp = Date.now();
             this.emit(this);
         }
     }
 
     public complete() {
-        if (this.status === 'busy') {
-            this.status = 'done';
+        if (this.status === TaskStatus.Busy) {
+            this.status = TaskStatus.Done;
             this.finishTimestamp = Date.now();
             this.emit(this);
         }
@@ -96,12 +111,13 @@ export class Task extends Subscribable<Task> {
 
     public getStatus(): TaskStatus {
         let failed: boolean;
+        if (this.isCancelled()) return TaskStatus.Cancelled;
         for (const task of this.tasks) {
             const status = task.getStatus();
-            if (status === 'failed') failed = true;
-            if (status === 'busy') return 'busy';
+            if (status === TaskStatus.Failed) failed = true;
+            if (status === TaskStatus.Busy) return TaskStatus.Busy;
         }
-        if (failed) return 'failed';
+        if (failed) return TaskStatus.Failed;
         return this.status;
     }
 
@@ -119,7 +135,7 @@ export class Task extends Subscribable<Task> {
     public toConsoleLog() {
         const formatter = {
             task: (task: Task) => {
-                const status = { done: `${Chalk.White}★ [Done]`, busy: `${Chalk.Orange}★ [Busy]`, failed: `${Chalk.Red}★ [Failed]` }[task.getStatus()];
+                const status = { done: `${Chalk.White}★ [Done]`, busy: `${Chalk.Orange}★ [Busy]`, failed: `${Chalk.Red}★ [Failed]`, cancelled: `${Chalk.Red}★ [Cancelled]` }[task.getStatus()];
                 const date = $Date.format(new Date(task.startTimestamp), '[YYYY-MM-DD hh:mm:ss]');
                 const duration = $Number.toUnitString(task.finishTimestamp - task.startTimestamp, Unit.Time);
                 return `${status} ${date} ${task.name} ${Chalk.Dim}${duration}${Chalk.Reset}`;
