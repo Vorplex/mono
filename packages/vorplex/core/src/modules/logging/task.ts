@@ -111,15 +111,14 @@ export class Task extends Subscribable<Task> {
     }
 
     public getStatus(): TaskStatus {
-        let failed: boolean;
-        if (this.isCancelled()) return TaskStatus.Cancelled;
+        if (this.status !== TaskStatus.Busy) return this.status;
         for (const task of this.tasks) {
             const status = task.getStatus();
-            if (status === TaskStatus.Failed) failed = true;
+            if (status === TaskStatus.Failed) return TaskStatus.Failed;
             if (status === TaskStatus.Busy) return TaskStatus.Busy;
         }
-        if (failed) return TaskStatus.Failed;
-        return this.status;
+        if (this.isCancelled()) return TaskStatus.Cancelled;
+        return TaskStatus.Busy;
     }
 
     public hasWarning(): boolean {
