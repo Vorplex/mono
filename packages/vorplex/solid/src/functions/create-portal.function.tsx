@@ -1,4 +1,4 @@
-import { createMemo, type JSX } from 'solid-js';
+import { createMemo, getOwner, runWithOwner, type JSX } from 'solid-js';
 import { render } from 'solid-js/web';
 import { createStyle } from './create-style.function';
 
@@ -28,6 +28,7 @@ export interface PortalOptions {
 }
 
 export function createPortal(options: PortalOptions): Portal {
+    const owner = getOwner();
     const container = document.createElement('div');
     container.style.zIndex = '1';
     createMemo(() => container.className = classes().container);
@@ -42,6 +43,6 @@ export function createPortal(options: PortalOptions): Portal {
             options.onDestroy?.();
         },
     };
-    const dispose = disposed ? () => { } : render(() => options.render(portal), container);
+    const dispose = disposed ? () => { } : render(() => runWithOwner(owner, () => options.render(portal))!, container);
     return portal;
 }
