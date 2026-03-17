@@ -1,4 +1,4 @@
-import { $Array, $Date, $Number, $Router, $String, $Tson, Awaitable, Chalk, Emitter, Injector, Logger, MimeType, ProviderScopes, Subscribable, Task, TsonError, TsonType, Unit, WebClient } from '@vorplex/core';
+import { $Array, $Router, $String, $Tson, Awaitable, Emitter, Injector, Logger, MimeType, Subscribable, Task, TsonError, TsonType, WebClient } from '@vorplex/core';
 import * as fs from 'fs';
 import { IncomingMessage, Server as NodeHttpServer, ServerResponse } from 'http';
 import { Server as NodeHttpsServer } from 'https';
@@ -10,7 +10,6 @@ import { $HttpResponder } from './http/responder.util';
 import { HttpResponseCodes } from './http/response-codes.enum';
 import { Action } from './hub/action.interface';
 import { Hub } from './hub/hub.interface';
-import { $HttpReader } from './http/reader.util';
 
 export class Api {
 
@@ -183,16 +182,17 @@ export class Server {
                 }
                 task.fail(`No route matches URL`);
                 if (response.writable) {
-                    response.writeHead(HttpResponseCodes.BadRequest, 'Route Not Found');
+                    response.writeHead(HttpResponseCodes.NotFound, 'Route Not Found');
                     response.end();
                 }
             } catch (error) {
                 const message = error instanceof Error ? error.stack : String(error);
                 task.fail(message);
                 if (error instanceof HttpError) {
-                    response.statusCode = error.code;
-                    if (error.message) response.statusMessage = error.message;
-                    response.end();
+                    response
+                        .setHeader('Content-Type', MimeType.json)
+                        .writeHead(error.code, error.message)
+                        .end(JSON.stringify({ error: error.message }));
                 } else $HttpResponder.internalServerError(response);
             } finally {
                 task.complete();
