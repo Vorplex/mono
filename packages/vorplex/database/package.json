@@ -1,6 +1,6 @@
 {
     "name": "@vorplex/database",
-    "version": "0.0.45",
+    "version": "46",
     "type": "module",
     "sideEffects": false,
     "files": [

@@ -1,4 +1,4 @@
-import { parsePath, parsePathSelector } from '../../functions/parse-path-selector.function';
+import { $PathSelector } from '../path-selector/path-selector.util';
 import { State } from '../state/state.model';
 import { Update } from '../state/update.type';
 import { $String } from '../string/string.util';
@@ -18,7 +18,7 @@ export class $Value {
     }
 
     public static update<T extends object, V>(target: T, pathSelector: (value: T) => V, update: Update<V>): T {
-        const path = parsePathSelector(pathSelector);
+        const path = $PathSelector.parse(pathSelector);
         const isUnassigned = (value: any) => value == null || typeof value !== 'object';
         const updateAtPath = (value: any, pathIndex: number): any => {
             if (pathIndex === path.length) return State.update(value, update);
@@ -46,7 +46,7 @@ export class $Value {
     public static set<T = any>(target: T, path: string, value: any): T
     public static set<T = any>(target: T, path: any, value: any): any {
         if ($String.isNullOrEmpty(path)) return value;
-        const selectors = typeof path === 'string' ? parsePath(path) : parsePathSelector(path);
+        const selectors = typeof path === 'string' ? $PathSelector.parse(path) : $PathSelector.parse(path);
         const isUnassigned = (value: any) => value == null || typeof value !== 'object';
         if (isUnassigned(target)) target = ($Value.isNumeric(selectors[0]) ? [] : {}) as T;
         let currentTarget = target;
@@ -63,7 +63,7 @@ export class $Value {
     }
 
     public static unset(target: any, path: string): void {
-        const selectors = parsePath(path);
+        const selectors = $PathSelector.parse(path);
         for (const [index, selector] of selectors.entries()) {
             if (index < selectors.length - 1) {
                 target = target?.[selector];
@@ -78,7 +78,7 @@ export class $Value {
     }
 
     public static get(value: any, path: string): any {
-        const selectors = parsePath(path);
+        const selectors = $PathSelector.parse(path);
         for (const selector of selectors) value = value?.[selector];
         return value;
     }
