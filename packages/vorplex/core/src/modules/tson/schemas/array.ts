@@ -70,14 +70,13 @@ export class TsonArray<T extends TsonDefinition = any> extends TsonSchemaBase<Ts
         let result = [] as TsonType<T>[];
         if (this.definition.min != null && value.length < this.definition.min) throw new TsonError(`Array min length of ${this.definition.min} expected`, value, this);
         if (this.definition.max != null && value.length > this.definition.max) throw new TsonError(`Array max length of ${this.definition.max} expected`, value, this);
-        if (this.definition.itemDefinition) {
-            for (const [index, item] of value.entries()) {
-                try {
-                    result[index] = $Tson.parse(this.definition.itemDefinition).parse(item);
-                } catch (error) {
-                    if (!(error instanceof TsonError)) throw error;
-                    throw new TsonError(`Invalid item in array. ${error.message}`, item, this, `[${index}]${error.path}`);
-                }
+        if (!this.definition.itemDefinition) return [...value];
+        for (const [index, item] of value.entries()) {
+            try {
+                result[index] = $Tson.parse(this.definition.itemDefinition).parse(item);
+            } catch (error) {
+                if (!(error instanceof TsonError)) throw error;
+                throw new TsonError(`Invalid item in array. ${error.message}`, item, this, `[${index}]${error.path}`);
             }
         }
         return result;
