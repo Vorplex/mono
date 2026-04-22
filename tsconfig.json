@@ -1,6 +1,9 @@
 {
     "compilerOptions": {
-        "types": ["vitest/globals", "node"],
+        "types": [
+            "vitest/globals",
+            "node"
+        ],
         "target": "esnext",
         "module": "preserve",
         "lib": [
@@ -11,7 +14,6 @@
         "jsx": "preserve",
         "strict": false,
         "skipLibCheck": true,
-        "baseUrl": ".",
         "paths": {
             "@vorplex/core": [
                 "./packages/vorplex/core/src/index.ts"
