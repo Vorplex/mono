@@ -1,12 +1,10 @@
-import type { Constructor } from '../reflection/types/constructor.type';
 import { $Reflection } from '../reflection/utils/reflection.util';
 import { Subscribable } from '../subscribable/subscribable.model';
 import type { Subscription } from '../subscribable/subscription.interface';
 import { $Value } from '../value/value.util';
 import { ArrayAdaptor } from './adaptors/array/array-adaptor.util';
 import { EntityAdaptor } from './adaptors/entity/entity-adaptor.util';
-import type { EntityMap } from './adaptors/entity/entity-map.type';
-import type { IEntity } from './adaptors/entity/entity.interface';
+import { EmptyReducer, Reducer, ReducerFields, StateReducer } from './reducer.type';
 import type { Update } from './update.type';
 
 export interface StateChange<T> {
@@ -16,7 +14,7 @@ export interface StateChange<T> {
 
 export type StateEffect<T> = (value: T) => T;
 
-export class State<T = any, TReducer extends Constructor = Constructor> extends Subscribable<StateChange<T>> {
+export class State<T = any, TReducer extends Reducer = EmptyReducer> extends Subscribable<StateChange<T>> {
     private _value: T;
 
     public get value() {
@@ -56,35 +54,13 @@ export class State<T = any, TReducer extends Constructor = Constructor> extends 
         };
     }
 
-    public reduce(
-        update: (
-            reducer: {
-                update: {
-                    <V>(path: (state: T) => V, update: (value: V) => Partial<V>): Update<T>;
-                    <V>(path: (state: T) => V, value: Partial<V>): Update<T>;
-                };
-            } & {
-                [K in keyof T]: T[K] extends EntityMap<IEntity>
-                ? {
-                    entity: EntityAdaptor<T, T[K] extends EntityMap<infer U> ? U : never, K & any>;
-                } & (K extends keyof InstanceType<TReducer> ? InstanceType<TReducer>[K & keyof InstanceType<TReducer>] : {})
-                : T[K] extends any[]
-                ? {
-                    array: ArrayAdaptor<T, T[K] extends (infer U)[] ? U : never, K & any>;
-                } & (K extends keyof InstanceType<TReducer> ? InstanceType<TReducer>[K & keyof InstanceType<TReducer>] : {})
-                : {
-                    value: {
-                        set: (value: T[K]) => Update<T> & (K extends keyof InstanceType<TReducer> ? InstanceType<TReducer>[K & keyof InstanceType<TReducer>] : {});
-                    } & (K extends keyof InstanceType<TReducer> ? InstanceType<TReducer>[K & keyof InstanceType<TReducer>] : {});
-                };
-            },
-        ) => Update<T>[],
-    ) {
-        const reducer = new Proxy({
+    public reduce(update: (reducer: StateReducer<T, TReducer>) => Update<T>[]) {
+        const reducerFields: ReducerFields<T> = {
             update: <V>(path: (state: T) => V, update: Partial<V> | ((state: NoInfer<V>) => NoInfer<V>)): Update<T> => {
                 return (state: T) => $Value.update<any, V>(state, path, update);
-            },
-        } as any, {
+            }
+        };
+        const reducer = new Proxy(reducerFields, {
             get: (target, property) => {
                 if (property === 'update') return target.update;
                 const reducer = {
@@ -96,11 +72,11 @@ export class State<T = any, TReducer extends Constructor = Constructor> extends 
                         }),
                     },
                 };
-                Object.assign(reducer, (this.reducer && new this.reducer()[property]) || {});
+                Object.assign(reducer, this.reducer?.[property as string] ?? {});
                 return reducer;
             },
         });
-        this.update(...update(reducer));
+        this.update(...update(reducer as StateReducer<T, TReducer>));
     }
 
     public override subscribe(emit: (event: StateChange<T>, subscription: Subscription) => void): Subscription {

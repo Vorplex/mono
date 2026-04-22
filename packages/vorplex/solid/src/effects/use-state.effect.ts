@@ -1,9 +1,9 @@
 import { $Value, State } from '@vorplex/core';
 import { type Accessor, createMemo, createSignal, onCleanup } from 'solid-js';
 
-export function useState<TState, TValue = TState>(state: State<TState>, select?: (state: TState) => TValue): Accessor<TValue>;
-export function useState<T extends any[], TValue>(state: { [K in keyof T]: State<T[K]> }, select?: (state: T) => TValue): Accessor<TValue>;
-export function useState<TState extends any[], TValue>(state: State<TState> | { [K in keyof TState]: State<TState[K]> }, select?: (state: TState) => TValue): Accessor<TValue> {
+export function useState<TState, TValue = TState>(state: State<TState, any>, select?: (state: TState) => TValue): Accessor<TValue>;
+export function useState<T extends any[], TValue>(state: { [K in keyof T]: State<T[K], any> }, select?: (state: T) => TValue): Accessor<TValue>;
+export function useState<TState extends any[], TValue>(state: State<TState, any> | { [K in keyof TState]: State<TState[K], any> }, select?: (state: TState) => TValue): Accessor<TValue> {
     const [get, set] = createSignal<TValue>();
     createMemo(() => {
         let current: any = null;

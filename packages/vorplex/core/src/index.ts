@@ -57,6 +57,7 @@ export * from './modules/reflection/types/type.type';
 export * from './modules/reflection/utils/decorator.util';
 export * from './modules/reflection/utils/reflection.util';
 export * from './modules/router/router.util';
+export * from './modules/state/reducer.type';
 export * from './modules/state/state.model';
 export * from './modules/state/update.type';
 export * from './modules/state/adaptors/array/array-adaptor.util';
