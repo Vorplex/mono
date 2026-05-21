@@ -31,6 +31,14 @@ export class IndexedDbStorage<T extends StorageDefinition = StorageDefinition> i
         }
     }
 
+    public static async deleteDatabase(database: string) {
+        return new Promise((resolve, reject) => {
+            const request = indexedDB.deleteDatabase(database);
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = (event: any) => reject(event.target.error);
+        });
+    }
+
     public static async get<T = any>(database: string, store: string, key: string): Promise<T | null> {
         const result = await this.connect(database, store, 'readonly', (store) => store.get(key));
         return result ?? null;
@@ -56,22 +64,39 @@ export class IndexedDbStorage<T extends StorageDefinition = StorageDefinition> i
         return await this.connect(database, store, 'readonly', (store) => store.getAll()) ?? [];
     }
 
+    constructor(private options: { version?: string } = {}) { }
+
+    private async deleteOutdatedDatabase<TDatabase extends keyof T & string>(database: TDatabase, version: string) {
+        if (version == null) return;
+        const databaseVersion = await IndexedDbStorage.get(database, '__meta__', 'version');
+        if (databaseVersion != version) {
+            await IndexedDbStorage.deleteDatabase(database);
+            await IndexedDbStorage.set(database, '__meta__', 'version', version);
+        }
+    }
+
     public async get<TDatabase extends keyof T & string, TStore extends keyof T[TDatabase] & string>(database: TDatabase, store: TStore, key: string): Promise<T[TDatabase][TStore] | null> {
+        await this.deleteOutdatedDatabase(database, this.options.version);
         return IndexedDbStorage.get<T[TDatabase][TStore]>(database, store, key);
     }
     public async set<TDatabase extends keyof T & string, TStore extends keyof T[TDatabase] & string>(database: TDatabase, store: TStore, key: string, value: T[TDatabase][TStore]): Promise<void> {
+        await this.deleteOutdatedDatabase(database, this.options.version);
         return IndexedDbStorage.set(database, store, key, value);
     }
     public async delete<TDatabase extends keyof T & string, TStore extends keyof T[TDatabase] & string>(database: TDatabase, store: TStore, key: string): Promise<void> {
+        await this.deleteOutdatedDatabase(database, this.options.version);
         return IndexedDbStorage.delete(database, store, key);
     }
     public async clear<TDatabase extends keyof T & string, TStore extends keyof T[TDatabase] & string>(database: TDatabase, store: TStore): Promise<void> {
+        await this.deleteOutdatedDatabase(database, this.options.version);
         return IndexedDbStorage.clear(database, store);
     }
     public async keys<TDatabase extends keyof T & string, TStore extends keyof T[TDatabase] & string>(database: TDatabase, store: TStore): Promise<string[]> {
+        await this.deleteOutdatedDatabase(database, this.options.version);
         return IndexedDbStorage.keys(database, store);
     }
     public async getAll<TDatabase extends keyof T & string, TStore extends keyof T[TDatabase] & string>(database: TDatabase, store: TStore): Promise<T[TDatabase][TStore][]> {
+        await this.deleteOutdatedDatabase(database, this.options.version);
         return IndexedDbStorage.getAll<T[TDatabase][TStore]>(database, store);
     }
 
