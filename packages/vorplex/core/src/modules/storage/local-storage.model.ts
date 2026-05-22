@@ -1,4 +1,4 @@
-import { StorageDefinition, StorageProvider } from './storage-provider.interface';
+import { StorageDefinition, StorageProvider, StoreKey, StoreValue } from './storage-provider.interface';
 
 export class LocalStorage<T extends StorageDefinition = StorageDefinition> implements StorageProvider<T> {
 
@@ -47,23 +47,23 @@ export class LocalStorage<T extends StorageDefinition = StorageDefinition> imple
         return result;
     }
 
-    public async get<TDatabase extends keyof T & string, TStore extends keyof T[TDatabase] & string>(database: TDatabase, store: TStore, key: string): Promise<T[TDatabase][TStore] | null> {
-        return LocalStorage.get<T[TDatabase][TStore]>(database, store, key);
+    public async get<TDatabase extends keyof T & string, TStore extends keyof T[TDatabase] & string>(database: TDatabase, store: TStore, key: StoreKey<T[TDatabase][TStore]>): Promise<StoreValue<T[TDatabase][TStore]> | null> {
+        return LocalStorage.get<StoreValue<T[TDatabase][TStore]>>(database, store, key);
     }
-    public async set<TDatabase extends keyof T & string, TStore extends keyof T[TDatabase] & string>(database: TDatabase, store: TStore, key: string, value: T[TDatabase][TStore]): Promise<void> {
+    public async set<TDatabase extends keyof T & string, TStore extends keyof T[TDatabase] & string>(database: TDatabase, store: TStore, key: StoreKey<T[TDatabase][TStore]>, value: StoreValue<T[TDatabase][TStore]>): Promise<void> {
         return LocalStorage.set(database, store, key, value);
     }
-    public async delete<TDatabase extends keyof T & string, TStore extends keyof T[TDatabase] & string>(database: TDatabase, store: TStore, key: string): Promise<void> {
+    public async delete<TDatabase extends keyof T & string, TStore extends keyof T[TDatabase] & string>(database: TDatabase, store: TStore, key: StoreKey<T[TDatabase][TStore]>): Promise<void> {
         return LocalStorage.delete(database, store, key);
     }
     public async clear<TDatabase extends keyof T & string, TStore extends keyof T[TDatabase] & string>(database: TDatabase, store: TStore): Promise<void> {
         return LocalStorage.clear(database, store);
     }
-    public async keys<TDatabase extends keyof T & string, TStore extends keyof T[TDatabase] & string>(database: TDatabase, store: TStore): Promise<string[]> {
-        return LocalStorage.keys(database, store);
+    public async keys<TDatabase extends keyof T & string, TStore extends keyof T[TDatabase] & string>(database: TDatabase, store: TStore): Promise<StoreKey<T[TDatabase][TStore]>[]> {
+        return LocalStorage.keys(database, store) as Promise<StoreKey<T[TDatabase][TStore]>[]>;
     }
-    public async getAll<TDatabase extends keyof T & string, TStore extends keyof T[TDatabase] & string>(database: TDatabase, store: TStore): Promise<T[TDatabase][TStore][]> {
-        return LocalStorage.getAll<T[TDatabase][TStore]>(database, store);
+    public async getAll<TDatabase extends keyof T & string, TStore extends keyof T[TDatabase] & string>(database: TDatabase, store: TStore): Promise<StoreValue<T[TDatabase][TStore]>[]> {
+        return LocalStorage.getAll<StoreValue<T[TDatabase][TStore]>>(database, store);
     }
 
 }

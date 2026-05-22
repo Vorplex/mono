@@ -1,4 +1,4 @@
-import { StorageDefinition, StorageProvider } from '@vorplex/core';
+import { StorageDefinition, StorageProvider, StoreKey, StoreValue } from '@vorplex/core';
 
 export class IndexedDbStorage<T extends StorageDefinition = StorageDefinition> implements StorageProvider<T> {
 
@@ -75,15 +75,15 @@ export class IndexedDbStorage<T extends StorageDefinition = StorageDefinition> i
         }
     }
 
-    public async get<TDatabase extends keyof T & string, TStore extends keyof T[TDatabase] & string>(database: TDatabase, store: TStore, key: string): Promise<T[TDatabase][TStore] | null> {
+    public async get<TDatabase extends keyof T & string, TStore extends keyof T[TDatabase] & string>(database: TDatabase, store: TStore, key: StoreKey<T[TDatabase][TStore]>): Promise<StoreValue<T[TDatabase][TStore]> | null> {
         await this.deleteOutdatedDatabase(database, this.options.version);
-        return IndexedDbStorage.get<T[TDatabase][TStore]>(database, store, key);
+        return IndexedDbStorage.get<StoreValue<T[TDatabase][TStore]>>(database, store, key);
     }
-    public async set<TDatabase extends keyof T & string, TStore extends keyof T[TDatabase] & string>(database: TDatabase, store: TStore, key: string, value: T[TDatabase][TStore]): Promise<void> {
+    public async set<TDatabase extends keyof T & string, TStore extends keyof T[TDatabase] & string>(database: TDatabase, store: TStore, key: StoreKey<T[TDatabase][TStore]>, value: StoreValue<T[TDatabase][TStore]>): Promise<void> {
         await this.deleteOutdatedDatabase(database, this.options.version);
         return IndexedDbStorage.set(database, store, key, value);
     }
-    public async delete<TDatabase extends keyof T & string, TStore extends keyof T[TDatabase] & string>(database: TDatabase, store: TStore, key: string): Promise<void> {
+    public async delete<TDatabase extends keyof T & string, TStore extends keyof T[TDatabase] & string>(database: TDatabase, store: TStore, key: StoreKey<T[TDatabase][TStore]>): Promise<void> {
         await this.deleteOutdatedDatabase(database, this.options.version);
         return IndexedDbStorage.delete(database, store, key);
     }
@@ -91,13 +91,13 @@ export class IndexedDbStorage<T extends StorageDefinition = StorageDefinition> i
         await this.deleteOutdatedDatabase(database, this.options.version);
         return IndexedDbStorage.clear(database, store);
     }
-    public async keys<TDatabase extends keyof T & string, TStore extends keyof T[TDatabase] & string>(database: TDatabase, store: TStore): Promise<string[]> {
+    public async keys<TDatabase extends keyof T & string, TStore extends keyof T[TDatabase] & string>(database: TDatabase, store: TStore): Promise<StoreKey<T[TDatabase][TStore]>[]> {
         await this.deleteOutdatedDatabase(database, this.options.version);
-        return IndexedDbStorage.keys(database, store);
+        return IndexedDbStorage.keys(database, store) as Promise<StoreKey<T[TDatabase][TStore]>[]>;
     }
-    public async getAll<TDatabase extends keyof T & string, TStore extends keyof T[TDatabase] & string>(database: TDatabase, store: TStore): Promise<T[TDatabase][TStore][]> {
+    public async getAll<TDatabase extends keyof T & string, TStore extends keyof T[TDatabase] & string>(database: TDatabase, store: TStore): Promise<StoreValue<T[TDatabase][TStore]>[]> {
         await this.deleteOutdatedDatabase(database, this.options.version);
-        return IndexedDbStorage.getAll<T[TDatabase][TStore]>(database, store);
+        return IndexedDbStorage.getAll<StoreValue<T[TDatabase][TStore]>>(database, store);
     }
 
 }

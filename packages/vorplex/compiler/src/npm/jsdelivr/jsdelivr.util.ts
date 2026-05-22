@@ -24,11 +24,16 @@ export interface PackageFile {
 
 export type JsDelivrStorageDefinition = {
     cache: {
-        'package-version': string,
-        data: JsDelivrData,
-        'file-path': string,
-        file: PackageFile,
-        'package-json': PackageJson
+        /** @example `package@latest` */
+        'package-version': { [key: `${string}@${string}`]: string },
+        /** @example `package@1.2.3` */
+        data: { [key: `${string}@${string}`]: JsDelivrData },
+        /** @example `package@1.2.3:/src/index.js` */
+        'file-path': { [key: `${string}@${string}:${string}`]: string },
+        /** @example `package@1.2.3:/src/index.js` */
+        file: { [key: `${string}@${string}:${string}`]: PackageFile },
+        /** @example `package@1.2.3` */
+        'package-json': { [key: `${string}@${string}`]: PackageJson }
     }
 };
 
@@ -40,7 +45,7 @@ export class JsDelivr {
 
     public static async resolveVersion(name: string, semanticVersion?: string) {
         semanticVersion ??= 'latest';
-        const key = `${name}@${semanticVersion}`;
+        const key = `${name}@${semanticVersion}` as const;
         const cached = await this.cache.get('cache', 'package-version', key);
         if (cached) return cached;
         const url = $Path.join(this.resolveUrl, `${name}@${semanticVersion}`);
@@ -63,7 +68,7 @@ export class JsDelivr {
 
     public static async getData(name: string, semanticVersion: string): Promise<JsDelivrData> {
         const version = await this.resolveVersion(name, semanticVersion);
-        const key = `${name}@${version}`;
+        const key = `${name}@${version}` as const;
         const cached = await this.cache.get('cache', 'data', key);
         if (cached) return cached;
         const url = $Path.join(this.dataUrl, `${name}@${version}`);
@@ -91,7 +96,7 @@ export class JsDelivr {
 
     public static async resolveFilePath(name: string, semanticVersion: string, path: string): Promise<string> {
         const version = await this.resolveVersion(name, semanticVersion);
-        const key = `${name}@${version}:${path}`;
+        const key = `${name}@${version}:${path}` as const;
         const cached = await this.cache.get('cache', 'file-path', key);
         if (cached) return cached;
         const paths = await this.getFilePaths(name, version, new RegExp('^' + $String.sanitizeForRegex($Path.absolute(path)) + '(?:\\.js|/index.js)?$'));
@@ -110,7 +115,7 @@ export class JsDelivr {
         const resolvedVersion = await this.resolveVersion(name, semanticVersion);
         const resolvedPath = path ? await this.resolveFilePath(name, resolvedVersion, path) : null;
         if (path && !resolvedPath) throw new Error(`Failed to resolve path (${path}) from package (${name}) version (${semanticVersion}). Not Found.`);
-        const key = `${name}@${resolvedVersion}:${resolvedPath ?? ''}`;
+        const key = `${name}@${resolvedVersion}:${resolvedPath ?? ''}` as const;
         const cached = await this.cache.get('cache', 'file', key);
         if (cached) return cached;
         const url = $Path.join(this.url, `${name}@${resolvedVersion}`, resolvedPath);
@@ -130,7 +135,7 @@ export class JsDelivr {
 
     public static async getPackageJson(name: string, semanticVersion: string): Promise<PackageJson> {
         const version = await this.resolveVersion(name, semanticVersion);
-        const key = `${name}@${version}`;
+        const key = `${name}@${version}` as const;
         const cached = await this.cache.get('cache', 'package-json', key);
         if (cached) return cached;
         const { content } = await this.getFile(name, semanticVersion, 'package.json');
@@ -149,7 +154,7 @@ export class JsDelivr {
 
     public static async resolveImportFilePath(packageName: string, semanticVersion: string, subpath?: string): Promise<string> {
         const version = await this.resolveVersion(packageName, semanticVersion);
-        const key = `${packageName}@${version}:${subpath ?? ''}`;
+        const key = `${packageName}@${version}:${subpath ?? ''}` as const;
         const cached = await this.cache.get('cache', 'file-path', key);
         if (cached) return cached;
         const packageJson = await this.getPackageJson(packageName, version);
