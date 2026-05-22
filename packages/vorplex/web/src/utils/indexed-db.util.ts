@@ -75,15 +75,15 @@ export class IndexedDbStorage<T extends StorageDefinition = StorageDefinition> i
         }
     }
 
-    public async get<TDatabase extends keyof T & string, TStore extends keyof T[TDatabase] & string>(database: TDatabase, store: TStore, key: StoreKey<T[TDatabase][TStore]>): Promise<StoreValue<T[TDatabase][TStore]> | null> {
+    public async get<TDatabase extends keyof T & string, TStore extends keyof T[TDatabase] & string, TKey extends StoreKey<T[TDatabase][TStore]>>(database: TDatabase, store: TStore, key: TKey): Promise<T[TDatabase][TStore][TKey] | null> {
         await this.deleteOutdatedDatabase(database, this.options.version);
-        return IndexedDbStorage.get<StoreValue<T[TDatabase][TStore]>>(database, store, key);
+        return IndexedDbStorage.get<T[TDatabase][TStore][TKey]>(database, store, key);
     }
-    public async set<TDatabase extends keyof T & string, TStore extends keyof T[TDatabase] & string>(database: TDatabase, store: TStore, key: StoreKey<T[TDatabase][TStore]>, value: StoreValue<T[TDatabase][TStore]>): Promise<void> {
+    public async set<TDatabase extends keyof T & string, TStore extends keyof T[TDatabase] & string, TKey extends StoreKey<T[TDatabase][TStore]>>(database: TDatabase, store: TStore, key: TKey, value: T[TDatabase][TStore][TKey]): Promise<void> {
         await this.deleteOutdatedDatabase(database, this.options.version);
         return IndexedDbStorage.set(database, store, key, value);
     }
-    public async delete<TDatabase extends keyof T & string, TStore extends keyof T[TDatabase] & string>(database: TDatabase, store: TStore, key: StoreKey<T[TDatabase][TStore]>): Promise<void> {
+    public async delete<TDatabase extends keyof T & string, TStore extends keyof T[TDatabase] & string, TKey extends StoreKey<T[TDatabase][TStore]>>(database: TDatabase, store: TStore, key: TKey): Promise<void> {
         await this.deleteOutdatedDatabase(database, this.options.version);
         return IndexedDbStorage.delete(database, store, key);
     }

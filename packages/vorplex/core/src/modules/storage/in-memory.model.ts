@@ -35,13 +35,13 @@ export class InMemoryStorage<T extends StorageDefinition = StorageDefinition> im
         return [...this.getStore(database, store).values()];
     }
 
-    public async get<TDatabase extends keyof T & string, TStore extends keyof T[TDatabase] & string>(database: TDatabase, store: TStore, key: StoreKey<T[TDatabase][TStore]>): Promise<StoreValue<T[TDatabase][TStore]> | null> {
-        return InMemoryStorage.get<StoreValue<T[TDatabase][TStore]>>(database, store, key);
+    public async get<TDatabase extends keyof T & string, TStore extends keyof T[TDatabase] & string, TKey extends StoreKey<T[TDatabase][TStore]>>(database: TDatabase, store: TStore, key: TKey): Promise<T[TDatabase][TStore][TKey] | null> {
+        return InMemoryStorage.get<T[TDatabase][TStore][TKey]>(database, store, key);
     }
-    public async set<TDatabase extends keyof T & string, TStore extends keyof T[TDatabase] & string>(database: TDatabase, store: TStore, key: StoreKey<T[TDatabase][TStore]>, value: StoreValue<T[TDatabase][TStore]>): Promise<void> {
+    public async set<TDatabase extends keyof T & string, TStore extends keyof T[TDatabase] & string, TKey extends StoreKey<T[TDatabase][TStore]>>(database: TDatabase, store: TStore, key: TKey, value: T[TDatabase][TStore][TKey]): Promise<void> {
         return InMemoryStorage.set(database, store, key, value);
     }
-    public async delete<TDatabase extends keyof T & string, TStore extends keyof T[TDatabase] & string>(database: TDatabase, store: TStore, key: StoreKey<T[TDatabase][TStore]>): Promise<void> {
+    public async delete<TDatabase extends keyof T & string, TStore extends keyof T[TDatabase] & string, TKey extends StoreKey<T[TDatabase][TStore]>>(database: TDatabase, store: TStore, key: TKey): Promise<void> {
         return InMemoryStorage.delete(database, store, key);
     }
     public async clear<TDatabase extends keyof T & string, TStore extends keyof T[TDatabase] & string>(database: TDatabase, store: TStore): Promise<void> {
