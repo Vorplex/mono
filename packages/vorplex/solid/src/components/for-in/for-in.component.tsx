@@ -9,10 +9,10 @@ export interface ForInProps<TKey extends string, TValue> {
 export function ForIn<TKey extends string, TValue>(props: ForInProps<TKey, TValue>) {
     return (
         <For
-            each={Object.entries(props.each)}
+            each={Object.keys(props.each)}
             fallback={props.fallback}
         >
-            {([key, value]) => props.children(value as TValue, key as TKey)}
+            {(key) => props.children(props.each[key] as TValue, key as TKey)}
         </For>
     );
 }
