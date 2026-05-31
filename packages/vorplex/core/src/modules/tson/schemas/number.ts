@@ -1,4 +1,4 @@
-import { TsonError } from '../error';
+import { TsonError, type TsonResult } from '../error';
 import type { TsonDefinition } from '../schema';
 import { type TsonDefinitionBase, TsonSchemaBase } from './schema-base';
 
@@ -62,11 +62,24 @@ export class TsonNumber extends TsonSchemaBase<number> {
         return true;
     }
 
-    public parse(value: any): number {
-        if (this.parseDefault(value)) return this.definition.default;
-        if (value != null && typeof value !== 'number') throw new TsonError('Number expected', value, this);
-        if (this.definition.min != null && value < this.definition.min) throw new TsonError(`Number should be greater than ${this.definition.min}`, value, this);
-        if (this.definition.max != null && value > this.definition.max) throw new TsonError(`Number should be less than ${this.definition.max}`, value, this);
-        return value;
+    public parse(value: any, failFast = false): TsonResult<number> {
+        const result = this.parseDefault(value);
+        if (result) return result;
+        const errors: TsonError[] = [];
+        if (value != null && typeof value !== 'number') {
+            errors.push(new TsonError('Number expected', value, this));
+            if (failFast) return [undefined, errors];
+        }
+        if (typeof value === 'number') {
+            if (this.definition.min != null && value < this.definition.min) {
+                errors.push(new TsonError(`Number should be greater than ${this.definition.min}`, value, this));
+                if (failFast) return [undefined, errors];
+            }
+            if (this.definition.max != null && value > this.definition.max) {
+                errors.push(new TsonError(`Number should be less than ${this.definition.max}`, value, this));
+                if (failFast) return [undefined, errors];
+            }
+        }
+        return [errors.length === 0 ? value : undefined, errors];
     }
 }

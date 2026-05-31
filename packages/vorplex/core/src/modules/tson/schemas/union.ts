@@ -1,4 +1,4 @@
-import { TsonError } from '../error';
+import { TsonError, type TsonResult } from '../error';
 import type { TsonDefinition } from '../schema';
 import { $Tson } from '../tson';
 import type { TypeTson } from '../type';
@@ -47,15 +47,13 @@ export class TsonUnion<T = any> extends TsonSchemaBase<T> {
         }
     }
 
-    public parse(value: any) {
-        if (this.parseDefault(value)) return this.definition.default;
+    public parse(value: any, failFast = false): TsonResult<T> {
+        const result = this.parseDefault(value);
+        if (result) return result;
         for (const type of this.definition.union) {
-            try {
-                return $Tson.parse(type).parse(value);
-            } catch (error) {
-                if (!(error instanceof TsonError)) throw error;
-            }
+            const [result, errors] = $Tson.parse(type).parse(value, true);
+            if (errors.length === 0) return [result as T, []];
         }
-        throw new TsonError(`Union type mismatch`, value, this);
+        return [undefined, [new TsonError(`Union type mismatch`, value, this)]];
     }
 }

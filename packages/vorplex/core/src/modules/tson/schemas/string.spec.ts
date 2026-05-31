@@ -81,23 +81,31 @@ describe(TsonString.name, () => {
     describe(TsonString.prototype.parse.name, () => {
         it('should return value', () => {
             const schema = new TsonString();
-            const result = schema.parse('a');
-            expect(result).toBe('a');
+            const [value, errors] = schema.parse('a');
+            expect(errors).toHaveLength(0);
+            expect(value).toBe('a');
         });
         it('should return default', () => {
             const values = [undefined, null];
             for (const value of values) {
                 const schema = new TsonString({ type: 'string', default: 'a' });
-                const result = schema.parse(value);
+                const [result, errors] = schema.parse(value);
+                expect(errors).toHaveLength(0);
                 expect(result).toEqual('a');
             }
         });
-        it('should throw an error for non-number types', () => {
+        it('should return an error for non-string types', () => {
             const values = [0, true, {}, [], () => { }];
             for (const value of values) {
                 const schema = new TsonString();
-                expect(() => schema.parse(value)).toThrow('String expected');
+                const [, errors] = schema.parse(value);
+                expect(errors[0]?.message).toBe('String expected');
             }
+        });
+        it('should collect all constraint errors when not fail-fast', () => {
+            const schema = new TsonString({ type: 'string', min: 5, max: 3 });
+            const [, errors] = schema.parse('abcd', false);
+            expect(errors.length).toBeGreaterThan(1);
         });
     });
 });

@@ -1,4 +1,4 @@
-import { TsonError } from '../error';
+import { TsonError, type TsonResult } from '../error';
 import type { TsonDefinition } from '../schema';
 import { $Tson } from '../tson';
 import type { TsonType } from '../type';
@@ -64,21 +64,30 @@ export class TsonArray<T extends TsonDefinition = any> extends TsonSchemaBase<Ts
         return true;
     }
 
-    public parse(value: any): TsonType<T>[] {
-        if (this.parseDefault(value)) return this.definition.default;
-        if (value != null && !Array.isArray(value)) throw new TsonError('Array expected', value, this);
-        let result = [] as TsonType<T>[];
-        if (this.definition.min != null && value.length < this.definition.min) throw new TsonError(`Array min length of ${this.definition.min} expected`, value, this);
-        if (this.definition.max != null && value.length > this.definition.max) throw new TsonError(`Array max length of ${this.definition.max} expected`, value, this);
-        if (!this.definition.itemDefinition) return [...value];
-        for (const [index, item] of value.entries()) {
-            try {
-                result[index] = $Tson.parse(this.definition.itemDefinition).parse(item);
-            } catch (error) {
-                if (!(error instanceof TsonError)) throw error;
-                throw new TsonError(`Invalid item in array. ${error.message}`, item, this, `[${index}]${error.path}`);
-            }
+    public parse(value: any, failFast = false): TsonResult<TsonType<T>[]> {
+        let result: any = this.parseDefault(value);
+        if (result) return result;
+        const errors: TsonError[] = [];
+        if (value != null && !Array.isArray(value)) {
+            return [undefined, [new TsonError('Array expected', value, this)]];
         }
-        return result;
+        if (this.definition.min != null && value.length < this.definition.min) {
+            errors.push(new TsonError(`Array min length of ${this.definition.min} expected`, value, this));
+            if (failFast) return [undefined, errors];
+        }
+        if (this.definition.max != null && value.length > this.definition.max) {
+            errors.push(new TsonError(`Array max length of ${this.definition.max} expected`, value, this));
+            if (failFast) return [undefined, errors];
+        }
+        if (!this.definition.itemDefinition) return [[...value], errors];
+        result = [] as TsonType<T>[];
+        for (const [index, item] of value.entries()) {
+            if (failFast && errors.length > 0) break;
+            const [childValue, childErrors] = $Tson.parse(this.definition.itemDefinition).parse(item, failFast);
+            result[index] = childValue;
+            for (const error of childErrors) error.path = `[${index}]${error.path}`;
+            errors.push(...childErrors);
+        }
+        return [errors.length === 0 ? result as TsonType<T>[] : undefined, errors];
     }
 }

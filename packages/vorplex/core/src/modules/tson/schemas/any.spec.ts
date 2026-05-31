@@ -26,13 +26,15 @@ describe(TsonAny.name, () => {
         it('should return value', () => {
             const value = {};
             const schema = new TsonAny();
-            const result = schema.parse(value);
+            const [result, errors] = schema.parse(value);
+            expect(errors).toHaveLength(0);
             expect(result).toBe(value);
         });
         it('should return default', () => {
             const value = null;
             const schema = new TsonAny({ type: 'any', default: 'a' });
-            const result = schema.parse(value);
+            const [result, errors] = schema.parse(value);
+            expect(errors).toHaveLength(0);
             expect(result).toEqual('a');
         });
     });

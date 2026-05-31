@@ -1,4 +1,4 @@
-import { TsonError } from '../error';
+import { TsonError, type TsonResult } from '../error';
 import type { TsonDefinition } from '../schema';
 import { type TsonDefinitionBase, TsonSchemaBase } from './schema-base';
 
@@ -37,11 +37,22 @@ export class TsonEnum<T extends string | number = any> extends TsonSchemaBase<T>
         return this.definition.flags.every((flag) => definition.flags.includes(flag as T));
     }
 
-    public parse(value: any): T {
-        if (this.parseDefault(value)) return this.definition.default;
-        if (value != null && typeof this.definition.flags[0] === 'string' && typeof value !== 'string') throw new TsonError('String expected', value, this);
-        if (value != null && typeof this.definition.flags[0] === 'number' && typeof value !== 'number') throw new TsonError('Number expected', value, this);
-        if (!this.definition.flags.includes(value as T)) throw new TsonError('Invalid value', value, this);
-        return value as T;
+    public parse(value: any, failFast = false): TsonResult<T> {
+        const result = this.parseDefault(value);
+        if (result) return result;
+        const errors: TsonError[] = [];
+        if (value != null && typeof this.definition.flags[0] === 'string' && typeof value !== 'string') {
+            errors.push(new TsonError('String expected', value, this));
+            if (failFast) return [undefined, errors];
+        }
+        if (value != null && typeof this.definition.flags[0] === 'number' && typeof value !== 'number') {
+            errors.push(new TsonError('Number expected', value, this));
+            if (failFast) return [undefined, errors];
+        }
+        if (!this.definition.flags.includes(value as T)) {
+            errors.push(new TsonError('Invalid value', value, this));
+            if (failFast) return [undefined, errors];
+        }
+        return [errors.length === 0 ? value as T : undefined, errors];
     }
 }

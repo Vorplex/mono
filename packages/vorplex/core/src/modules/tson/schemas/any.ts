@@ -1,3 +1,4 @@
+import type { TsonResult } from '../error';
 import type { TsonDefinition } from '../schema';
 import { type TsonDefinitionBase, TsonSchemaBase } from './schema-base';
 
@@ -30,8 +31,9 @@ export class TsonAny extends TsonSchemaBase<any> {
         return true;
     }
 
-    public parse(value: any): any {
-        if (this.parseDefault(value)) return this.definition.default;
-        return value;
+    public parse(value: any, failFast = false): TsonResult<any> {
+        const result = this.parseDefault(value);
+        if (result) return result;
+        return [value, []];
     }
 }

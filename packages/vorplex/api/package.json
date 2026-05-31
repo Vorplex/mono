@@ -1,6 +1,6 @@
 {
     "name": "@vorplex/api",
-    "version": "0.0.55",
+    "version": "0.0.56",
     "type": "module",
     "sideEffects": false,
     "files": [

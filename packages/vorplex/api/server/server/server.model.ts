@@ -1,4 +1,4 @@
-import { $Array, $Router, $String, $Tson, Awaitable, Emitter, Injector, Logger, MimeType, Subscribable, Task, TsonError, TsonType, WebClient } from '@vorplex/core';
+import { $Array, $Router, $String, $Tson, Awaitable, Emitter, Injector, Logger, MimeType, Subscribable, Task, WebClient } from '@vorplex/core';
 import * as fs from 'fs';
 import { IncomingMessage, Server as NodeHttpServer, ServerResponse } from 'http';
 import { Server as NodeHttpsServer } from 'https';
@@ -238,22 +238,18 @@ export class Server {
                 }
             });
             const schema = $Tson.parse(definition);
-            let parsedPacket: TsonType<typeof definition>;
-            try {
-                parsedPacket = schema.parse(packet);
-            } catch (error) {
-                if (error instanceof TsonError) {
-                    client.send({
-                        error: {
-                            message: error.message,
-                            path: error.path,
-                            schema: error.schema
-                        },
-                        schema
-                    });
-                    return;
-                }
-                throw error;
+            const [parsedPacket, packetErrors] = schema.parse(packet);
+            if (packetErrors.length > 0) {
+                const [parseError] = packetErrors;
+                client.send({
+                    error: {
+                        message: parseError.message,
+                        path: parseError.path,
+                        schema: parseError.schema
+                    },
+                    schema
+                });
+                return;
             }
             const task = new Task(`[${parsedPacket.id}] Packet`);
             try {
@@ -266,18 +262,17 @@ export class Server {
                                 });
                                 let data = parsedPacket.data;
                                 if (action.schema) {
-                                    try {
-                                        data = $Tson.parse(action.schema).parse(parsedPacket.data);
-                                    } catch (error) {
-                                        if (error instanceof TsonError) {
-                                            throw new WebError(`Failed to parse packet data for hub (${hub.name}) with action (${action.name})`, {
-                                                message: error.message,
-                                                path: error.path,
-                                                schema: error.schema,
-                                                value: error.value
-                                            });
-                                        } else throw error;
+                                    const [parsedData, dataErrors] = $Tson.parse(action.schema).parse(parsedPacket.data);
+                                    if (dataErrors.length > 0) {
+                                        const [dataError] = dataErrors;
+                                        throw new WebError(`Failed to parse packet data for hub (${hub.name}) with action (${action.name})`, {
+                                            message: dataError.message,
+                                            path: dataError.path,
+                                            schema: dataError.schema,
+                                            value: dataError.value
+                                        });
                                     }
+                                    data = parsedData;
                                 }
                                 await action.callback({
                                     injector: this.injector,

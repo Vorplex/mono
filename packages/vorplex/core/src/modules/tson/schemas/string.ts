@@ -1,4 +1,4 @@
-import { TsonError } from '../error';
+import { TsonError, type TsonResult } from '../error';
 import type { TsonDefinition } from '../schema';
 import { type TsonDefinitionBase, TsonSchemaBase } from './schema-base';
 
@@ -52,12 +52,28 @@ export class TsonString extends TsonSchemaBase<string> {
         return true;
     }
 
-    public parse(value: any): string {
-        if (this.parseDefault(value)) return this.definition.default;
-        if (value != null && typeof value !== 'string') throw new TsonError('String expected', value, this);
-        if (this.definition.min != null && value.length < this.definition.min) throw new TsonError(`Value min length of ${this.definition.min} expected`, value, this);
-        if (this.definition.max != null && value.length > this.definition.max) throw new TsonError(`Value max length of ${this.definition.max} expected`, value, this);
-        if (this.definition.match != null && !new RegExp(this.definition.match).exec(value)) throw new TsonError(`Invalid value`, value, this);
-        return value;
+    public parse(value: any, failFast = false): TsonResult<string> {
+        const result = this.parseDefault(value);
+        if (result) return result;
+        const errors: TsonError[] = [];
+        if (value != null && typeof value !== 'string') {
+            errors.push(new TsonError('String expected', value, this));
+            if (failFast) return [undefined, errors];
+        }
+        if (typeof value === 'string') {
+            if (this.definition.min != null && value.length < this.definition.min) {
+                errors.push(new TsonError(`Value min length of ${this.definition.min} expected`, value, this));
+                if (failFast) return [undefined, errors];
+            }
+            if (this.definition.max != null && value.length > this.definition.max) {
+                errors.push(new TsonError(`Value max length of ${this.definition.max} expected`, value, this));
+                if (failFast) return [undefined, errors];
+            }
+            if (this.definition.match != null && !new RegExp(this.definition.match).exec(value)) {
+                errors.push(new TsonError(`Invalid value`, value, this));
+                if (failFast) return [undefined, errors];
+            }
+        }
+        return [errors.length === 0 ? value : undefined, errors];
     }
 }

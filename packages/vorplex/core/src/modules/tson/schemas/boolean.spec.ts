@@ -49,7 +49,8 @@ describe(TsonBoolean.name, () => {
             const values = [false, true];
             for (const value of values) {
                 const schema = new TsonBoolean();
-                const result = schema.parse(value);
+                const [result, errors] = schema.parse(value);
+                expect(errors).toHaveLength(0);
                 expect(result).toBe(value);
             }
         });
@@ -58,17 +59,19 @@ describe(TsonBoolean.name, () => {
             for (const value of values) {
                 const schema = new TsonBoolean({
                     type: 'boolean',
-                    default: true,
+                    default: true
                 });
-                const result = schema.parse(value);
+                const [result, errors] = schema.parse(value);
+                expect(errors).toHaveLength(0);
                 expect(result).toEqual(true);
             }
         });
-        it('should throw an error for non-boolean types', () => {
+        it('should return an error for non-boolean types', () => {
             const values = [0, '', {}, [], () => { }];
             for (const value of values) {
                 const schema = new TsonBoolean();
-                expect(() => schema.parse(value)).toThrow('Boolean expected');
+                const [, errors] = schema.parse(value);
+                expect(errors[0]?.message).toBe('Boolean expected');
             }
         });
     });

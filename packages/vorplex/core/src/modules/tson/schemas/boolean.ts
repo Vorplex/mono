@@ -1,4 +1,4 @@
-import { TsonError } from '../error';
+import { TsonError, type TsonResult } from '../error';
 import type { TsonDefinition } from '../schema';
 import { type TsonDefinitionBase, TsonSchemaBase } from './schema-base';
 
@@ -35,9 +35,14 @@ export class TsonBoolean extends TsonSchemaBase<boolean> {
         return true;
     }
 
-    public parse(value: any): boolean {
-        if (this.parseDefault(value)) return this.definition.default;
-        if (value != null && typeof value !== 'boolean') throw new TsonError('Boolean expected', value, this);
-        return value;
+    public parse(value: any, failFast = false): TsonResult<boolean> {
+        const result = this.parseDefault(value);
+        if (result) return result;
+        const errors: TsonError[] = [];
+        if (value != null && typeof value !== 'boolean') {
+            errors.push(new TsonError('Boolean expected', value, this));
+            if (failFast) return [undefined, errors];
+        }
+        return [errors.length === 0 ? value : undefined, errors];
     }
 }

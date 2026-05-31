@@ -83,7 +83,8 @@ describe(TsonNumber.name, () => {
             const values = [0, -1, 1, 1.1];
             for (const value of values) {
                 const schema = new TsonNumber();
-                const result = schema.parse(value);
+                const [result, errors] = schema.parse(value);
+                expect(errors).toHaveLength(0);
                 expect(result).toBe(value);
             }
         });
@@ -91,16 +92,23 @@ describe(TsonNumber.name, () => {
             const values = [undefined, null];
             for (const value of values) {
                 const schema = new TsonNumber({ type: 'number', default: 2 });
-                const result = schema.parse(value);
+                const [result, errors] = schema.parse(value);
+                expect(errors).toHaveLength(0);
                 expect(result).toEqual(2);
             }
         });
-        it('should throw an error for non-number types', () => {
+        it('should return an error for non-number types', () => {
             const values = ['', true, {}, [], () => { }];
             for (const value of values) {
                 const schema = new TsonNumber();
-                expect(() => schema.parse(value)).toThrow('Number expected');
+                const [, errors] = schema.parse(value);
+                expect(errors[0]?.message).toBe('Number expected');
             }
+        });
+        it('should collect all constraint errors when not fail-fast', () => {
+            const schema = new TsonNumber({ type: 'number', min: 10, max: 5 });
+            const [, errors] = schema.parse(7, false);
+            expect(errors.length).toBeGreaterThan(1);
         });
     });
 });

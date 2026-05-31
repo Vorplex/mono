@@ -10,3 +10,5 @@ export class TsonError extends Error {
         super(message);
     }
 }
+
+export type TsonResult<T> = [value: T | undefined, errors: TsonError[]];
