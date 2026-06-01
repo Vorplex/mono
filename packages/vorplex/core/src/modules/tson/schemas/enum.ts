@@ -50,7 +50,7 @@ export class TsonEnum<T extends string | number = any> extends TsonSchemaBase<T>
             if (failFast) return [undefined, errors];
         }
         if (!this.definition.flags.includes(value as T)) {
-            errors.push(new TsonError('Invalid value', value, this));
+            errors.push(new TsonError(`Enum value expected (${this.definition.flags.join(', ')})`, value, this));
             if (failFast) return [undefined, errors];
         }
         return [errors.length === 0 ? value as T : undefined, errors];
