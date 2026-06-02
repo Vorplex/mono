@@ -1,6 +1,7 @@
 export class $PathSelector {
 
     public static parse<T>(selector: string | ((value: T) => any)): string[] {
+        if (selector == null) return [];
         if (typeof selector === 'function') {
             const path: string[] = [];
             const proxy = new Proxy({}, {
