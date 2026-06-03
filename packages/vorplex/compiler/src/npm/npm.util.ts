@@ -1,5 +1,5 @@
 import { $Path, Task } from '@vorplex/core';
-import { satisfies } from 'semver';
+import { satisfies, valid } from 'semver';
 import { stringify } from 'yaml';
 import type { PackageJson } from './package-json.type';
 
@@ -140,6 +140,7 @@ export class NPM {
     }
 
     public static parseImportString(string: string) {
+        string = string.replace(/\/$/, '');
         const match = string.match(/^(?<packageName>(?:@[\w.-]+\/[\w.-]+|[\w.-]+))(?:\/(?<subpath>.+?))?(?:\/?@(?<version>\d+(?:\.\d+)*(?:-[\w.]+)?(?:\+[\w.]+)?))?$/);
         if (!match) throw new Error(`Invalid import string (${string})`);
         return match?.groups as {
