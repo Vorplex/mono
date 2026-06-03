@@ -25,7 +25,38 @@ export interface Log {
     attachments: Record<string, Attachment>
 }
 
-export class Task extends Subscribable<Task> {
+export interface TaskEventBase {
+    type: 'cancel' | 'action' | 'log' | 'fail' | 'complete';
+    source: Task;
+    task: Task;
+};
+
+export interface CancelTaskEvent extends TaskEventBase {
+    type: 'cancel';
+};
+
+export interface ActionTaskEvent extends TaskEventBase {
+    type: 'action';
+    action: Task;
+};
+
+export interface LogTaskEvent extends TaskEventBase {
+    type: 'log';
+    log: Log;
+};
+
+export interface FailTaskEvent extends TaskEventBase {
+    type: 'fail';
+    reason: string | Error;
+};
+
+export interface CompleteTaskEvent extends TaskEventBase {
+    type: 'complete';
+};
+
+export type TaskEvent = CancelTaskEvent | ActionTaskEvent | LogTaskEvent | FailTaskEvent | CompleteTaskEvent;
+
+export class Task extends Subscribable<TaskEvent> {
 
     public startTimestamp: number = Date.now();
     public finishTimestamp: number;
@@ -39,7 +70,7 @@ export class Task extends Subscribable<Task> {
         super();
         this.name = name;
         this.parent = task;
-        this.subscribe(task => task.parent?.emit(this.parent));
+        this.subscribe(event => this.parent?.emit({ ...event, task: this }));
     }
 
     public isCancelled() {
@@ -51,7 +82,7 @@ export class Task extends Subscribable<Task> {
             this.log('Task cancelled', { level: 'error' });
             this.status = TaskStatus.Cancelled;
             this.finishTimestamp = Date.now();
-            this.emit(this);
+            this.emit({ source: this, type: 'cancel', task: this });
         }
     }
 
@@ -59,7 +90,7 @@ export class Task extends Subscribable<Task> {
         if (this.isCancelled()) throw new Error('Task cancelled');
         const task = new Task(name, this);
         this.tasks.push(task);
-        this.emit(this);
+        this.emit({ source: this, type: 'action', task: this, action: task });
         try {
             const result = await callback(task);
             task.complete();
@@ -84,21 +115,22 @@ export class Task extends Subscribable<Task> {
 
     public log(message: string, options?: { level?: 'info' | 'warning' | 'error', attachments?: Record<string, Attachment> }) {
         if (this.isCancelled()) throw new Error('Task cancelled');
-        this.logs.push({
+        const log: Log = {
             timestamp: Date.now(),
             message,
             level: options?.level ?? 'info',
             attachments: options?.attachments ?? {}
-        });
-        this.emit(this);
+        };
+        this.logs.push(log);
+        this.emit({ source: this, type: 'log', task: this, log });
     }
 
-    public fail(error?: string | Error) {
+    public fail(reason?: string | Error) {
         if (this.status === TaskStatus.Busy) {
-            if (error) this.log(error instanceof Error ? error.stack ?? error.message : error, { level: 'error' });
+            if (reason) this.log(reason instanceof Error ? reason.stack ?? reason.message : reason, { level: 'error' });
             this.status = TaskStatus.Failed;
             this.finishTimestamp = Date.now();
-            this.emit(this);
+            this.emit({ source: this, type: 'fail', task: this, reason: reason });
         }
     }
 
@@ -106,7 +138,7 @@ export class Task extends Subscribable<Task> {
         if (this.status === TaskStatus.Busy) {
             this.status = TaskStatus.Done;
             this.finishTimestamp = Date.now();
-            this.emit(this);
+            this.emit({ source: this, type: 'complete', task: this });
         }
     }
 
