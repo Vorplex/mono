@@ -47,8 +47,10 @@ export class Bundler {
 
                             importParent[importPath] ??= importerPath;
                             let importStack = [];
+                            const visited = new Set<string>();
                             let parentPath = importerPath;
-                            while (parentPath) {
+                            while (parentPath && !visited.has(parentPath)) {
+                                visited.add(parentPath);
                                 importStack.push(parentPath);
                                 parentPath = importParent[importPathAlias[parentPath]] ?? importParent[parentPath];
                             }
