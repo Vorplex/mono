@@ -1,5 +1,5 @@
 import { $Path, Task } from '@vorplex/core';
-import { maxSatisfying, satisfies } from 'semver';
+import { satisfies } from 'semver';
 import { stringify } from 'yaml';
 import type { PackageJson } from './package-json.type';
 
@@ -25,13 +25,12 @@ export class NPM {
         return await response.json();
     }
 
-    public static async resolveDependencyTree(packages: Record<string, string>, resolver: { getPackageJson: (name: string, version: string) => Promise<PackageJson>; getPackageVersions: (name: string) => Promise<string[]>; }, task: Task = new Task('Resolve Dependency Tree')): Promise<DependencyTree> {
+    public static async resolveDependencyTree(packages: Record<string, string>, resolver: { getPackageJson: (name: string, version: string) => Promise<PackageJson>; resolveVersion: (name: string, semanticVersion: string) => Promise<string>; }, task: Task = new Task('Resolve Dependency Tree')): Promise<DependencyTree> {
         try {
             const seen: DependencyTree = {};
 
             async function resolvePackage(name: string, range: string, ancestors: any[] = [], task: Task): Promise<DependencyNode> {
                 task.log(`Resolving package (${name}@${range})`);
-                if (range === 'latest') range = '*';
 
                 task.log(`Searching for package in ancestors`);
                 for (const ancestor of ancestors) {
@@ -43,12 +42,8 @@ export class NPM {
                 }
                 task.log(`No existing package found in ancestors`);
 
-                task.log('Resolving package versions');
-                const available = await resolver.getPackageVersions(name);
-                const version = maxSatisfying(available, range, { includePrerelease: true });
-                if (!version) {
-                    throw new Error(`No version found for ${name}@${range}`);
-                }
+                task.log('Resolving package version');
+                const version = await resolver.resolveVersion(name, range);
                 task.log(`Version (${version}) was resolved for range (${range})`);
 
                 const key = `${name}@${version}`;
