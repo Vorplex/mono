@@ -39,11 +39,14 @@ export class Compiler {
         const task = options.task ?? new Task('Compile');
         try {
             task.log(`Compiling $[files] using entry file path (${options.entryFilePath})`, { attachments: { files: { type: 'yaml', value: stringify(options.files) } } });
+            const importOrigin: Record<string, string> = {};
             return await Bundler.bundle({
                 path: options.entryFilePath,
                 script: options.files[options.entryFilePath].content,
                 sourcemaps: options.sourcemaps,
-                resolve: async ({ importerPath, importPath, importStack }) => {
+                resolve: async ({ importerPath, importPath }) => {
+                    const origin = importerPath in options.files ? importerPath : importOrigin[importerPath] ?? importerPath;
+                    importOrigin[importPath] ??= origin;
                     return await task.do(`Resolving: ${importPath}`, async task => {
                         if (importPath in options.files) {
                             task.log('Returning local file $[content]', { attachments: { content: { type: 'typescript', value: options.files[importPath].content } } });
@@ -73,7 +76,7 @@ export class Compiler {
                             }
                         }
                         try {
-                            const dependencyTree = options.files[importStack.find(importPath => options.files[importPath]?.dependencyTree)]?.dependencyTree ?? options.files[importPath]?.dependencyTree ?? {};
+                            const dependencyTree = options.files[origin]?.dependencyTree ?? options.files[importPath]?.dependencyTree ?? {};
                             const string = NPM.parseImportString(importPath);
                             task.log(`Package ${string.packageName} subpath ${string.subpath} version ${string.version}`);
                             if (!string.version) {

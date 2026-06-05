@@ -24,7 +24,7 @@ export class Bundler {
         path: string;
         script: string;
         sourcemaps?: boolean;
-        resolve: (event: { namespace: string; importerPath: string; importPath: string, relative: boolean, importStack: string[] }) => Promise<{ namespace: string } | { path?: string; content: string }>;
+        resolve: (event: { namespace: string; importerPath: string; importPath: string, relative: boolean }) => Promise<{ namespace: string } | { path?: string; content: string }>;
     }) {
         await Bundler.initialize();
         const result = await build({
@@ -38,42 +38,34 @@ export class Bundler {
                     name: 'module-loader-resolver',
                     setup: (build) => {
                         const files: Record<string, string> = {};
-                        const importParent: Record<string, string> = {};
-                        const importPathAlias: Record<string, string> = {};
                         build.onResolve({ filter: /.*/ }, async (args) => {
                             const relative = args.path.startsWith('.') || args.path.startsWith('/');
                             const importerPath = args.importer === '<stdin>' ? options.path : args.importer;
                             const importPath = relative ? $Path.join(importerPath, `../${args.path}`) : args.path;
-
-                            importParent[importPath] ??= importerPath;
-                            let importStack = [];
-                            const visited = new Set<string>();
-                            let parentPath = importerPath;
-                            while (parentPath && !visited.has(parentPath)) {
-                                visited.add(parentPath);
-                                importStack.push(parentPath);
-                                parentPath = importParent[importPathAlias[parentPath]] ?? importParent[parentPath];
-                            }
                             const resolved = await options.resolve({
                                 namespace: args.path,
                                 importerPath,
                                 importPath,
                                 relative,
-                                importStack
                             });
-                            if (!resolved) return { path: importPath, namespace: 'mock' };
-                            if ('content' in resolved) {
-                                files[resolved.path ?? importPath] = resolved.content;
-                                if (resolved.path) importPathAlias[resolved.path] = importPath;
+                            if (!resolved) {
                                 return {
-                                    path: resolved.path ?? importPath,
+                                    path: importPath,
+                                    namespace: 'mock',
+                                };
+                            }
+                            if ('content' in resolved) {
+                                const resolvedPath = resolved.path ?? importPath;
+                                files[resolvedPath] = resolved.content;
+                                return {
+                                    path: resolvedPath,
                                     namespace: 'virtual',
                                 };
-                            } else
-                                return {
-                                    path: resolved.namespace,
-                                    external: true,
-                                };
+                            }
+                            return {
+                                path: resolved.namespace,
+                                external: true,
+                            };
                         });
 
                         build.onLoad({ filter: /.*/, namespace: 'virtual' }, (args) => {
@@ -99,8 +91,8 @@ export class Bundler {
                 },
             ],
             sourcemap: options.sourcemaps ? 'inline' : false,
-            mainFields: ['module', 'main'],
-            conditions: ['import', 'module'],
+            mainFields: ['browser', 'module', 'main'],
+            conditions: ['browser', 'import', 'module'],
             bundle: true,
             format: 'cjs',
             target: 'esnext',
