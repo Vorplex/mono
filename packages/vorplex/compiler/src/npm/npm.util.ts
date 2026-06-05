@@ -1,5 +1,5 @@
-import { $Path, Task } from '@vorplex/core';
-import { satisfies, valid } from 'semver';
+import { $Path, $String, Task } from '@vorplex/core';
+import { satisfies } from 'semver';
 import { stringify } from 'yaml';
 import type { PackageJson } from './package-json.type';
 
@@ -133,6 +133,60 @@ export class NPM {
             }
         };
         return resolve(tree);
+    }
+
+    public static getPackageEntryPoint(packageJson: PackageJson, filePaths: string[], subpath?: string): string | null {
+        if (packageJson.exports) {
+            const resolveExports = (exports: PackageJson['exports']): Record<string, string> => {
+                const result: Record<string, string> = {};
+                if (typeof exports === 'string') return { '.': $Path.relative(exports) };
+                const resolveExportPath = (path: string | Record<string, any>): string | undefined => {
+                    if (!path) return;
+                    if (typeof path === 'string') return path;
+                    if (typeof path !== 'object') return;
+                    for (const priority of ['browser', 'import', 'es2015', 'module', 'default', 'node', 'require']) {
+                        const resolvedPath = resolveExportPath(path[priority]);
+                        if (resolvedPath) return resolvedPath;
+                    }
+                };
+                for (const [path, value] of Object.entries(exports)) {
+                    let targetPath = resolveExportPath(value as any);
+                    if (!targetPath || targetPath === './') continue;
+                    if (targetPath.startsWith('./')) targetPath = targetPath.slice(2);
+                    if ($Path.getExtension(targetPath) === '.cjs') continue;
+                    if (targetPath.includes('*')) {
+                        const regex = new RegExp(`^${$String.sanitizeForRegex(targetPath).replace('\\*', '(.+)')}$`);
+                        for (const path of filePaths.filter(path => regex.test(path))) {
+                            const extension = $Path.getExtension(path);
+                            if (!['.js', '.mjs', '.json', '.jsx'].includes(extension)) continue;
+                            const wildcard = path.match(regex)[1];
+                            const resolvedPath = path.replaceAll('*', wildcard);
+                            const resolvedTargetPath = targetPath.replaceAll('*', wildcard);
+                            if (Object.values(result).includes($Path.relative(resolvedTargetPath))) continue;
+                            result[resolvedPath] = $Path.relative(resolvedTargetPath);
+                        }
+                    } else {
+                        if (Object.values(result).includes($Path.relative(targetPath))) continue;
+                        result[path] = $Path.relative(targetPath);
+                    }
+                }
+                return result;
+            };
+            const exports = resolveExports(packageJson.exports);
+            if (!subpath && exports['.']) return $Path.absolute(exports['.']);
+            if (subpath && exports[$Path.relative(subpath)]) return $Path.absolute(exports[$Path.relative(subpath)]);
+        }
+        if (!subpath) {
+            let entryPoint = $Path.absolute(packageJson.module || packageJson.main || 'index.js');
+            if (typeof packageJson.browser === 'string') {
+                entryPoint = $Path.absolute(packageJson.browser);
+            } else if (packageJson.browser != null && typeof packageJson.browser === 'object') {
+                const remapped = Object.entries(packageJson.browser).find(([key]) => $Path.absolute(key) === entryPoint)?.[1];
+                if (typeof remapped === 'string') entryPoint = $Path.absolute(remapped);
+            }
+            return entryPoint;
+        }
+        return null;
     }
 
     public static getScriptImports(script: string): string[] {

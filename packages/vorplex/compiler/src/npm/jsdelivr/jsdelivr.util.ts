@@ -1,4 +1,5 @@
 import { $Path, $String, InMemoryStorage, type StorageProvider } from '@vorplex/core';
+import { NPM } from '../npm.util';
 import type { PackageJson } from '../package-json.type';
 
 export interface JsDelivrData {
@@ -158,55 +159,11 @@ export class JsDelivr {
         const cached = await this.cache.get('cache', 'file-path', key);
         if (cached) return cached;
         const packageJson = await this.getPackageJson(packageName, version);
-        if (packageJson.exports) {
-            const resolveExports = async (exports): Promise<Record<string, string>> => {
-                const result: Record<string, string> = {};
-                if (typeof exports === 'string') return { '.': $Path.relative(exports) };
-                const resolveExportPath = (path: string | Record<string, any>) => {
-                    if (!path) return;
-                    if (typeof path === 'string') return path;
-                    if (typeof path !== 'object') return;
-                    const priorities = ['browser', 'import', 'es2015', 'module', 'default', 'node', 'require'];
-                    for (const priority of priorities) {
-                        const resolvedPath = resolveExportPath(path[priority]);
-                        if (resolvedPath) return resolvedPath;
-                    }
-                };
-                for (const [path, value] of Object.entries(exports)) {
-                    let targetPath = resolveExportPath(value);
-                    if (!targetPath || targetPath === './') continue;
-                    if (targetPath.startsWith('./')) targetPath = targetPath.slice(2);
-                    if ($Path.getExtension(targetPath) === '.cjs') continue;
-                    if (targetPath.includes('*')) {
-                        const regex = new RegExp(`^${$String.sanitizeForRegex(targetPath).replace('\\*', '(.+)')}$`);
-                        const files = await this.getFilePaths(packageName, semanticVersion, regex);
-                        for (const file of files) {
-                            const fileExtension = $Path.getExtension(file);
-                            if (!['.js', '.mjs', '.json', '.jsx'].includes(fileExtension)) continue;
-                            const wildcard = file.match(regex)[1];
-                            const resolvedPath = path.replaceAll('*', wildcard);
-                            const resolvedTargetPath = targetPath.replaceAll('*', wildcard);
-                            if (Object.values(result).includes($Path.relative(resolvedTargetPath))) continue;
-                            result[resolvedPath] = $Path.relative(resolvedTargetPath);
-                        }
-                    } else {
-                        if (Object.values(result).includes($Path.relative(targetPath))) continue;
-                        result[path] = $Path.relative(targetPath);
-                    }
-                }
-                return result;
-            };
-            const exports = await resolveExports(packageJson.exports);
-            if (!subpath && exports['.']) {
-                const result = $Path.absolute(exports['.']);
-                await this.cache.set('cache', 'file-path', key, result);
-                return result;
-            }
-            if (subpath && exports[$Path.relative(subpath)]) {
-                const result = $Path.absolute(exports[$Path.relative(subpath)]);
-                await this.cache.set('cache', 'file-path', key, result);
-                return result;
-            }
+        const filePaths = await this.getFilePaths(packageName, version);
+        const entryPoint = NPM.getPackageEntryPoint(packageJson, filePaths, subpath);
+        if (entryPoint) {
+            await this.cache.set('cache', 'file-path', key, entryPoint);
+            return entryPoint;
         }
         if (subpath) {
             const file = await this.resolveFilePath(packageName, version, subpath);
@@ -214,10 +171,6 @@ export class JsDelivr {
                 await this.cache.set('cache', 'file-path', key, file);
                 return file;
             }
-        } else {
-            const result = $Path.absolute(packageJson.module || packageJson.main || 'index.js');
-            await this.cache.set('cache', 'file-path', key, result);
-            return result;
         }
         throw new Error(`Failed to resolve file path for import (${packageName}${subpath ? `/${subpath}` : ''}@${semanticVersion})`);
     }

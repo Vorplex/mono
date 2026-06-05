@@ -9,7 +9,7 @@ import { Chalk } from './console-logger.model';
 export const TaskStatus = {
     Busy: 'busy',
     Failed: 'failed',
-    Done: 'done',
+    Complete: 'complete',
     Cancelled: 'cancelled'
 } as const;
 
@@ -70,7 +70,7 @@ export class Task extends Subscribable<TaskEvent> {
         super();
         this.name = name;
         this.parent = task;
-        this.subscribe(event => this.parent?.emit({ ...event, task: this }));
+        this.subscribe(event => this.parent?.emit({ ...event, task: this.parent }));
     }
 
     public isCancelled() {
@@ -136,7 +136,7 @@ export class Task extends Subscribable<TaskEvent> {
 
     public complete() {
         if (this.status === TaskStatus.Busy) {
-            this.status = TaskStatus.Done;
+            this.status = TaskStatus.Complete;
             this.finishTimestamp = Date.now();
             this.emit({ source: this, type: 'complete', task: this });
         }
@@ -150,7 +150,7 @@ export class Task extends Subscribable<TaskEvent> {
             if (status === TaskStatus.Failed) return TaskStatus.Failed;
             if (status === TaskStatus.Busy) return TaskStatus.Busy;
         }
-        if (this.isCancelled()) return TaskStatus.Cancelled;
+        if (this.status === TaskStatus.Busy && this.isCancelled()) return TaskStatus.Cancelled;
         return this.status;
     }
 

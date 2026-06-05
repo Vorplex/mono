@@ -73,7 +73,7 @@ export class Compiler {
                             }
                         }
                         try {
-                            const dependencyTree = options.files[importStack.find(importPath => options.files[importPath]?.dependencyTree)]?.dependencyTree ?? options.files[importPath].dependencyTree ?? {};
+                            const dependencyTree = options.files[importStack.find(importPath => options.files[importPath]?.dependencyTree)]?.dependencyTree ?? options.files[importPath]?.dependencyTree ?? {};
                             const string = NPM.parseImportString(importPath);
                             task.log(`Package ${string.packageName} subpath ${string.subpath} version ${string.version}`);
                             if (!string.version) {
