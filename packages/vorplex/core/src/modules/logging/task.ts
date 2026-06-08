@@ -168,7 +168,7 @@ export class Task extends Subscribable<TaskEvent> {
     public toConsoleLog() {
         const formatter = {
             task: (task: Task) => {
-                const status = { done: `${Chalk.White}★ [Done]`, busy: `${Chalk.Orange}★ [Busy]`, failed: `${Chalk.Red}★ [Failed]`, cancelled: `${Chalk.Red}★ [Cancelled]` }[task.getStatus()];
+                const status = { [TaskStatus.Complete]: `${Chalk.White}★ [Complete]`, [TaskStatus.Busy]: `${Chalk.Orange}★ [Busy]`, [TaskStatus.Failed]: `${Chalk.Red}★ [Failed]`, [TaskStatus.Cancelled]: `${Chalk.Red}★ [Cancelled]` }[task.getStatus()];
                 const date = $Date.format(new Date(task.startTimestamp), '[YYYY-MM-DD hh:mm:ss]');
                 const duration = $Number.toUnitString(task.finishTimestamp - task.startTimestamp, Unit.Time);
                 return `${status} ${date} ${task.name} ${Chalk.Dim}${duration}${Chalk.Reset}`;
