@@ -1,7 +1,10 @@
+export type SelectorPath<TValue = any, TResult = any> = string | string[] | ((value: TValue) => TResult);
+
 export class $PathSelector {
 
-    public static parse<T>(selector: string | ((value: T) => any)): string[] {
+    public static parse<T>(selector: SelectorPath<T>): string[] {
         if (selector == null) return [];
+        if (Array.isArray(selector)) return selector;
         if (typeof selector === 'function') {
             const path: string[] = [];
             const proxy = new Proxy({}, {
@@ -48,8 +51,8 @@ export class $PathSelector {
         return segments;
     }
 
-    public static sanitize(...segments: string[]): string {
-        return segments
+    public static toString(path: SelectorPath): string {
+        return $PathSelector.parse(path)
             .map(s => s
                 .replace(/\\/g, `\\\\`) // escape \
                 .replace(/\./g, `\\.`)  // escape .
