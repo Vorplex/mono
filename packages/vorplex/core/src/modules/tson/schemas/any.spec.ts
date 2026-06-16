@@ -20,6 +20,11 @@ describe(TsonAny.name, () => {
             const result = schema.accepts({ type: 'any' });
             expect(result).toEqual(true);
         });
+
+        it('should reject missing definitions unless defaulted', () => {
+            expect(new TsonAny().accepts(undefined)).toEqual(false);
+            expect(new TsonAny({ type: 'any', default: undefined }).accepts(undefined)).toEqual(true);
+        });
     });
 
     describe(TsonAny.prototype.parse.name, () => {

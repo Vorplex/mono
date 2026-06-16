@@ -1,10 +1,11 @@
-import { $Reflection } from '../reflection/utils/reflection.util';
+import { $PathSelector, SelectorPath } from '../path-selector/path-selector.util';
+import { Signal, SignalAccessor, SignalProxy } from '../signal/signal';
 import { Subscribable } from '../subscribable/subscribable.model';
 import type { Subscription } from '../subscribable/subscription.interface';
-import { $Value } from '../value/value.util';
+import { $Value, ValueSet } from '../value/value.util';
 import { ArrayAdaptor } from './adaptors/array/array-adaptor.util';
 import { EntityAdaptor } from './adaptors/entity/entity-adaptor.util';
-import { EmptyReducer, Reducer, ReducerFields, StateReducer } from './reducer.type';
+import { EmptyReducer, isReducerOperation, Reducer, ReducerFields, ReducerOperation, StateReducer } from './reducer.type';
 import type { Update } from './update.type';
 
 export interface StateChange<T> {
@@ -12,18 +13,22 @@ export interface StateChange<T> {
     value: T;
 }
 
-export type StateEffect<T> = (value: T) => T;
+type StateSelection<T> = {
+    path: string[];
+    signal: SignalAccessor<T>;
+    proxy: SignalAccessor<T>;
+};
 
 export class State<T = any, TReducer extends Reducer = EmptyReducer> extends Subscribable<StateChange<T>> {
-    private _value: T;
 
-    public get value() {
-        return this._value;
-    }
+    private readonly selections = new Map<string, StateSelection<any>>();
+    private _store?: SignalProxy<T>;
 
-    constructor(state?: T, private reducer?: TReducer) {
+    public get value() { return this._value; };
+    public get store(): SignalProxy<T> { return this._store ??= Signal.proxy(path => this.select(path)); }
+
+    constructor(private _value?: T, private reducer?: TReducer) {
         super();
-        this._value = state;
     }
 
     public static combineLatest<T extends any[]>(states: { [K in keyof T]: State<T[K]> }, callback: (values: T) => void): Subscription {
@@ -38,10 +43,7 @@ export class State<T = any, TReducer extends Reducer = EmptyReducer> extends Sub
         ];
         for (const [index, state] of states.entries()) {
             const subscription = state.subscribe((state) => {
-                values.update((values) => {
-                    values[index] = state.value;
-                    return values;
-                });
+                values.set(values => values[index], state.value);
             });
             subscriptions.push(subscription);
         }
@@ -54,15 +56,37 @@ export class State<T = any, TReducer extends Reducer = EmptyReducer> extends Sub
         };
     }
 
-    public reduce(update: (reducer: StateReducer<T, TReducer>) => Update<T>[]) {
+    public asReadOnly(): Subscribable<StateChange<T>> & { readonly value: T } {
+        return this;
+    }
+
+    public override subscribe(emit: (event: StateChange<T>, subscription: Subscription) => void): Subscription {
+        const subscription = super.subscribe(emit);
+        const event = {
+            previousValue: this.value,
+            value: this.value,
+        };
+        emit(event, subscription);
+        return subscription;
+    }
+
+    public reduce(update: (reducer: StateReducer<T, TReducer>) => (Update<T> | ReducerOperation<T>)[]): void {
         const reducerFields: ReducerFields<T> = {
-            update: <V>(path: (state: T) => V, update: Partial<V> | ((state: NoInfer<V>) => NoInfer<V>)): Update<T> => {
-                return (state: T) => $Value.update<any, V>(state, path, update);
+            update: (path, update) => {
+                return {
+                    [ReducerOperation]: state => $Value.update(state, path, update)
+                };
+            },
+            set: (path, update) => {
+                return {
+                    [ReducerOperation]: state => $Value.set(state, path, update)
+                };
             }
         };
         const reducer = new Proxy(reducerFields, {
             get: (target, property) => {
                 if (property === 'update') return target.update;
+                if (property === 'set') return target.set;
                 const reducer = {
                     entity: new EntityAdaptor<any, any, any>(property),
                     array: new ArrayAdaptor<any, any, any>(property),
@@ -76,49 +100,71 @@ export class State<T = any, TReducer extends Reducer = EmptyReducer> extends Sub
                 return reducer;
             },
         });
-        this.update(...update(reducer as StateReducer<T, TReducer>));
+        let value = this.value;
+        for (const change of update(reducer as StateReducer<T, TReducer>)) {
+            value = isReducerOperation(change) ? change[ReducerOperation](value) : $Value.update(value, change);
+        }
+        this.commit(value);
     }
 
-    public override subscribe(emit: (event: StateChange<T>, subscription: Subscription) => void): Subscription {
-        const subscription = super.subscribe(emit);
+    public update(update: Update<T>): void;
+    public update<V>(path: SelectorPath<T, V>, update: Update<V>): void;
+    public update<V>(...args: any[]): void {
+        const update: Update<T> | Update<V> = args.length === 1 ? args[0] : args[1];
+        const path: SelectorPath<T, V> = args.length === 2 ? args[0] : null;
+        if (args.length === 1) this.commit($Value.update(this.value, update as Update<T>));
+        else this.commit($Value.update(this.value, path, update as Update<V>));
+    }
+
+    public set(update: ValueSet<T>): void;
+    public set<V>(path: SelectorPath<T, V>, update: ValueSet<V>): void;
+    public set<V>(...args: any[]): void {
+        const update: ValueSet<T> | ValueSet<V> = args.length === 1 ? args[0] : args[1];
+        const path: SelectorPath<T, V> = args.length === 2 ? args[0] : null;
+        if (args.length === 1) this.commit($Value.set(this.value, update as ValueSet<T>));
+        else this.commit($Value.set(this.value, path, update as ValueSet<V>));
+    }
+
+    public select<V = any>(path?: SelectorPath<T, V>): SignalAccessor<V> {
+        const segments = $PathSelector.parse<T>(path);
+        const key = $PathSelector.toString(segments);
+        const existing = this.selections.get(key);
+        if (existing) return existing.proxy;
+        const value = $Value.get(this.value, key);
+        const signal = Signal.create(value);
+        const selection: StateSelection<any> = {
+            path: segments,
+            signal,
+            proxy: new Proxy(signal, {
+                apply: (_target, _thisArg, args) => {
+                    if (args.length === 0) return signal();
+                    this.commit($Value.set(this.value, selection.path, args[0]));
+                    return selection.signal.signal.value;
+                }
+            })
+        };
+        this.selections.set(key, selection);
+        return selection.proxy;
+    }
+
+    private commit(value: T): void {
+        if (this.value === value) return;
         const event = {
             previousValue: this.value,
-            value: this.value,
+            value: value,
         };
-        emit(event, subscription);
-        return subscription;
-    }
-
-    public static update<TState>(state: TState, ...updates: Update<TState>[]): TState {
-        for (const update of updates) {
-            if ($Reflection.isFunction(update)) {
-                state = State.update(state, update(state));
-            } else if ($Reflection.isObject(update)) {
-                const prototype = Object.getPrototypeOf(state ?? update);
-                state = Object.assign({}, state, update);
-                Object.setPrototypeOf(state, prototype);
-            } else {
-                state = update;
-            }
-        }
-        return state;
-    }
-
-    public update(...updates: Update<T>[]): void {
-        this.set(State.update(this.value, ...updates));
-    }
-
-    public set(value: T) {
-        const previousValue = this.value;
         this._value = value;
-        this.emit({
-            previousValue,
-            value: this.value
+        Signal.batch(() => {
+            for (const [key, selection] of this.selections) {
+                if (selection.signal.signal.subscribers.size === 0) {
+                    this.selections.delete(key);
+                    continue;
+                }
+                const value = $Value.get(this.value, selection.path);
+                selection.signal(value);
+            }
         });
-    }
-
-    public asReadOnly(): Subscribable<StateChange<T>> & { readonly value: T } {
-        return this;
+        this.emit(event);
     }
 
     public sync(config: State<T>): Subscription {

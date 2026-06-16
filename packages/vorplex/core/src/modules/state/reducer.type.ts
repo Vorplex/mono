@@ -1,3 +1,5 @@
+import { SelectorPath } from '../path-selector/path-selector.util';
+import { ValueSet } from '../value/value.util';
 import { ArrayAdaptor } from './adaptors/array/array-adaptor.util';
 import { EntityAdaptor } from './adaptors/entity/entity-adaptor.util';
 import { EntityMap } from './adaptors/entity/entity-map.type';
@@ -20,11 +22,19 @@ type StateFields<TState, TReducer extends Reducer> = {
     [K in keyof TState]: ReducerFieldAdaptor<TState, TReducer, K>;
 };
 
+export const ReducerOperation = Symbol();
+
+export type ReducerOperation<T> = {
+    [ReducerOperation]: (state: T) => T;
+};
+
+export function isReducerOperation(change: unknown): change is ReducerOperation<any> {
+    return change != null && typeof change === 'object' && typeof change[ReducerOperation] === 'function';
+}
+
 export type ReducerFields<TState> = {
-    update: {
-        <V>(path: (state: TState) => V, fn: (value: V) => Partial<V>): Update<TState>;
-        <V>(path: (state: TState) => V, value: Partial<V>): Update<TState>;
-    }
+    set: <TValue>(path: SelectorPath<TState, TValue>, update: ValueSet<TValue>) => ReducerOperation<TState>;
+    update: <V>(path: SelectorPath<TState, V>, update: Update<V>) => ReducerOperation<TState>;
 };
 
 export type EmptyReducer = Record<never, never>;

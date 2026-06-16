@@ -32,7 +32,7 @@ export class TsonUnion<T = any> extends TsonSchemaBase<T> {
     }
 
     public accepts(definition: TsonDefinition | null | undefined): boolean {
-        if (definition == null && this.definition.default !== undefined) return true;
+        if (definition == null) return 'default' in this.definition;
         if (definition.type === 'any') return true;
         if (definition.type !== 'union') {
             for (const union of this.definition.union) {

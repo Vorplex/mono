@@ -28,10 +28,9 @@ export class TsonBoolean extends TsonSchemaBase<boolean> {
     }
 
     public accepts(definition: TsonDefinition | null | undefined): boolean {
-        if (definition == null) return this.definition.default !== undefined;
+        if (definition == null) return 'default' in this.definition;
         if (definition.type === 'any') return true;
         if (definition.type !== 'boolean') return false;
-        if (this.definition.default === undefined && definition.default !== undefined) return false;
         return true;
     }
 

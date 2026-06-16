@@ -54,9 +54,8 @@ export class TsonArray<T extends TsonDefinition = any> extends TsonSchemaBase<Ts
     }
 
     public accepts(definition: TsonDefinition | null | undefined): boolean {
-        if (definition == null && this.definition.default !== undefined) return true;
+        if (definition == null) return 'default' in this.definition;
         if (definition.type === 'any') return true;
-        if (this.definition.default === undefined && definition.default !== undefined) return false;
         if (definition.type !== 'array') return false;
         if (this.definition.max != null && this.definition.max < definition.max) return false;
         if (this.definition.min != null && this.definition.min < definition.min) return false;

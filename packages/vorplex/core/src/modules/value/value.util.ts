@@ -1,7 +1,7 @@
-import { $PathSelector } from '../path-selector/path-selector.util';
-import { State } from '../state/state.model';
+import { $PathSelector, SelectorPath } from '../path-selector/path-selector.util';
 import { Update } from '../state/update.type';
-import { $String } from '../string/string.util';
+
+export type ValueSet<T = any> = T | ((value: T) => T);
 
 export class $Value {
 
@@ -17,49 +17,34 @@ export class $Value {
         return !isNaN(parseInt(value));
     }
 
-    public static update<T extends object, V>(target: T, pathSelector: (value: T) => V, update: Update<V>): T {
-        const path = $PathSelector.parse(pathSelector);
-        const isUnassigned = (value: any) => value == null || typeof value !== 'object';
-        const updateAtPath = (value: any, pathIndex: number): any => {
-            if (pathIndex === path.length) return State.update(value, update);
-            const key = path[pathIndex];
-            let nextValue = value?.[key];
-            if (isUnassigned(nextValue) && pathIndex < path.length - 1) {
-                const nextKey = path[pathIndex + 1];
-                nextValue = $Value.isNumeric(nextKey) ? [] : {};
-            }
-            if (Array.isArray(value)) {
-                const array = [...value];
-                array[Number(key)] = updateAtPath(nextValue, pathIndex + 1);
-                return array;
-            }
-            return {
-                ...(value || {}),
-                [key]: updateAtPath(nextValue, pathIndex + 1)
-            };
+    public static update<T>(target: T, update: Update<T>): T;
+    public static update<T, V>(target: T, path: SelectorPath<T, V>, update: Update<V>): T;
+    public static update<T = any>(...args: any[]): T {
+        const patch = <TValue, TPatch extends Partial<TValue>>(value: TValue, patch: TPatch): TValue & TPatch => {
+            if (value == null || patch == null) return patch as TValue & TPatch;
+            if (typeof value !== 'object' || typeof patch !== 'object') return patch as TValue & TPatch;
+            if (Array.isArray(value) || Array.isArray(patch)) return patch as TValue & TPatch;
+            const prototype = Object.getPrototypeOf(value ?? patch);
+            const result = Object.assign({}, value, patch);
+            return Object.setPrototypeOf(result, prototype) as TValue & TPatch;
         };
-
-        return updateAtPath(target, 0) as T;
+        const target: T = args[0];
+        const path: SelectorPath<T> = args.length === 3 ? args[1] : null;
+        const update: Update<T> = args.length === 2 ? args[1] : args[2];
+        const updater = (value: any) => typeof update === 'function' ? (update as (value: T) => Partial<T>)(value) : update;
+        if (args.length === 2) return patch(target, updater(target));
+        return $Value.write(target, path, (value) => patch(value, updater(value)));
     }
 
-    public static set<T extends object, V>(target: T, pathSelector: (value: T) => V, update: NoInfer<V> | ((value: V) => NoInfer<V>)): T
-    public static set<T = any>(target: T, path: string, value: any): T
-    public static set<T = any>(target: T, path: any, value: any): any {
-        if ($String.isNullOrEmpty(path)) return value;
-        const selectors = typeof path === 'string' ? $PathSelector.parse(path) : $PathSelector.parse(path);
-        const isUnassigned = (value: any) => value == null || typeof value !== 'object';
-        if (isUnassigned(target)) target = ($Value.isNumeric(selectors[0]) ? [] : {}) as T;
-        let currentTarget = target;
-        for (let i = 0; i < selectors.length - 1; i++) {
-            const key = selectors[i];
-            const nextKey = selectors[i + 1];
-            if (isUnassigned(currentTarget[key])) {
-                currentTarget[key] = $Value.isNumeric(nextKey) ? [] : {};
-            }
-            currentTarget = currentTarget[key];
-        }
-        currentTarget[selectors[selectors.length - 1]] = value;
-        return target;
+    public static set<T>(target: T, update: ValueSet<T>): T;
+    public static set<T, V>(target: T, path: SelectorPath<T, V>, update: ValueSet<V>): T;
+    public static set<T = any>(...args: any[]): T {
+        const target: T = args[0];
+        const path: SelectorPath<T> = args.length === 3 ? args[1] : null;
+        const update: ValueSet<T> = args.length === 2 ? args[1] : args[2];
+        const updater = (value: any) => typeof update === 'function' ? (update as (value: T) => T)(value) : update;
+        if (args.length === 2) return updater(target);
+        return $Value.write(target, path, (value) => updater(value));
     }
 
     public static unset(target: any, path: string): void {
@@ -77,10 +62,32 @@ export class $Value {
         }
     }
 
-    public static get(value: any, path: string): any {
+    public static get(value: any, path: SelectorPath): any {
         const selectors = $PathSelector.parse(path);
         for (const selector of selectors) value = value?.[selector];
         return value;
+    }
+
+    private static write<T>(target: T, path: SelectorPath<T>, update: (value: any) => any): T {
+        const paths = $PathSelector.parse(path);
+        const writeAtPath = (value: any, pathIndex: number): any => {
+            if (pathIndex === paths.length) return update(value);
+            const key = paths[pathIndex];
+            const container = $Value.isPrimitive(value) ? ($Value.isNumeric(key) ? [] : {}) : value;
+            const currentValue = container[key];
+            const nextValue = writeAtPath(currentValue, pathIndex + 1);
+            if (currentValue === nextValue && key in container) return value;
+            if (Array.isArray(container)) {
+                const array = [...container];
+                array[Number(key)] = nextValue;
+                return array;
+            }
+            return {
+                ...container,
+                [key]: nextValue
+            };
+        };
+        return writeAtPath(target, 0) as T;
     }
 
     public static equals(a: any, b: any): boolean {
@@ -137,10 +144,10 @@ export class $Value {
     }
 
     public static pick(target: Record<string, any>, options: { include?: string[]; exclude?: string[] }) {
-        const result = options.include ? {} : { ...target };
+        let result = options.include ? {} : { ...target };
         if (options.include) {
             for (const include of options.include) {
-                $Value.set(result, include, $Value.get(target, include));
+                result = $Value.set(result, include, $Value.get(target, include));
             }
         }
         if (options.exclude) {

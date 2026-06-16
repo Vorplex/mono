@@ -1,4 +1,4 @@
-import { $Id, $String, $Value, type CamelToKebab, State, type Update } from '@vorplex/core';
+import { $Id, $String, $Value, type CamelToKebab, type Update } from '@vorplex/core';
 import { Accessor, type JSX, createMemo } from 'solid-js';
 
 export type StyleNames<T> = { [name in keyof T]: string };
@@ -110,7 +110,7 @@ export class $StyleSheet {
     }
 
     public static update<T extends object>(style: ClassStyleSheet<T>, changes: Update<StyleClasses<T>> = {} as Update<StyleClasses<T>>): ClassStyleSheet<T> {
-        changes = State.update(style.value, changes);
+        changes = $Value.update(style.value, changes);
         if ($Value.equals(style.value, changes)) return style;
         const { classes, css } = $StyleSheet.parse<any>(changes, style.classes);
         style.sheet.replaceSync(css);

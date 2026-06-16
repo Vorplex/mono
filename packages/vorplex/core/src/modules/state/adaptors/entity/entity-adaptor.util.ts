@@ -1,6 +1,6 @@
 import type { KeysOfType } from '../../../../types/keys-of-type.type';
 import type { Predicate } from '../../../../types/predicate.type';
-import { State } from '../../state.model';
+import { $Value } from '../../../value/value.util';
 import type { Update } from '../../update.type';
 import type { EntityMap } from './entity-map.type';
 import type { IEntity } from './entity.interface';
@@ -23,6 +23,14 @@ export class MapAdaptor {
             else records[key] = items[key] as any;
         }
         return records;
+    }
+
+    public static rename<T extends Record<string, any>>(records: T, oldKey: string, newKey: string): T {
+        let result = {};
+        for (const key in records) {
+            result[key === oldKey ? newKey : key] = records[key];
+        }
+        return result as T;
     }
 
     public static map<T extends Record<string, any>, TT>(records: T, map: (record: T[keyof T]) => [string, TT]): Record<string, TT> {
@@ -54,44 +62,41 @@ export class EntityAdaptor<TState, TEntity extends IEntity, TKey extends keyof K
     }
 
     public create(...entities: TEntity[]): Update<TState> {
-        return (state) =>
-            ({
-                [this.key]: EntityAdaptor.create(state[this.key] as EntityMap<TEntity>, ...entities),
-            }) as Partial<TState>;
+        return (state) => ({
+            [this.key]: EntityAdaptor.create(state[this.key] as EntityMap<TEntity>, ...entities),
+        }) as Partial<TState>;
     }
 
-    public static updateAll<T extends IEntity>(items: EntityMap<T>, ...updates: Update<T>[]): EntityMap<T> {
+    public static updateAll<T extends IEntity>(items: EntityMap<T>, update: Update<T>): EntityMap<T> {
         items = { ...items };
         for (const id in items) {
-            items[id] = State.update(items[id], ...updates);
+            items[id] = $Value.update(items[id], update);
         }
         return items;
     }
 
-    public updateAll(...updates: Update<TEntity>[]): Update<TState> {
-        return (state) =>
-            ({
-                [this.key]: EntityAdaptor.updateAll(state[this.key] as EntityMap<TEntity>, ...updates),
-            }) as Partial<TState>;
+    public updateAll(update: Update<TEntity>): Update<TState> {
+        return (state) => ({
+            [this.key]: EntityAdaptor.updateAll(state[this.key] as EntityMap<TEntity>, update),
+        }) as Partial<TState>;
     }
 
-    public static updateById<T extends IEntity>(items: EntityMap<T>, id: string, ...updates: Update<T>[]): EntityMap<T> {
+    public static updateById<T extends IEntity>(items: EntityMap<T>, id: string, update: Update<T>): EntityMap<T> {
         items = { ...items };
-        return EntityAdaptor.updateByIds(items, [id], ...updates);
+        return EntityAdaptor.updateByIds(items, [id], update);
     }
 
-    public updateById(id: string, ...updates: Update<TEntity>[]): Update<TState> {
-        return (state) =>
-            ({
-                [this.key]: EntityAdaptor.updateById(state[this.key] as EntityMap<TEntity>, id, ...updates),
-            }) as Partial<TState>;
+    public updateById(id: string, update: Update<TEntity>): Update<TState> {
+        return (state) => ({
+            [this.key]: EntityAdaptor.updateById(state[this.key] as EntityMap<TEntity>, id, update),
+        }) as Partial<TState>;
     }
 
-    public static updateByIds<T extends IEntity>(items: EntityMap<T>, ids: string[], ...updates: Update<T>[]): EntityMap<T> {
+    public static updateByIds<T extends IEntity>(items: EntityMap<T>, ids: string[], update: Update<T>): EntityMap<T> {
         items = { ...items };
         for (const id of ids) {
             if (items[id]) {
-                items[id] = State.update(items[id], ...updates);
+                items[id] = $Value.update(items[id], update);
             } else {
                 throw new Error(`Entity with ID ${id} doesn't exist.`);
             }
@@ -99,26 +104,24 @@ export class EntityAdaptor<TState, TEntity extends IEntity, TKey extends keyof K
         return items;
     }
 
-    public updateByIds(ids: string[], ...updates: Update<TEntity>[]): Update<TState> {
-        return (state) =>
-            ({
-                [this.key]: EntityAdaptor.updateByIds(state[this.key] as EntityMap<TEntity>, ids, ...updates),
-            }) as Partial<TState>;
+    public updateByIds(ids: string[], update: Update<TEntity>): Update<TState> {
+        return (state) => ({
+            [this.key]: EntityAdaptor.updateByIds(state[this.key] as EntityMap<TEntity>, ids, update),
+        }) as Partial<TState>;
     }
 
-    public static updateWhere<T extends IEntity>(items: EntityMap<T>, predicate: Predicate<T>, ...updates: Update<T>[]): EntityMap<T> {
+    public static updateWhere<T extends IEntity>(items: EntityMap<T>, predicate: Predicate<T>, update: Update<T>): EntityMap<T> {
         items = { ...items };
         for (const item of Object.values(items).filter(predicate)) {
-            items[item.id] = State.update(item, ...updates);
+            items[item.id] = $Value.update(item, update);
         }
         return items;
     }
 
-    public updateWhere(predicate: Predicate<TEntity>, ...updates: Update<TEntity>[]): Update<TState> {
-        return (state) =>
-            ({
-                [this.key]: EntityAdaptor.updateWhere(state[this.key] as EntityMap<TEntity>, predicate, ...updates),
-            }) as Partial<TState>;
+    public updateWhere(predicate: Predicate<TEntity>, update: Update<TEntity>): Update<TState> {
+        return (state) => ({
+            [this.key]: EntityAdaptor.updateWhere(state[this.key] as EntityMap<TEntity>, predicate, update),
+        }) as Partial<TState>;
     }
 
     public static upsert<T extends IEntity>(items: EntityMap<T>, ...entities: T[]): EntityMap<T> {
@@ -159,10 +162,9 @@ export class EntityAdaptor<TState, TEntity extends IEntity, TKey extends keyof K
     }
 
     public delete(...ids: string[]): Update<TState> {
-        return (state) =>
-            ({
-                [this.key]: EntityAdaptor.delete(state[this.key] as EntityMap<TEntity>, ...ids),
-            }) as Partial<TState>;
+        return (state) => ({
+            [this.key]: EntityAdaptor.delete(state[this.key] as EntityMap<TEntity>, ...ids),
+        }) as Partial<TState>;
     }
 
     public static deleteWhere<T extends IEntity>(items: EntityMap<T>, predicate: Predicate<T>): EntityMap<T> {
@@ -176,10 +178,9 @@ export class EntityAdaptor<TState, TEntity extends IEntity, TKey extends keyof K
     }
 
     public deleteWhere(predicate: Predicate<TEntity>): Update<TState> {
-        return (state) =>
-            ({
-                [this.key]: EntityAdaptor.deleteWhere(state[this.key] as EntityMap<TEntity>, predicate),
-            }) as Partial<TState>;
+        return (state) => ({
+            [this.key]: EntityAdaptor.deleteWhere(state[this.key] as EntityMap<TEntity>, predicate),
+        }) as Partial<TState>;
     }
 
     public static fromArray<T extends IEntity>(entities: T[]): EntityMap<T> {

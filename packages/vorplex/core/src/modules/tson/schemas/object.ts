@@ -38,9 +38,8 @@ export class TsonObject<T extends { [key: string]: TsonDefinition } = {}> extend
     }
 
     public override accepts(definition: TsonDefinition | null | undefined): boolean {
-        if (definition == null && this.definition.default !== undefined) return true;
+        if (definition == null) return 'default' in this.definition;
         if (definition.type === 'any') return true;
-        if (this.definition.default === undefined && definition.default !== undefined) return false;
         if (definition.type !== 'object') return false;
         if (this.definition.prototype != null && !$Reflection.extends(definition.prototype, this.definition.prototype)) return false;
         if (this.definition.property) {

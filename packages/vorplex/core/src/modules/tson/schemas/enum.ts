@@ -30,9 +30,8 @@ export class TsonEnum<T extends string | number = any> extends TsonSchemaBase<T>
     }
 
     public accepts(definition: TsonDefinition | null | undefined): boolean {
+        if (definition == null) return 'default' in this.definition;
         if (definition.type === 'any') return true;
-        if (definition == null && this.definition.default !== undefined) return true;
-        if (this.definition.default === undefined && definition.default !== undefined) return false;
         if (definition.type !== 'enum') return false;
         return this.definition.flags.every((flag) => definition.flags.includes(flag as T));
     }

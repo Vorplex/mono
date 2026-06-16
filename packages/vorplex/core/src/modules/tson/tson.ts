@@ -66,6 +66,27 @@ export class $Tson {
         };
     }
 
+    public static getDefaultDefinition(type: TsonDefinition['type']): TsonDefinition {
+        switch (type) {
+            case 'any':
+                return new TsonAny().definition;
+            case 'string':
+                return new TsonString().definition;
+            case 'number':
+                return new TsonNumber().definition;
+            case 'boolean':
+                return new TsonBoolean().definition;
+            case 'object':
+                return new TsonObject().definition;
+            case 'array':
+                return new TsonArray().definition;
+            case 'enum':
+                return new TsonEnum().definition;
+            case 'union':
+                return new TsonUnion().definition;
+        }
+    }
+
     public static parse(definition: TsonDefinition): TsonSchema {
         switch (definition.type) {
             case 'any':

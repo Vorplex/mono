@@ -52,9 +52,8 @@ export class TsonNumber extends TsonSchemaBase<number> {
     }
 
     public accepts(definition: TsonDefinition | null | undefined): boolean {
-        if (definition == null && this.definition.default !== undefined) return true;
+        if (definition == null) return 'default' in this.definition;
         if (definition.type === 'any') return true;
-        if (this.definition.default === undefined && definition.default !== undefined) return false;
         if (definition.type !== 'number') return false;
         if (this.definition.min != null && (definition.min == null || definition.min < this.definition.min)) return false;
         if (this.definition.max != null && (definition.max == null || definition.max > this.definition.max)) return false;

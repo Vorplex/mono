@@ -76,6 +76,12 @@ describe(TsonString.name, () => {
                 }
             }
         });
+
+        it('should accept compatible definitions with defaults', () => {
+            const schema = new TsonString();
+            const result = schema.accepts({ type: 'string', default: 'root' });
+            expect(result).toEqual(true);
+        });
     });
 
     describe(TsonString.prototype.parse.name, () => {

@@ -28,6 +28,7 @@ export class TsonAny extends TsonSchemaBase<any> {
     }
 
     public accepts(definition: TsonDefinition | null | undefined): boolean {
+        if (definition == null) return 'default' in this.definition;
         return true;
     }
 
