@@ -24,10 +24,10 @@ export class $Object {
         return result as T;
     }
 
-    public static getPaths(value: any): string[] {
-        const paths: string[] = [];
+    public static getPaths(value: any): string[][] {
+        const paths: string[][] = [];
         function addPath(path: string[]) {
-            if (path.length) paths.push(path.join('.'));
+            if (path.length) paths.push(path);
         }
         function traverse(value: any, path: string[]) {
             if (value == null || typeof value !== 'object') {

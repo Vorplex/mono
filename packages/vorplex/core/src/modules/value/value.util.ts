@@ -17,6 +17,21 @@ export class $Value {
         return !isNaN(parseInt(value));
     }
 
+    public static pick(value: any, options: { include?: SelectorPath[], exclude?: SelectorPath[] }): any {
+        let result: any = options.include ? {} : $Value.clone(value);
+        if (options.include) {
+            for (const selector of options.include) {
+                result = $Value.set(result, selector, $Value.get(value, selector));
+            }
+        }
+        if (options.exclude) {
+            for (const selector of options.exclude) {
+                result = $Value.unset(result, selector);
+            }
+        }
+        return result;
+    }
+
     public static update<T>(target: T, update: Update<T>): T;
     public static update<T, V>(target: T, path: SelectorPath<T, V>, update: Update<V>): T;
     public static update<T = any>(...args: any[]): T {
@@ -47,19 +62,24 @@ export class $Value {
         return $Value.write(target, path, (value) => updater(value));
     }
 
-    public static unset(target: any, path: string): void {
-        const selectors = $PathSelector.parse(path);
-        for (const [index, selector] of selectors.entries()) {
-            if (index < selectors.length - 1) {
-                target = target?.[selector];
-                if (target == null) return;
+    public static unset<T>(target: T, path: SelectorPath<T>): T {
+        const paths = $PathSelector.parse(path);
+        if (paths.length === 0) return target;
+        const lastKey = paths[paths.length - 1];
+        const parentPath = paths.slice(0, -1);
+        if ($Value.isPrimitive($Value.get(target, parentPath))) return target;
+        return $Value.write(target, parentPath, (container: any) => {
+            if (Array.isArray(container)) {
+                if (Number.isNaN(Number(lastKey))) return container;
+                const array = [...container];
+                array.splice(Number(lastKey), 1);
+                return array;
             }
-            else if (Array.isArray(target)) {
-                if (Number.isNaN(Number(selector))) return;
-                target.splice(Number(selector), 1);
-            }
-            else delete target[selector];
-        }
+            if (!(lastKey in container)) return container;
+            const rest = { ...container };
+            delete rest[lastKey];
+            return rest;
+        });
     }
 
     public static get(value: any, path: SelectorPath): any {
@@ -141,21 +161,6 @@ export class $Value {
             return copy;
         };
         return clone(value);
-    }
-
-    public static pick(target: Record<string, any>, options: { include?: string[]; exclude?: string[] }) {
-        let result = options.include ? {} : { ...target };
-        if (options.include) {
-            for (const include of options.include) {
-                result = $Value.set(result, include, $Value.get(target, include));
-            }
-        }
-        if (options.exclude) {
-            for (const exclude of options.exclude) {
-                $Value.unset(result, exclude);
-            }
-        }
-        return result;
     }
 
     public static orderProperties<T>(value: T): T {

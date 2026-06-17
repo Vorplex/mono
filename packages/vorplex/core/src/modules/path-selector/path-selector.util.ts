@@ -1,3 +1,5 @@
+import { $Value } from '../value/value.util';
+
 export type SelectorPath<TValue = any, TResult = any> = string | string[] | ((value: TValue) => TResult);
 
 export class $PathSelector {
@@ -60,6 +62,25 @@ export class $PathSelector {
                 .replace(/\]/g, `\\]`)  // escape ]
             )
             .join('.');
+    }
+
+    public static query(target: any, path: SelectorPath, options?: { include?: SelectorPath[], exclude?: SelectorPath[] }): any {
+        const [head, ...rest] = $PathSelector.parse(path);
+        if (head === undefined) return options ? $Value.pick(target, options) : target;
+        if (target == null) return undefined;
+        if (head === '*') {
+            if (typeof target !== 'object') return undefined;
+            const isArray = Array.isArray(target);
+            const result: any = isArray ? [] : {};
+            for (const key of Object.keys(target)) {
+                const value = $PathSelector.query(target[key], rest, options);
+                if (value === undefined) continue;
+                if (isArray) result.push(value);
+                else result[key] = value;
+            }
+            return (isArray ? result.length : Object.keys(result).length) ? result : undefined;
+        }
+        return $PathSelector.query(target[head], rest, options);
     }
 
 }
