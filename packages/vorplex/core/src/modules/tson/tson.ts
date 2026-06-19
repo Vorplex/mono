@@ -250,4 +250,31 @@ export class $Tson {
             });
         return $Tson.any();
     }
+    public static getDefinitionAtPath(definition: TsonDefinition, path: SelectorPath): TsonDefinition | undefined {
+        const resolve = (definition: TsonDefinition, segments: string[]): TsonDefinition | undefined => {
+            if (definition == null) return undefined;
+            if (segments.length === 0) return definition;
+            const [key, ...rest] = segments;
+            switch (definition.type) {
+                case 'any':
+                    return definition;
+                case 'array':
+                    return definition.itemDefinition ? resolve(definition.itemDefinition, rest) : undefined;
+                case 'object':
+                    if (definition.properties && key in definition.properties) return resolve(definition.properties[key], rest);
+                    if (definition.property) return resolve(definition.property, rest);
+                    return undefined;
+                case 'union': {
+                    const results = definition.union
+                        .map(item => resolve(item, segments))
+                        .filter(item => item != null);
+                    if (results.length === 0) return undefined;
+                    return results.length === 1 ? results[0] : this.union({ union: results as TsonDefinition[] });
+                }
+                default:
+                    return undefined;
+            }
+        };
+        return resolve(definition, $PathSelector.parse(path));
+    }
 }
