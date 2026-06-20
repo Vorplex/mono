@@ -83,6 +83,7 @@ export * from './modules/tson/schemas/boolean';
 export * from './modules/tson/schemas/enum';
 export * from './modules/tson/schemas/number';
 export * from './modules/tson/schemas/object';
+export * from './modules/tson/schemas/ref';
 export * from './modules/tson/schemas/schema-base';
 export * from './modules/tson/schemas/string';
 export * from './modules/tson/schemas/union';

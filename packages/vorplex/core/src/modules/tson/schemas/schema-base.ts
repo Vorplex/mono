@@ -16,7 +16,6 @@ export abstract class TsonSchemaBase<T = any> {
         return [undefined, [new TsonError(`${$String.upperCaseFirst(this.definition.type)} required`, value, this as any)]];
     }
 
-
     public abstract accepts(tson: TsonDefinitionBase | null | undefined): boolean;
     public abstract parse(value: any, failFast?: boolean): TsonResult<T>;
     public abstract getDefault(): T;

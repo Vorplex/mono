@@ -23,6 +23,7 @@ type TsonObjectType<T extends Record<string, TsonDefinition>> = ObjectType<{ [P 
 
 export type TsonType<T extends TsonDefinition | readonly TsonDefinition[]>
     = T extends { type: 'any' } ? any
+    : T extends { type: 'ref' } ? any
     : T extends { type: 'string' } ? string
     : T extends { type: 'number' } ? number
     : T extends { type: 'boolean' } ? boolean

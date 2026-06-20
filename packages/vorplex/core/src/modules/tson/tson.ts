@@ -1,4 +1,5 @@
 import { $Enum } from '../enum/enum.util';
+import { $PathSelector, SelectorPath } from '../path-selector/path-selector.util';
 import { $Reflection } from '../reflection/utils/reflection.util';
 import { $String } from '../string/string.util';
 import type { TsonDefinition, TsonSchema } from './schema';
@@ -8,6 +9,7 @@ import { TsonBoolean, type TsonBooleanDefinition } from './schemas/boolean';
 import { TsonEnum, type TsonEnumDefinition } from './schemas/enum';
 import { TsonNumber, type TsonNumberDefinition } from './schemas/number';
 import { TsonObject, type TsonObjectDefinition } from './schemas/object';
+import { TsonRef, type TsonRefDefinition } from './schemas/ref';
 import { TsonString, type TsonStringDefinition } from './schemas/string';
 import { TsonUnion, type TsonUnionDefinition } from './schemas/union';
 
@@ -38,6 +40,10 @@ export class $Tson {
 
     public static any(definition?: Omit<TsonAnyDefinition, 'type'>): TsonAnyDefinition {
         return { type: 'any', ...(definition ?? {}) };
+    }
+
+    public static ref<T extends Omit<TsonRefDefinition, 'type'>>(definition: T): T & Pick<TsonRefDefinition, 'type'> {
+        return { type: 'ref', ...definition } as T & Pick<TsonRefDefinition, 'type'>;
     }
 
     public static enum<T extends string | number = any>(definition?: Omit<TsonEnumDefinition<T>, 'type'>): TsonEnumDefinition<T> {
@@ -84,6 +90,8 @@ export class $Tson {
                 return new TsonEnum().definition;
             case 'union':
                 return new TsonUnion().definition;
+            case 'ref':
+                return new TsonRef().definition;
         }
     }
 
@@ -105,6 +113,8 @@ export class $Tson {
                 return new TsonEnum(definition);
             case 'union':
                 return new TsonUnion(definition);
+            case 'ref':
+                return new TsonRef(definition);
         }
     }
 
@@ -143,6 +153,8 @@ export class $Tson {
                 return `${definition.flags.map(flag => typeof flag === 'string' ? `'${flag}'` : flag).join(' | ')}`;
             case 'union':
                 return `${definition.union.map(definition => this.generateTypeScriptDefinition(definition)).join(' | ')}`;
+            case 'ref':
+                throw new Error(`Cannot generate a TypeScript definition for an unresolved TSON ref with id (${definition.id})`);
         }
     }
 
@@ -220,6 +232,8 @@ export class $Tson {
                 });
                 case 'enum': return meta({ enum: definition.flags });
                 case 'union': return meta({ oneOf: definition.union.map(item => build(item, $defs)) });
+                case 'ref':
+                    throw new Error(`Cannot generate a JSON Schema for an unresolved TSON ref with id (${definition.id})`);
             }
         };
 
@@ -271,10 +285,40 @@ export class $Tson {
                     if (results.length === 0) return undefined;
                     return results.length === 1 ? results[0] : this.union({ union: results as TsonDefinition[] });
                 }
+                case 'ref':
+                    throw new Error(`Cannot resolve a path through an unresolved TSON ref with id (${definition.id})`);
                 default:
                     return undefined;
             }
         };
         return resolve(definition, $PathSelector.parse(path));
+    }
+
+    public static resolveRefs(definition: TsonDefinition, resolve: (id: string) => TsonDefinition | undefined): TsonDefinition {
+        const resolveRefs = (definition: TsonDefinition, seen: ReadonlySet<string>): TsonDefinition => {
+            if (definition == null) return definition;
+            if (definition.type === 'ref') {
+                if (seen.has(definition.id)) throw new Error(`Circular TSON ref detected with id (${definition.id})`);
+                const resolved = resolve(definition.id);
+                if (resolved == null) throw new Error(`Unable to resolve TSON ref with id (${definition.id})`);
+                return resolveRefs(resolved, new Set(seen).add(definition.id));
+            }
+            switch (definition.type) {
+                case 'object':
+                    if (definition.property) return { ...definition, property: resolveRefs(definition.property, seen) };
+                    if (definition.properties) return {
+                        ...definition,
+                        properties: Object.fromEntries(Object.entries(definition.properties).map(([key, value]) => [key, resolveRefs(value, seen)]))
+                    };
+                    return definition;
+                case 'array':
+                    return definition.itemDefinition ? { ...definition, itemDefinition: resolveRefs(definition.itemDefinition, seen) } : definition;
+                case 'union':
+                    return { ...definition, union: definition.union.map(item => resolveRefs(item, seen)) };
+                default:
+                    return definition;
+            }
+        };
+        return resolveRefs(definition, new Set());
     }
 }

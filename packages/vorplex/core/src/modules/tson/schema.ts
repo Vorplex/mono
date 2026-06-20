@@ -4,6 +4,7 @@ import type { TsonBoolean, TsonBooleanDefinition } from './schemas/boolean';
 import type { TsonEnum, TsonEnumDefinition } from './schemas/enum';
 import type { TsonNumber, TsonNumberDefinition } from './schemas/number';
 import type { TsonObject, TsonObjectDefinition } from './schemas/object';
+import type { TsonRef, TsonRefDefinition } from './schemas/ref';
 import type { TsonString, TsonStringDefinition } from './schemas/string';
 import type { TsonUnion, TsonUnionDefinition } from './schemas/union';
 
@@ -15,6 +16,7 @@ export type TsonDefinition =
     | TsonAnyDefinition
     | TsonNumberDefinition
     | TsonObjectDefinition
+    | TsonRefDefinition
     | TsonStringDefinition
     | TsonUnionDefinition;
 
@@ -26,4 +28,5 @@ export type TsonSchema =
     | TsonEnum
     | TsonObject
     | TsonAny
+    | TsonRef
     | TsonUnion;
