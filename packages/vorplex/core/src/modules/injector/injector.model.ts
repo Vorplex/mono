@@ -69,18 +69,25 @@ export class Injector {
 
     public create<T = any>(type: Constructor<T>): T {
         if ('inject' in type && typeof type.inject === 'object' && type.inject != null) {
-            const tokens = {};
-            for (const [key, value] of Object.entries(type.inject)) {
-                try {
-                    tokens[key] = this.get(value);
-                } catch (error) {
-                    if (error instanceof InjectorError) {
-                        throw new InjectorError(`Unable to create ${$Reflection.getTypeName(type)}, failed to resolve key (${key}). ${error.message}`);
+            const inject = type.inject;
+            const resolved = new Map<string, any>();
+            const proxy = new Proxy({}, {
+                get: (_target, key) => {
+                    if (typeof key !== 'string' || !(key in inject)) return undefined;
+                    if (resolved.has(key)) return resolved.get(key);
+                    const dependencyType = inject[key]();
+                    try {
+                        resolved.set(key, this.get(dependencyType));
+                    } catch (error) {
+                        if (error instanceof InjectorError) {
+                            throw new InjectorError(`Failed to resolve dependency of type (${$Reflection.getTypeName(dependencyType)}) on type (${$Reflection.getTypeName(type)}). ${error.message}`);
+                        }
+                        throw error;
                     }
-                    throw error;
+                    return resolved.get(key);
                 }
-            }
-            return new type(tokens);
+            });
+            return new type(proxy);
         }
         return new type();
     }

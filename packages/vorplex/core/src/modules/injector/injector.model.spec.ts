@@ -1,4 +1,4 @@
-import { Instance } from '../reflection/types/instance.type';
+import { InjectInstance } from './inject-instance.type';
 import { Injectable } from './decorators/injectable.decorator';
 import { Injector } from './injector.model';
 import { ProviderScopes } from './provider-scopes.enum';
@@ -101,9 +101,9 @@ describe(Injector.name, () => {
         }
         class Service {
             static inject = {
-                sample: Base
+                sample: () => Base
             };
-            constructor(public services: Instance<typeof Service.inject>) { }
+            constructor(public services: InjectInstance<typeof Service.inject>) { }
         }
 
         it('should create instance with providers', () => {
@@ -112,6 +112,25 @@ describe(Injector.name, () => {
             const instance = injector.create(Service);
             expect(instance).toBeDefined();
             expect(instance.services.sample instanceof Sample).toBeTruthy();
+        });
+
+        it('should resolve a real A -> B -> A cycle', () => {
+            class A {
+                static inject = { b: () => B };
+                constructor(public services: InjectInstance<typeof A.inject>) { }
+            }
+            class B {
+                static inject = { a: () => A };
+                constructor(public services: InjectInstance<typeof B.inject>) { }
+            }
+
+            const injector = new Injector([
+                { type: A, scope: ProviderScopes.Singleton },
+                { type: B, scope: ProviderScopes.Singleton },
+            ]);
+            const a = injector.get(A);
+            expect(a.services.b).toBeInstanceOf(B);
+            expect(a.services.b.services.a).toBe(a);
         });
     });
 

@@ -24,6 +24,7 @@ export * from './modules/date/date.util';
 export * from './modules/enum/enum.util';
 export * from './modules/hash/hash.util';
 export * from './modules/id/id.util';
+export * from './modules/injector/inject-instance.type';
 export * from './modules/injector/injector.model';
 export * from './modules/injector/provider-scopes.enum';
 export * from './modules/injector/provider.interface';
