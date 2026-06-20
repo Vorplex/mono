@@ -5,7 +5,7 @@ import type { Subscription } from '../subscribable/subscription.interface';
 import { $Value, ValueSet } from '../value/value.util';
 import { ArrayAdaptor } from './adaptors/array/array-adaptor.util';
 import { EntityAdaptor } from './adaptors/entity/entity-adaptor.util';
-import { EmptyReducer, isReducerOperation, Reducer, ReducerFields, ReducerOperation, StateReducer } from './reducer.type';
+import { EmptyReducer, Reducer, ReducerFields, ReducerOperation, StateReducer } from './reducer.type';
 import type { Update } from './update.type';
 
 export interface StateChange<T> {
@@ -72,16 +72,8 @@ export class State<T = any, TReducer extends Reducer = EmptyReducer> extends Sub
 
     public reduce(update: (reducer: StateReducer<T, TReducer>) => (Update<T> | ReducerOperation<T>)[]): void {
         const reducerFields: ReducerFields<T> = {
-            update: (path, update) => {
-                return {
-                    [ReducerOperation]: state => $Value.update(state, path, update)
-                };
-            },
-            set: (path, update) => {
-                return {
-                    [ReducerOperation]: state => $Value.set(state, path, update)
-                };
-            }
+            update: (path, update) => ReducerOperation.create(state => $Value.update(state, path, update)),
+            set: (path, update) => ReducerOperation.create(state => $Value.set(state, path, update))
         };
         const reducer = new Proxy(reducerFields, {
             get: (target, property) => {
@@ -102,7 +94,7 @@ export class State<T = any, TReducer extends Reducer = EmptyReducer> extends Sub
         });
         let value = this.value;
         for (const change of update(reducer as StateReducer<T, TReducer>)) {
-            value = isReducerOperation(change) ? change[ReducerOperation](value) : $Value.update(value, change);
+            value = ReducerOperation.is(change) ? ReducerOperation.invoke(change, value) : $Value.update(value, change);
         }
         this.commit(value);
     }

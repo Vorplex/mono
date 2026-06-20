@@ -22,15 +22,19 @@ type StateFields<TState, TReducer extends Reducer> = {
     [K in keyof TState]: ReducerFieldAdaptor<TState, TReducer, K>;
 };
 
-export const ReducerOperation = Symbol();
+const ReducerOperationSymbol = Symbol();
 
 export type ReducerOperation<T> = {
-    [ReducerOperation]: (state: T) => T;
+    [ReducerOperationSymbol]: (state: T) => T;
 };
 
-export function isReducerOperation(change: unknown): change is ReducerOperation<any> {
-    return change != null && typeof change === 'object' && typeof change[ReducerOperation] === 'function';
-}
+export const ReducerOperation = {
+    create<T>(operation: (state: T) => T) { return { [ReducerOperationSymbol]: operation }; },
+    is(change: unknown): change is ReducerOperation<any> { return change != null && typeof change === 'object' && typeof change[ReducerOperationSymbol] === 'function'; },
+    invoke<T>(change: ReducerOperation<T>, state: T): T { return change[ReducerOperationSymbol](state); }
+};
+
+export type ReducerFunction<TState, TReducer> = (reducer: StateReducer<TState, TReducer>) => ReducerOperation<TState>;
 
 export type ReducerFields<TState> = {
     set: <TValue>(path: SelectorPath<TState, TValue>, update: ValueSet<TValue>) => ReducerOperation<TState>;
