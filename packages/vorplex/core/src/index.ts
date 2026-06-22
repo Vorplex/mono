@@ -1,6 +1,7 @@
 // **/*.ts
 export * from './consts/mime-type.const';
 export * from './consts/unit.const';
+export * from './functions/create-identifier.function';
 export * from './functions/debounce.function';
 export * from './functions/is-node-environment.function';
 export * from './functions/ok.function';
