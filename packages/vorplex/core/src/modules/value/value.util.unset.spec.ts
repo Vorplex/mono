@@ -5,7 +5,7 @@ describe($Value.unset.name, () => {
         const target = {
             name: 'foo',
         };
-        $Value.unset(target, 'name');
-        expect('name' in target).toBeFalsy();
+        const result = $Value.unset(target, 'name');
+        expect('name' in result).toBeFalsy();
     });
 });

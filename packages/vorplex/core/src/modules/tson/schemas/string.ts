@@ -55,7 +55,7 @@ export class TsonString extends TsonSchemaBase<string> {
         const result = this.parseDefault(value);
         if (result) return result;
         const errors: TsonError[] = [];
-        if (value != null && typeof value !== 'string') {
+        if (typeof value !== 'string') {
             errors.push(new TsonError('String expected', value, this));
             if (failFast) return [undefined, errors];
         }

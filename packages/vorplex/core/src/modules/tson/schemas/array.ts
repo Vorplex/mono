@@ -67,7 +67,7 @@ export class TsonArray<T extends TsonDefinition = any> extends TsonSchemaBase<Ts
         let result: any = this.parseDefault(value);
         if (result) return result;
         const errors: TsonError[] = [];
-        if (value != null && !Array.isArray(value)) {
+        if (!Array.isArray(value)) {
             return [undefined, [new TsonError('Array expected', value, this)]];
         }
         if (this.definition.min != null && value.length < this.definition.min) {

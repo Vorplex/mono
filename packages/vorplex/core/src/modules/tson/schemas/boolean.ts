@@ -38,7 +38,7 @@ export class TsonBoolean extends TsonSchemaBase<boolean> {
         const result = this.parseDefault(value);
         if (result) return result;
         const errors: TsonError[] = [];
-        if (value != null && typeof value !== 'boolean') {
+        if (typeof value !== 'boolean') {
             errors.push(new TsonError('Boolean expected', value, this));
             if (failFast) return [undefined, errors];
         }

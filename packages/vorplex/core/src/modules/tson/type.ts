@@ -32,6 +32,7 @@ export type TsonType<T extends TsonDefinition | readonly TsonDefinition[]>
     : T extends { type: 'array' } ? any[]
     : T extends { type: "object"; properties: infer P extends Record<string, TsonDefinition> } ? TsonObjectType<P>
     : T extends { type: 'object', property: infer P extends TsonDefinition } ? Record<string, TsonType<P>>
+    : T extends { type: 'object' } ? Record<string, any>
     : T extends { type: 'union', union: infer Union extends readonly TsonDefinition[] } ? TsonTupleType<Union>
     : T extends readonly TsonDefinition[] ? TsonType<TsonTupleType<T>>
     : never;

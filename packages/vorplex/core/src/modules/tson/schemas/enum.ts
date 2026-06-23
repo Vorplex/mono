@@ -40,11 +40,11 @@ export class TsonEnum<T extends string | number = any> extends TsonSchemaBase<T>
         const result = this.parseDefault(value);
         if (result) return result;
         const errors: TsonError[] = [];
-        if (value != null && typeof this.definition.flags[0] === 'string' && typeof value !== 'string') {
+        if (typeof this.definition.flags[0] === 'string' && typeof value !== 'string') {
             errors.push(new TsonError('String expected', value, this));
             if (failFast) return [undefined, errors];
         }
-        if (value != null && typeof this.definition.flags[0] === 'number' && typeof value !== 'number') {
+        if (typeof this.definition.flags[0] === 'number' && typeof value !== 'number') {
             errors.push(new TsonError('Number expected', value, this));
             if (failFast) return [undefined, errors];
         }

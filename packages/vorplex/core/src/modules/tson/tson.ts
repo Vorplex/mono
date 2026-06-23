@@ -31,23 +31,23 @@ export class $Tson {
         return { type: 'array', ...(definition ?? {}) } as T & Pick<TsonArrayDefinition, 'type'>;
     }
 
-    public static object<P extends Record<string, TsonDefinition>>(definition: { properties: P } & Omit<TsonObjectDefinition<P>, 'type' | 'properties'>): { readonly type: 'object', properties: P };
-    public static object<P extends TsonDefinition>(definition: { property: P } & Omit<TsonObjectDefinition<P>, 'type' | 'property'>): { readonly type: 'object', property: P };
-    public static object<T>(definition?: Omit<TsonObjectDefinition<T>, 'type'>): TsonObjectDefinition<T>;
+    public static object<T extends { properties: Record<string, TsonDefinition> } & Omit<TsonObjectDefinition, 'type' | 'properties'>>(definition: T): T & Pick<TsonObjectDefinition, 'type'>;
+    public static object<T extends { property: TsonDefinition } & Omit<TsonObjectDefinition, 'type' | 'property'>>(definition: T): T & Pick<TsonObjectDefinition, 'type'>;
+    public static object<T extends Omit<TsonObjectDefinition, 'type'> = {}>(definition?: T): T & Pick<TsonObjectDefinition, 'type'>;
     public static object(definition?: any): any {
         return { type: 'object', ...(definition ?? {}) };
     }
 
-    public static any(definition?: Omit<TsonAnyDefinition, 'type'>): TsonAnyDefinition {
-        return { type: 'any', ...(definition ?? {}) };
+    public static any<T extends Omit<TsonAnyDefinition, 'type'>>(definition?: T): T & Pick<TsonAnyDefinition, 'type'> {
+        return { type: 'any', ...(definition ?? {}) } as T & Pick<TsonAnyDefinition, 'type'>;
     }
 
     public static ref<T extends Omit<TsonRefDefinition, 'type'>>(definition: T): T & Pick<TsonRefDefinition, 'type'> {
         return { type: 'ref', ...definition } as T & Pick<TsonRefDefinition, 'type'>;
     }
 
-    public static enum<T extends string | number = any>(definition?: Omit<TsonEnumDefinition<T>, 'type'>): TsonEnumDefinition<T> {
-        return { type: 'enum', flags: [], ...(definition ?? {}) } as TsonEnumDefinition<T>;
+    public static enum<T extends Omit<TsonEnumDefinition, 'type'> = { flags: any[] }>(definition?: T): T & Pick<TsonEnumDefinition, 'type'> {
+        return { type: 'enum', flags: [], ...(definition ?? {}) } as T & Pick<TsonEnumDefinition, 'type'>;
     }
 
     public static const<T extends string | number>(...flags: T[]): TsonEnumDefinition<T> {
@@ -57,12 +57,12 @@ export class $Tson {
         };
     }
 
-    public static union<T extends readonly TsonDefinition[]>(definition: { union: T } & Omit<TsonUnionDefinition<T>, 'union' | 'type'>): { type: 'union', union: T } {
+    public static union<T extends { union: readonly TsonDefinition[] } & Omit<TsonUnionDefinition, 'union' | 'type'>>(definition: T): T & Pick<TsonUnionDefinition, 'type'> {
         return {
             type: 'union',
             union: [],
             ...(definition ?? {}),
-        } as { type: 'union', union: T };
+        } as T & Pick<TsonUnionDefinition, 'type'>;
     }
 
     public static fromEnum<T extends object>(flags: T): TsonEnumDefinition<T[keyof T] extends string ? T[keyof T] & string : T[keyof T] & number> {

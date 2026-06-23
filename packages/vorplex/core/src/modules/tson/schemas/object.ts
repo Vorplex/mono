@@ -23,8 +23,7 @@ export class TsonObject<T extends { [key: string]: TsonDefinition } = {}> extend
 
     public override getDefault(): { [P in keyof T]: TsonType<T[P]> } {
         if ('default' in this.definition) return this.definition.default;
-        if (this.definition.property) return {} as { [P in keyof T]: TsonType<T[P]> };
-        if (!this.definition.properties) return {} as { [P in keyof T]: TsonType<T[P]> };
+        if (this.definition.property || !this.definition.properties) return {} as { [P in keyof T]: TsonType<T[P]> };
         const result: Record<string, any> = {};
         for (const property in this.definition.properties) {
             result[property] = $Tson.parse(this.definition.properties[property] as TsonDefinition).getDefault();
@@ -58,7 +57,7 @@ export class TsonObject<T extends { [key: string]: TsonDefinition } = {}> extend
         let result: any = this.parseDefault(value);
         if (result) return result;
         const errors: TsonError[] = [];
-        if (value != null && typeof value !== 'object') {
+        if (typeof value !== 'object') {
             return [undefined, [new TsonError('Object expected', value, this)]];
         }
         result = {} as Record<string, any>;

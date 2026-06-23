@@ -65,7 +65,7 @@ export class TsonNumber extends TsonSchemaBase<number> {
         const result = this.parseDefault(value);
         if (result) return result;
         const errors: TsonError[] = [];
-        if (value != null && typeof value !== 'number') {
+        if (typeof value !== 'number') {
             errors.push(new TsonError('Number expected', value, this));
             if (failFast) return [undefined, errors];
         }
