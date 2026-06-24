@@ -1,18 +1,6 @@
 import { TsonAny } from './any';
 
 describe(TsonAny.name, () => {
-    describe(TsonAny.prototype.getDefault.name, () => {
-        it('should return undefined', () => {
-            const definition = new TsonAny({ type: 'any' });
-            const result = definition.getDefault();
-            expect(result).toEqual(undefined);
-        });
-        it('should return default', () => {
-            const definition = new TsonAny({ type: 'any', default: 'a' });
-            const result = definition.getDefault();
-            expect(result).toEqual('a');
-        });
-    });
 
     describe(TsonAny.prototype.accepts.name, () => {
         it('should return true', () => {
@@ -23,7 +11,7 @@ describe(TsonAny.name, () => {
 
         it('should reject missing definitions unless defaulted', () => {
             expect(new TsonAny().accepts(undefined)).toEqual(false);
-            expect(new TsonAny({ type: 'any', default: undefined }).accepts(undefined)).toEqual(true);
+            expect(new TsonAny({ type: 'any', default: { value: undefined } }).accepts(undefined)).toEqual(true);
         });
     });
 
@@ -37,7 +25,7 @@ describe(TsonAny.name, () => {
         });
         it('should return default', () => {
             const value = null;
-            const schema = new TsonAny({ type: 'any', default: 'a' });
+            const schema = new TsonAny({ type: 'any', default: { value: 'a' } });
             const [result, errors] = schema.parse(value);
             expect(errors).toHaveLength(0);
             expect(result).toEqual('a');

@@ -6,7 +6,7 @@ import { type TsonDefinitionBase, TsonSchemaBase } from './schema-base';
 
 export interface TsonUnionDefinition<T extends readonly any[] = any> extends TsonDefinitionBase<T> {
     type: 'union';
-    default?: undefined;
+    default?: { value: any };
     union: readonly TypeTson<T>[];
 }
 
@@ -20,19 +20,8 @@ export class TsonUnion<T = any> extends TsonSchemaBase<T> {
         super();
     }
 
-    public default(value: any): TsonUnion {
-        return new TsonUnion({
-            ...this.definition,
-            default: value,
-        });
-    }
-
-    public getDefault() {
-        return this.definition.default;
-    }
-
     public accepts(definition: TsonDefinition | null | undefined): boolean {
-        if (definition == null) return 'default' in this.definition;
+        if (definition == null) return this.definition.default != null;
         if (definition.type === 'any') return true;
         if (definition.type !== 'union') {
             for (const union of this.definition.union) {

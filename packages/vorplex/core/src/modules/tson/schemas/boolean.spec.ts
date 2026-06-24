@@ -2,21 +2,6 @@ import type { TsonDefinition } from '../schema';
 import { TsonBoolean } from './boolean';
 
 describe(TsonBoolean.name, () => {
-    describe(TsonBoolean.prototype.getDefault.name, () => {
-        it('should return false', () => {
-            const definition = new TsonBoolean({ type: 'boolean' });
-            const result = definition.getDefault();
-            expect(result).toEqual(false);
-        });
-        it('should return default', () => {
-            const definition = new TsonBoolean({
-                type: 'boolean',
-                default: true,
-            });
-            const result = definition.getDefault();
-            expect(result).toEqual(true);
-        });
-    });
 
     describe(TsonBoolean.prototype.accepts.name, () => {
         it('should return true for accepted definitions', () => {
@@ -32,6 +17,7 @@ describe(TsonBoolean.name, () => {
                 { type: 'number' },
                 { type: 'string' },
                 { type: 'object' },
+                { type: 'record' },
                 { type: 'array' },
                 { type: 'enum', flags: [] },
                 { type: 'union', union: [] },
@@ -59,7 +45,7 @@ describe(TsonBoolean.name, () => {
             for (const value of values) {
                 const schema = new TsonBoolean({
                     type: 'boolean',
-                    default: true
+                    default: { value: true }
                 });
                 const [result, errors] = schema.parse(value);
                 expect(errors).toHaveLength(0);

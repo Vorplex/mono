@@ -2,18 +2,6 @@ import type { TsonDefinition } from '../schema';
 import { TsonString, type TsonStringDefinition } from './string';
 
 describe(TsonString.name, () => {
-    describe(TsonString.prototype.getDefault.name, () => {
-        it('should return empty string', () => {
-            const definition = new TsonString({ type: 'string' });
-            const result = definition.getDefault();
-            expect(result).toEqual('');
-        });
-        it('should return default', () => {
-            const definition = new TsonString({ type: 'string', default: 'a' });
-            const result = definition.getDefault();
-            expect(result).toEqual('a');
-        });
-    });
 
     describe(TsonString.prototype.accepts.name, () => {
         it('should return false for definitions failing validation', () => {
@@ -29,6 +17,7 @@ describe(TsonString.name, () => {
                             { type: 'boolean' },
                             { type: 'number' },
                             { type: 'object' },
+                            { type: 'record' },
                             { type: 'array' },
                             { type: 'enum', flags: [] },
                             { type: 'union', union: [] },
@@ -79,7 +68,7 @@ describe(TsonString.name, () => {
 
         it('should accept compatible definitions with defaults', () => {
             const schema = new TsonString();
-            const result = schema.accepts({ type: 'string', default: 'root' });
+            const result = schema.accepts({ type: 'string', default: { value: 'root' } });
             expect(result).toEqual(true);
         });
     });
@@ -94,7 +83,7 @@ describe(TsonString.name, () => {
         it('should return default', () => {
             const values = [undefined, null];
             for (const value of values) {
-                const schema = new TsonString({ type: 'string', default: 'a' });
+                const schema = new TsonString({ type: 'string', default: { value: 'a' } });
                 const [result, errors] = schema.parse(value);
                 expect(errors).toHaveLength(0);
                 expect(result).toEqual('a');

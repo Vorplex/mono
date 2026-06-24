@@ -4,7 +4,7 @@ import { type TsonDefinitionBase, TsonSchemaBase } from './schema-base';
 
 export interface TsonAnyDefinition extends TsonDefinitionBase {
     type: 'any';
-    default?: any;
+    default?: { value: any };
 }
 
 export class TsonAny extends TsonSchemaBase<any> {
@@ -16,19 +16,8 @@ export class TsonAny extends TsonSchemaBase<any> {
         super();
     }
 
-    public default(value: any): TsonAny {
-        return new TsonAny({
-            ...this.definition,
-            default: value,
-        });
-    }
-
-    public getDefault(): any {
-        return this.definition.default;
-    }
-
     public accepts(definition: TsonDefinition | null | undefined): boolean {
-        if (definition == null) return 'default' in this.definition;
+        if (definition == null) return this.definition.default != null;
         return true;
     }
 

@@ -2,19 +2,6 @@ import type { TsonDefinition } from '../schema';
 import { TsonNumber, type TsonNumberDefinition } from './number';
 
 describe(TsonNumber.name, () => {
-    describe(TsonNumber.prototype.getDefault.name, () => {
-        it('should return 0', () => {
-            const definition = new TsonNumber({ type: 'number' });
-            const result = definition.getDefault();
-            expect(result).toEqual(0);
-        });
-        it('should return default', () => {
-            const definition = new TsonNumber({ type: 'number', default: 2 });
-            const result = definition.getDefault();
-            expect(result).toEqual(2);
-        });
-    });
-
     describe(TsonNumber.prototype.accepts.name, () => {
         it('should return false for definitions failing validation', () => {
             const tests: {
@@ -29,6 +16,7 @@ describe(TsonNumber.name, () => {
                             { type: 'boolean' },
                             { type: 'string' },
                             { type: 'object' },
+                            { type: 'record', },
                             { type: 'array' },
                             { type: 'enum', flags: [] },
                             { type: 'union', union: [] },
@@ -91,7 +79,7 @@ describe(TsonNumber.name, () => {
         it('should return default', () => {
             const values = [undefined, null];
             for (const value of values) {
-                const schema = new TsonNumber({ type: 'number', default: 2 });
+                const schema = new TsonNumber({ type: 'number', default: { value: 2 } });
                 const [result, errors] = schema.parse(value);
                 expect(errors).toHaveLength(0);
                 expect(result).toEqual(2);

@@ -1,3 +1,4 @@
+import { Extended } from '../../types/extended.type';
 import { $Enum } from '../enum/enum.util';
 import { $PathSelector, SelectorPath } from '../path-selector/path-selector.util';
 import { $Reflection } from '../reflection/utils/reflection.util';
@@ -9,9 +10,12 @@ import { TsonBoolean, type TsonBooleanDefinition } from './schemas/boolean';
 import { TsonEnum, type TsonEnumDefinition } from './schemas/enum';
 import { TsonNumber, type TsonNumberDefinition } from './schemas/number';
 import { TsonObject, type TsonObjectDefinition } from './schemas/object';
+import { TsonRecord, type TsonRecordDefinition } from './schemas/record';
 import { TsonRef, type TsonRefDefinition } from './schemas/ref';
 import { TsonString, type TsonStringDefinition } from './schemas/string';
 import { TsonUnion, type TsonUnionDefinition } from './schemas/union';
+
+type ExtendedObjectDefinition<T extends TsonObjectDefinition, TT extends TsonObjectDefinition> = Extended<Extended<T, TT>, { properties: Extended<NonNullable<T['properties']>, NonNullable<TT['properties']>> }>;
 
 export class $Tson {
 
@@ -31,11 +35,23 @@ export class $Tson {
         return { type: 'array', ...(definition ?? {}) } as T & Pick<TsonArrayDefinition, 'type'>;
     }
 
-    public static object<T extends { properties: Record<string, TsonDefinition> } & Omit<TsonObjectDefinition, 'type' | 'properties'>>(definition: T): T & Pick<TsonObjectDefinition, 'type'>;
-    public static object<T extends { property: TsonDefinition } & Omit<TsonObjectDefinition, 'type' | 'property'>>(definition: T): T & Pick<TsonObjectDefinition, 'type'>;
-    public static object<T extends Omit<TsonObjectDefinition, 'type'> = {}>(definition?: T): T & Pick<TsonObjectDefinition, 'type'>;
-    public static object(definition?: any): any {
-        return { type: 'object', ...(definition ?? {}) };
+    public static extends<T extends TsonObjectDefinition, TT extends TsonObjectDefinition>(base: T, definition: TT): ExtendedObjectDefinition<T, TT> {
+        return {
+            ...base,
+            ...definition,
+            properties: {
+                ...base.properties,
+                ...definition.properties
+            }
+        } as ExtendedObjectDefinition<T, TT>;
+    }
+
+    public static object<T extends Omit<TsonObjectDefinition, 'type'>>(definition?: T): T & Pick<TsonObjectDefinition, 'type'> {
+        return { type: 'object', ...(definition ?? {}) } as T & Pick<TsonObjectDefinition, 'type'>;
+    }
+
+    public static record<T extends Omit<TsonRecordDefinition, 'type'>>(definition?: T): T & Pick<TsonRecordDefinition, 'type'> {
+        return { type: 'record', ...(definition ?? {}) } as T & Pick<TsonRecordDefinition, 'type'>;
     }
 
     public static any<T extends Omit<TsonAnyDefinition, 'type'>>(definition?: T): T & Pick<TsonAnyDefinition, 'type'> {
@@ -84,6 +100,8 @@ export class $Tson {
                 return new TsonBoolean().definition;
             case 'object':
                 return new TsonObject().definition;
+            case 'record':
+                return new TsonRecord().definition;
             case 'array':
                 return new TsonArray().definition;
             case 'enum':
@@ -107,6 +125,8 @@ export class $Tson {
                 return new TsonBoolean(definition);
             case 'object':
                 return new TsonObject(definition);
+            case 'record':
+                return new TsonRecord(definition);
             case 'array':
                 return new TsonArray(definition);
             case 'enum':
@@ -129,24 +149,25 @@ export class $Tson {
                 return 'number';
             case 'boolean':
                 return 'boolean';
-            case 'object':
-                if (definition.property) {
-                    let result = '';
-                    if (definition.description) result += `// ${definition.property.description}\n`;
-                    result += `[key: string]: ${this.generateTypeScriptDefinition(definition.property)}`;
-                    return `{\n${$String.indent(result, 4)}\n}`;
-                } else if (definition.properties) {
-                    const result = Object
-                        .entries(definition.properties)
-                        .map(([property, value]) => {
-                            let result = '';
-                            if (value.description) result += `// ${value.description}\n`;
-                            result += `'${property}'${'default' in value ? '?' : ''}: ${this.generateTypeScriptDefinition(value)}`;
-                            return result;
-                        })
-                        .join(',\n');
-                    return `{\n${$String.indent(result, 4)}\n}`;
-                } else return 'Record<string, any>';
+            case 'object': {
+                if (!definition.properties) return 'Record<string, any>';
+                const result = Object
+                    .entries(definition.properties)
+                    .map(([property, value]) => {
+                        let result = '';
+                        if (value.description) result += `// ${value.description}\n`;
+                        result += `'${property}'${value.default ? '?' : ''}: ${this.generateTypeScriptDefinition(value)}`;
+                        return result;
+                    })
+                    .join(',\n');
+                return `{\n${$String.indent(result, 4)}\n}`;
+            }
+            case 'record': {
+                let result = '';
+                if (definition.description) result += `// ${definition.description}\n`;
+                result += `[key: string]: ${this.generateTypeScriptDefinition(definition.property)}`;
+                return `{\n${$String.indent(result, 4)}\n}`;
+            }
             case 'array':
                 return `${this.generateTypeScriptDefinition(definition.itemDefinition)}[]`
             case 'enum':
@@ -160,7 +181,7 @@ export class $Tson {
 
     public static generateJsonSchema(definition: TsonDefinition): object {
         const buildDefs = (definition: TsonDefinition, $defs = new Map<TsonDefinition, { name: string, schema: { $ref: string } }>(), seen = new Set<TsonDefinition>()) => {
-            if (definition == null) return;
+            if (definition == null) return $defs;
             if ($defs.has(definition)) return $defs;
             if (seen.has(definition)) {
                 const name = `def${$defs.size}`;
@@ -169,13 +190,11 @@ export class $Tson {
             }
             seen.add(definition);
             if (definition.type === 'object') {
-                if (definition.property) buildDefs(definition.property, $defs, seen);
-                else if (definition.properties) {
-                    for (const property of Object.values(definition.properties)) {
-                        buildDefs(property, $defs, seen);
-                    }
+                for (const property of Object.values(definition.properties ?? {})) {
+                    buildDefs(property, $defs, seen);
                 }
             }
+            else if (definition.type === 'record') buildDefs(definition.property, $defs, seen);
             else if (definition.type === 'array') buildDefs(definition.itemDefinition, $defs, seen);
             else if (definition.type === 'union') {
                 for (const item of definition.union) {
@@ -191,7 +210,7 @@ export class $Tson {
             if (!inline && $defs.has(definition)) return $defs.get(definition).schema;
             const meta = (schema: any) => {
                 if (definition.description) schema.description = definition.description;
-                if ('default' in definition) schema.default = definition.default;
+                if (definition.default) schema.default = definition.default.value;
                 return schema;
             };
             switch (definition.type) {
@@ -209,21 +228,22 @@ export class $Tson {
                 });
                 case 'boolean': return meta({ type: 'boolean' });
                 case 'object': {
-                    if (definition.property) return meta({
-                        type: 'object',
-                        additionalProperties: build(definition.property, $defs)
-                    });
-                    if (definition.properties) {
-                        const required: string[] = [];
-                        const properties = Object.fromEntries(Object.entries(definition.properties).map(([k, v]) => { if (!('default' in (v as any))) required.push(k); return [k, build(v, $defs)]; }));
-                        return meta({
-                            type: 'object',
-                            properties,
-                            ...(required.length > 0 && { required })
-                        });
+                    const required: string[] = [];
+                    const properties: Record<string, any> = {};
+                    for (const [property, value] of Object.entries(definition.properties ?? {})) {
+                        properties[property] = [property, build(value, $defs)];
+                        if (!value.default) required.push(property);
                     }
-                    return { type: 'object' };
+                    return meta({
+                        type: 'object',
+                        ...(Object.keys(properties).length > 0 && { properties }),
+                        ...(required.length > 0 && { required })
+                    });
                 }
+                case 'record': return meta({
+                    type: 'object',
+                    additionalProperties: build(definition.property, $defs)
+                });
                 case 'array': return meta({
                     type: 'array',
                     items: build(definition.itemDefinition, $defs),
@@ -270,14 +290,10 @@ export class $Tson {
             if (segments.length === 0) return definition;
             const [key, ...rest] = segments;
             switch (definition.type) {
-                case 'any':
-                    return definition;
-                case 'array':
-                    return definition.itemDefinition ? resolve(definition.itemDefinition, rest) : undefined;
-                case 'object':
-                    if (definition.properties && key in definition.properties) return resolve(definition.properties[key], rest);
-                    if (definition.property) return resolve(definition.property, rest);
-                    return undefined;
+                case 'any': return definition;
+                case 'array': return definition.itemDefinition ? resolve(definition.itemDefinition, rest) : undefined;
+                case 'object': return definition.properties?.[key] ? resolve(definition.properties[key], rest) : undefined;
+                case 'record': return definition.property ? resolve(definition.property, rest) : undefined;
                 case 'union': {
                     const results = definition.union
                         .map(item => resolve(item, segments))
@@ -285,10 +301,8 @@ export class $Tson {
                     if (results.length === 0) return undefined;
                     return results.length === 1 ? results[0] : this.union({ union: results as TsonDefinition[] });
                 }
-                case 'ref':
-                    throw new Error(`Cannot resolve a path through an unresolved TSON ref with id (${definition.id})`);
-                default:
-                    return undefined;
+                case 'ref': throw new Error(`Cannot resolve a path through an unresolved TSON ref with id (${definition.id})`);
+                default: return undefined;
             }
         };
         return resolve(definition, $PathSelector.parse(path));
@@ -305,12 +319,14 @@ export class $Tson {
             }
             switch (definition.type) {
                 case 'object':
-                    if (definition.property) return { ...definition, property: resolveRefs(definition.property, seen) };
-                    if (definition.properties) return {
+                    if (!definition.properties) return definition;
+                    return {
                         ...definition,
                         properties: Object.fromEntries(Object.entries(definition.properties).map(([key, value]) => [key, resolveRefs(value, seen)]))
                     };
-                    return definition;
+                case 'record':
+                    if (!definition.property) return definition;
+                    return { ...definition, property: resolveRefs(definition.property, seen) };
                 case 'array':
                     return definition.itemDefinition ? { ...definition, itemDefinition: resolveRefs(definition.itemDefinition, seen) } : definition;
                 case 'union':

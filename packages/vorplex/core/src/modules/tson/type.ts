@@ -1,4 +1,3 @@
-import { HasKey } from '../../types/has-key.type';
 import { IsUnion } from '../../types/is-union.type';
 import type { TsonDefinition } from './schema';
 import type { TsonArrayDefinition } from './schemas/array';
@@ -6,6 +5,7 @@ import type { TsonBooleanDefinition } from './schemas/boolean';
 import type { TsonEnumDefinition } from './schemas/enum';
 import type { TsonNumberDefinition } from './schemas/number';
 import type { TsonObjectDefinition } from './schemas/object';
+import type { TsonRecordDefinition } from './schemas/record';
 import type { TsonStringDefinition } from './schemas/string';
 import type { TsonUnionDefinition } from './schemas/union';
 
@@ -16,8 +16,8 @@ export type TsonTupleType<T extends readonly TsonDefinition[], Result = never>
         : never
     )
     : Result;
-type OptionalKeys<T> = { [K in keyof T]: HasKey<T[K], 'default'> extends true ? K : never }[keyof T];
-type RequiredKeys<T> = { [K in keyof T]: HasKey<T[K], 'default'> extends false ? K : never }[keyof T];
+type OptionalKeys<T> = { [K in keyof T]: T[K] extends { default: { value: any } } ? K : never }[keyof T];
+type RequiredKeys<T> = { [K in keyof T]: T[K] extends { default: { value: any } } ? never : K }[keyof T];
 type ObjectType<T> = { [K in keyof T]: T[K] };
 type TsonObjectType<T extends Record<string, TsonDefinition>> = ObjectType<{ [P in RequiredKeys<T>]: TsonType<T[P]> } & { [P in OptionalKeys<T>]?: TsonType<T[P]> }>;
 
@@ -31,8 +31,9 @@ export type TsonType<T extends TsonDefinition | readonly TsonDefinition[]>
     : T extends { type: 'array', itemDefinition: infer Item extends TsonDefinition } ? TsonType<Item>[]
     : T extends { type: 'array' } ? any[]
     : T extends { type: "object"; properties: infer P extends Record<string, TsonDefinition> } ? TsonObjectType<P>
-    : T extends { type: 'object', property: infer P extends TsonDefinition } ? Record<string, TsonType<P>>
     : T extends { type: 'object' } ? Record<string, any>
+    : T extends { type: 'record', property: infer P extends TsonDefinition } ? Record<string, TsonType<P>>
+    : T extends { type: 'record' } ? Record<string, any>
     : T extends { type: 'union', union: infer Union extends readonly TsonDefinition[] } ? TsonTupleType<Union>
     : T extends readonly TsonDefinition[] ? TsonType<TsonTupleType<T>>
     : never;
@@ -43,7 +44,7 @@ export type TypeTson<T>
     : [T] extends [number] ? TsonNumberDefinition | TsonEnumDefinition<T>
     : [T] extends [boolean] ? TsonBooleanDefinition
     : [T] extends [(infer Item)[]] ? TsonArrayDefinition<Item>
-    : [T] extends [object] ? TsonObjectDefinition<T>
+    : [T] extends [object] ? (string extends keyof T ? TsonRecordDefinition<T[keyof T]> : TsonObjectDefinition<T>)
     : IsUnion<T> extends true ? (
         T extends readonly any[] ? TsonUnionDefinition<T>
         : never

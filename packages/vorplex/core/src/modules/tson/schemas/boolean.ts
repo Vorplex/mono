@@ -4,7 +4,7 @@ import { type TsonDefinitionBase, TsonSchemaBase } from './schema-base';
 
 export interface TsonBooleanDefinition extends TsonDefinitionBase {
     readonly type: 'boolean';
-    default?: boolean;
+    default?: { value: boolean };
 }
 
 export class TsonBoolean extends TsonSchemaBase<boolean> {
@@ -16,19 +16,8 @@ export class TsonBoolean extends TsonSchemaBase<boolean> {
         super();
     }
 
-    public default(value: any): TsonBoolean {
-        return new TsonBoolean({
-            ...this.definition,
-            default: value,
-        });
-    }
-
-    public getDefault(): boolean {
-        return 'default' in this.definition ? this.definition.default : false;
-    }
-
     public accepts(definition: TsonDefinition | null | undefined): boolean {
-        if (definition == null) return 'default' in this.definition;
+        if (definition == null) return this.definition.default != null;
         if (definition.type === 'any') return true;
         if (definition.type !== 'boolean') return false;
         return true;

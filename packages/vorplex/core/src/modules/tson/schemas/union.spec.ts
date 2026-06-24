@@ -2,12 +2,6 @@ import type { TsonDefinition } from '../schema';
 import { TsonUnion } from './union';
 
 describe(TsonUnion.name, () => {
-    describe(TsonUnion.prototype.getDefault.name, () => {
-        it('should return undefined when no default is set', () => {
-            const schema = new TsonUnion({ type: 'union', union: [{ type: 'string' }] });
-            expect(schema.getDefault()).toBeUndefined();
-        });
-    });
 
     describe(TsonUnion.prototype.accepts.name, () => {
         it('should accept matching non-union definitions', () => {
@@ -35,7 +29,7 @@ describe(TsonUnion.name, () => {
         });
 
         it('should accept null/undefined only when a default is configured', () => {
-            const withDefault = new TsonUnion({ type: 'union', union: [{ type: 'string' }], default: undefined });
+            const withDefault = new TsonUnion({ type: 'union', union: [{ type: 'string' }], default: { value: undefined } });
             expect(withDefault.accepts(undefined)).toEqual(true);
             expect(withDefault.accepts(null)).toEqual(true);
 
@@ -75,7 +69,7 @@ describe(TsonUnion.name, () => {
         });
 
         it('should return undefined without error for null/undefined when a default is configured', () => {
-            const schema = new TsonUnion({ type: 'union', union: [{ type: 'string' }], default: undefined });
+            const schema = new TsonUnion({ type: 'union', union: [{ type: 'string' }], default: { value: undefined } });
             for (const value of [undefined, null]) {
                 const [result, errors] = schema.parse(value);
                 expect(errors).toHaveLength(0);

@@ -6,7 +6,7 @@ export interface TsonNumberDefinition extends TsonDefinitionBase {
     readonly type: 'number';
     min?: number;
     max?: number;
-    default?: number;
+    default?: { value: number };
     integer?: boolean;
 }
 
@@ -17,13 +17,6 @@ export class TsonNumber extends TsonSchemaBase<number> {
         },
     ) {
         super();
-    }
-
-    public default(value: any): TsonNumber {
-        return new TsonNumber({
-            ...this.definition,
-            default: value,
-        });
     }
 
     public isInteger(): TsonNumber {
@@ -47,12 +40,8 @@ export class TsonNumber extends TsonSchemaBase<number> {
         });
     }
 
-    public getDefault(): number {
-        return 'default' in this.definition ? this.definition.default : 0;
-    }
-
     public accepts(definition: TsonDefinition | null | undefined): boolean {
-        if (definition == null) return 'default' in this.definition;
+        if (definition == null) return this.definition.default != null;
         if (definition.type === 'any') return true;
         if (definition.type !== 'number') return false;
         if (this.definition.min != null && (definition.min == null || definition.min < this.definition.min)) return false;

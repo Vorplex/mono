@@ -4,7 +4,7 @@ import { type TsonDefinitionBase, TsonSchemaBase } from './schema-base';
 
 export interface TsonStringDefinition extends TsonDefinitionBase {
     readonly type: 'string';
-    default?: string;
+    default?: { value: string };
     min?: number;
     max?: number;
     match?: string;
@@ -37,12 +37,8 @@ export class TsonString extends TsonSchemaBase<string> {
         });
     }
 
-    public getDefault(): string {
-        return 'default' in this.definition ? this.definition.default : '';
-    }
-
     public accepts(definition: TsonDefinition | null | undefined): boolean {
-        if (definition == null) return 'default' in this.definition;
+        if (definition == null) return this.definition.default != null;
         if (definition.type === 'any') return true;
         if (definition.type !== 'string') return false;
         if (this.definition.max != null && (definition.max == null || definition.max > this.definition.max)) return false;

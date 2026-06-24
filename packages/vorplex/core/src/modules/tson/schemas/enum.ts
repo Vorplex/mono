@@ -4,7 +4,7 @@ import { type TsonDefinitionBase, TsonSchemaBase } from './schema-base';
 
 export interface TsonEnumDefinition<T extends string | number = any> extends TsonDefinitionBase {
     readonly type: 'enum';
-    default?: T;
+    default?: { value: T };
     flags: T[];
 }
 
@@ -18,19 +18,8 @@ export class TsonEnum<T extends string | number = any> extends TsonSchemaBase<T>
         super();
     }
 
-    public default(value: any): TsonEnum {
-        return new TsonEnum({
-            ...this.definition,
-            default: value,
-        });
-    }
-
-    public getDefault(): T {
-        return 'default' in this.definition ? this.definition.default : this.definition.flags[0];
-    }
-
     public accepts(definition: TsonDefinition | null | undefined): boolean {
-        if (definition == null) return 'default' in this.definition;
+        if (definition == null) return this.definition.default != null;
         if (definition.type === 'any') return true;
         if (definition.type !== 'enum') return false;
         return this.definition.flags.every((flag) => definition.flags.includes(flag as T));

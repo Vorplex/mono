@@ -1,0 +1,1 @@
+export type Extended<T, TT> = Omit<T, keyof TT> & TT;
