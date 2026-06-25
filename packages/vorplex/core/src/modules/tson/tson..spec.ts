@@ -90,6 +90,17 @@ function testArray() {
     const incorrect: type = [0];
 }
 
+function testReadonlyArray() {
+    const schema = $Tson.array({ itemDefinition: $Tson.string(), readonly: true });
+    type type = TsonType<typeof schema>;
+    const fromLiteral: type = [''];
+    const fromMutable: type = ['a'] as string[];
+    // @ts-expect-error: TS2339 - readonly array has no push
+    fromLiteral.push('x');
+    // @ts-expect-error: TS2542 - readonly array index is not assignable
+    fromLiteral[0] = 'x';
+}
+
 function testAnyArray() {
     const schema = $Tson.array();
     type type = TsonType<typeof schema>;

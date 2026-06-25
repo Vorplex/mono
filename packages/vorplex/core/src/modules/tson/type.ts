@@ -28,6 +28,7 @@ export type TsonType<T extends TsonDefinition | readonly TsonDefinition[]>
     : T extends { type: 'number' } ? number
     : T extends { type: 'boolean' } ? boolean
     : T extends { type: 'enum', flags: (infer Flags)[] } ? Flags
+    : T extends { type: 'array', readonly: true, itemDefinition: infer Item extends TsonDefinition } ? readonly TsonType<Item>[]
     : T extends { type: 'array', itemDefinition: infer Item extends TsonDefinition } ? TsonType<Item>[]
     : T extends { type: 'array' } ? any[]
     : T extends { type: "object"; properties: infer P extends Record<string, TsonDefinition> } ? TsonObjectType<P>

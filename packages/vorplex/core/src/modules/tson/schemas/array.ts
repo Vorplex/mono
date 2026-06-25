@@ -10,6 +10,7 @@ export interface TsonArrayDefinition<T = any> extends TsonDefinitionBase {
     max?: number;
     default?: { value: T[] };
     itemDefinition?: TsonDefinition;
+    readonly?: true;
 }
 
 export class TsonArray<T extends TsonDefinition = any> extends TsonSchemaBase<TsonType<T>[]> {
