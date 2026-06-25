@@ -12,11 +12,15 @@ type ArrayItem<V> = V extends (infer U)[] ? U : never;
 type FieldOf<TClass, K> = K extends keyof TClass ? TClass[K] : {};
 
 type ReducerFieldAdaptor<TState, TReducer extends Reducer, K extends keyof TState> =
-    TState[K] extends EntityMap<IEntity>
-    ? { entity: EntityAdaptor<TState, EntityItem<TState[K]>, K & any> } & FieldOf<TReducer, K>
-    : TState[K] extends any[]
-    ? { array: ArrayAdaptor<TState, ArrayItem<TState[K]>, K & any> } & FieldOf<TReducer, K>
-    : { value: { set: (value: TState[K]) => Update<TState> } } & FieldOf<TReducer, K>;
+    { value: { set: (value: TState[K]) => Update<TState> } }
+    & FieldOf<TReducer, K>
+    & (
+        TState[K] extends EntityMap<IEntity>
+        ? { entity: EntityAdaptor<TState, EntityItem<TState[K]>, K & any> }
+        : TState[K] extends any[]
+        ? { array: ArrayAdaptor<TState, ArrayItem<TState[K]>, K & any> }
+        : unknown
+    );
 
 type StateFields<TState, TReducer extends Reducer> = {
     [K in keyof TState]: ReducerFieldAdaptor<TState, TReducer, K>;
