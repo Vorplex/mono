@@ -1,4 +1,4 @@
-import { $Point, type Point } from '@vorplex/core';
+import { $Point, type Point, type Rect } from '@vorplex/core';
 
 export class $Element {
     public static getRelativePoint(element: HTMLElement, position: 'top' | 'right' | 'bottom' | 'left', offset: number = 0) {
@@ -23,7 +23,10 @@ export class $Element {
     }
 
     public static getBounds(element: HTMLElement) {
-        const rect = element.getBoundingClientRect();
+        return $Element.getBoundsFromRect(element.getBoundingClientRect());
+    }
+
+    public static getBoundsFromRect(rect: Rect) {
         return {
             width: rect.width,
             height: rect.height,
