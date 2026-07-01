@@ -144,7 +144,7 @@ export function createPopup(options: PopupOptions): Portal {
                         portal.destroy();
                     }}
                 >
-                    {'anchor' in options
+                    {(options as AnchorPopupOptions).anchor
                         ? <AnchoredPopup options={options as AnchorPopupOptions} portal={portal} />
                         : <LocationPopup options={options as LocationPopupOptions} portal={portal} />
                     }
