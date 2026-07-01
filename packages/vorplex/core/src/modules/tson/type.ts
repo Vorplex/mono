@@ -18,8 +18,9 @@ export type TsonTupleType<T extends readonly TsonDefinition[], Result = never>
     : Result;
 type OptionalKeys<T> = { [K in keyof T]: T[K] extends { default: { value: any } } ? K : never }[keyof T];
 type RequiredKeys<T> = { [K in keyof T]: T[K] extends { default: { value: any } } ? never : K }[keyof T];
-type ObjectType<T> = { [K in keyof T]: T[K] };
-type TsonObjectType<T extends Record<string, TsonDefinition>> = ObjectType<{ [P in RequiredKeys<T>]: TsonType<T[P]> } & { [P in OptionalKeys<T>]?: TsonType<T[P]> }>;
+type TsonObjectType<T extends Record<string, TsonDefinition>> = [OptionalKeys<T>] extends [never]
+    ? { [P in keyof T]: TsonType<T[P]> }
+    : { [P in RequiredKeys<T>]: TsonType<T[P]> } & { [P in OptionalKeys<T>]?: TsonType<T[P]> };
 
 export type TsonType<T extends TsonDefinition | readonly TsonDefinition[]>
     = T extends { type: 'any' } ? any
@@ -36,7 +37,7 @@ export type TsonType<T extends TsonDefinition | readonly TsonDefinition[]>
     : T extends { type: 'record', property: infer P extends TsonDefinition } ? Record<string, TsonType<P>>
     : T extends { type: 'record' } ? Record<string, any>
     : T extends { type: 'union', union: infer Union extends readonly TsonDefinition[] } ? TsonTupleType<Union>
-    : T extends readonly TsonDefinition[] ? TsonType<TsonTupleType<T>>
+    : T extends readonly TsonDefinition[] ? TsonTupleType<T>
     : never;
 
 export type TypeTson<T>

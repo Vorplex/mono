@@ -1,6 +1,6 @@
 {
     "name": "@vorplex/solid",
-    "version": "0.0.85",
+    "version": "0.0.86",
     "type": "module",
     "sideEffects": false,
     "files": [

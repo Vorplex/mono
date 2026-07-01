@@ -252,6 +252,30 @@ function testNestedBareRecord() {
     };
 }
 
+function testRawTuple() {
+    const strDef = $Tson.string();
+    const numDef = $Tson.number();
+    type type = TsonType<[typeof strDef, typeof numDef]>;
+    { const correct: type = ''; }
+    { const correct: type = 0; }
+    {
+        // @ts-expect-error: TS2322
+        const incorrect: type = false;
+    }
+}
+
+function testRawTupleWithObject() {
+    const strDef = $Tson.string();
+    const objDef = $Tson.object({ properties: { name: $Tson.string() } });
+    type type = TsonType<[typeof strDef, typeof objDef]>;
+    { const correct: type = ''; }
+    { const correct: type = { name: '' }; }
+    {
+        // @ts-expect-error: TS2322
+        const incorrect: type = 0;
+    }
+}
+
 function testUnion() {
     const schema = $Tson.union({ union: [$Tson.string(), $Tson.number(), $Tson.object({ properties: { name: $Tson.string() } })] as const });
     type type = TsonType<typeof schema>;
