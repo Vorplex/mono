@@ -149,7 +149,7 @@ export class Server {
                                     response
                                 });
                                 if (result) {
-                                    if (response.writable) {
+                                    if (!response.headersSent) {
                                         if (result.code) response.statusCode = result.code;
                                         if (result.status) response.statusMessage = result.status;
                                         if (result.headers) response.setHeaders(new Map(Object.entries(result.headers)));
@@ -181,19 +181,21 @@ export class Server {
                     }
                 }
                 task.fail(`No route matches URL`);
-                if (response.writable) {
+                if (!response.headersSent) {
                     response.writeHead(HttpResponseCodes.NotFound, 'Route Not Found');
                     response.end();
                 }
             } catch (error) {
                 const message = error instanceof Error ? error.stack : String(error);
                 task.fail(message);
-                if (error instanceof HttpError) {
-                    response
-                        .setHeader('Content-Type', MimeType.json)
-                        .writeHead(error.code, error.message)
-                        .end(JSON.stringify({ error: error.message }));
-                } else $HttpResponder.internalServerError(response);
+                if (!response.headersSent) {
+                    if (error instanceof HttpError) {
+                        response
+                            .setHeader('Content-Type', MimeType.json)
+                            .writeHead(error.code, error.message)
+                            .end(JSON.stringify({ error: error.message }));
+                    } else $HttpResponder.internalServerError(response);
+                }
             } finally {
                 task.complete();
                 this.options.logger?.log(task.toConsoleLog());
