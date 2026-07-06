@@ -34,15 +34,17 @@ export function createPortal(options: PortalOptions): Portal {
     createMemo(() => container.className = classes().container);
     document.body.appendChild(container);
     let disposed = false;
+    let dispose: () => void;
     const portal: Portal = {
         container,
         destroy: () => {
-            if (dispose) dispose();
-            else disposed = true;
+            if (disposed) return;
+            disposed = true;
+            dispose?.();
             container.remove();
             options.onDestroy?.();
         },
     };
-    const dispose = disposed ? () => { } : render(() => runWithOwner(owner, () => options.render(portal))!, container);
+    dispose = render(() => runWithOwner(owner, () => options.render(portal))!, container);
     return portal;
 }
