@@ -39,6 +39,36 @@ describe($Changes.rebase.name, () => {
         local: { a: { c: 2 } },
         result: { result: { a: { c: 2 } } },
     });
+    // string patches
+    test('should apply a remote string patch when local is unchanged', {
+        source: { title: 'The quick brown fox' },
+        remote: { title: 'The slow brown fox' },
+        local: { title: 'The quick brown fox' },
+        result: { result: { title: 'The slow brown fox' } },
+    });
+    test('should apply a local string patch when remote is unchanged', {
+        source: { title: 'The quick brown fox' },
+        remote: { title: 'The quick brown fox' },
+        local: { title: 'The slow brown fox' },
+        result: { result: { title: 'The slow brown fox' } },
+    });
+    test('should resolve conflicting string patches with local winning, reconstructed against the correct base', {
+        source: { title: 'The quick brown fox' },
+        remote: { title: 'The slow brown fox' },
+        local: { title: 'The quick brown fox jumps high' },
+        result: {
+            result: { title: 'The quick brown fox jumps high' },
+            conflict: {
+                local: { differences: undefined, similarities: undefined, conflicts: { title: [19, 19, ' jumps high'] } },
+                remote: { differences: undefined, similarities: undefined, conflicts: { title: [4, 9, 'slow'] } },
+                merge: {
+                    source: { title: 'The quick brown fox' },
+                    remote: { title: 'The slow brown fox' },
+                    local: { title: 'The quick brown fox jumps high' }
+                },
+            },
+        },
+    });
     // non-conflicting changes
     test('should merge non-conflicting changes from both', {
         source: { a: 1, b: 1 },
@@ -128,6 +158,57 @@ describe($Changes.rebase.name, () => {
         local: { nodes: [{ id: 'a', type: 'element' }, { id: 'c', type: 'element' }] },
         result: {
             result: { nodes: [{ id: 'a', type: 'element' }, { id: 'c', type: 'element' }, { id: 'b', type: 'element' }] },
+        },
+    });
+    test('should resolve a conflicting leaf against its untouched source value when a sibling is a non-conflicting difference', {
+        source: { doc: { title: 'The quick brown fox', status: 'draft', owner: 'alice' } },
+        remote: { doc: { title: 'The slow brown fox', status: 'draft', owner: 'alice' } },
+        local: { doc: { title: 'The quick brown fox jumps high', status: 'published', owner: 'alice' } },
+        result: {
+            result: { doc: { title: 'The quick brown fox jumps high', status: 'published', owner: 'alice' } },
+            conflict: {
+                local: { differences: { doc: { status: 'published' } }, similarities: undefined, conflicts: { doc: { title: [19, 19, ' jumps high'] } } },
+                remote: { differences: undefined, similarities: undefined, conflicts: { doc: { title: [4, 9, 'slow'] } } },
+                merge: {
+                    source: { doc: { title: 'The quick brown fox', status: 'published', owner: 'alice' } },
+                    remote: { doc: { title: 'The slow brown fox', status: 'published', owner: 'alice' } },
+                    local: { doc: { title: 'The quick brown fox jumps high', status: 'published', owner: 'alice' } },
+                },
+            },
+        },
+    });
+    test('should resolve multiple simultaneous conflicts of different types with local winning each', {
+        source: { title: 'The quick brown fox', count: 10, meta: { color: 'red' } },
+        remote: { title: 'The slow brown fox', count: 20, meta: { color: 'blue' } },
+        local: { title: 'The quick brown fox indeed', count: 30, meta: { color: 'green' } },
+        result: {
+            result: { title: 'The quick brown fox indeed', count: 30, meta: { color: 'green' } },
+            conflict: {
+                local: { differences: undefined, similarities: undefined, conflicts: { title: [19, 19, ' indeed'], count: 30, meta: { color: 'green' } } },
+                remote: { differences: undefined, similarities: undefined, conflicts: { title: [4, 9, 'slow'], count: 20, meta: { color: 'blue' } } },
+                merge: {
+                    source: { title: 'The quick brown fox', count: 10, meta: { color: 'red' } },
+                    remote: { title: 'The slow brown fox', count: 20, meta: { color: 'blue' } },
+                    local: { title: 'The quick brown fox indeed', count: 30, meta: { color: 'green' } },
+                },
+            },
+        },
+    });
+    test('should resolve a multi-hunk string conflict with local winning, reconstructed against the correct base', {
+        source: { body: 'The report was reviewed by John Smith on Monday and approved by Jane Doe on Tuesday for release' },
+        remote: { body: 'The report was reviewed by Alex Smith on Monday and approved by Jane Doe on Tuesday for launch' },
+        local: { body: 'The report was reviewed by John Smith on Monday and approved by Jane Doe on Wednesday for shipping' },
+        result: {
+            result: { body: 'The report was reviewed by John Smith on Monday and approved by Jane Doe on Wednesday for shipping' },
+            conflict: {
+                local: { differences: undefined, similarities: undefined, conflicts: { body: [76, 95, 'Wednesday for shipping'] } },
+                remote: { differences: undefined, similarities: undefined, conflicts: { body: [[27, 31, 'Alex'], [88, 95, 'launch']] } },
+                merge: {
+                    source: { body: 'The report was reviewed by John Smith on Monday and approved by Jane Doe on Tuesday for release' },
+                    remote: { body: 'The report was reviewed by Alex Smith on Monday and approved by Jane Doe on Tuesday for launch' },
+                    local: { body: 'The report was reviewed by John Smith on Monday and approved by Jane Doe on Wednesday for shipping' },
+                },
+            },
         },
     });
     test('should merge non-conflicting changes while flagging conflicts', {

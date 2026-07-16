@@ -14,6 +14,13 @@ describe($Changes.compareChanges.name, () => {
     // primitives
     test('should return similarities for equal primitives', 'x', 'x', { differences: undefined, similarities: 'x', conflicts: undefined });
     test('should return conflict for unequal primitives', 'x', 'y', { differences: undefined, similarities: undefined, conflicts: 'x' });
+    // string patches — must be treated as atomic, not decomposed index-by-index
+    test('should return similarities for equal string patches', [4, 9, 'slow'], [4, 9, 'slow'], { differences: undefined, similarities: [4, 9, 'slow'], conflicts: undefined });
+    test('should return the whole patch as a conflict for unequal string patches, not per-index', [4, 9, 'slow'], [2, 9, 'fast'], { differences: undefined, similarities: undefined, conflicts: [4, 9, 'slow'] });
+    test('should return conflict when a string patch is compared against a full string replacement', [4, 9, 'slow'], 'The slow brown fox and more', { differences: undefined, similarities: undefined, conflicts: [4, 9, 'slow'] });
+    test('should treat a nested string patch as an atomic conflict', { title: [4, 9, 'slow'] }, { title: [2, 9, 'fast'] }, { differences: undefined, similarities: undefined, conflicts: { title: [4, 9, 'slow'] } });
+    test('should return similarities for equal multi-hunk string patches', [[27, 31, 'Alex'], [88, 95, 'launch']], [[27, 31, 'Alex'], [88, 95, 'launch']], { differences: undefined, similarities: [[27, 31, 'Alex'], [88, 95, 'launch']], conflicts: undefined });
+    test('should return the whole multi-hunk patch as a conflict, not per-hunk', [[27, 31, 'Alex'], [88, 95, 'launch']], [[27, 31, 'Sam'], [88, 95, 'launch']], { differences: undefined, similarities: undefined, conflicts: [[27, 31, 'Alex'], [88, 95, 'launch']] });
     // type mismatches
     test('should return conflict when b is primitive and a is object', { a: 1 }, 'x', { differences: undefined, similarities: undefined, conflicts: { a: 1 } });
     test('should return conflict when array type differs', { a: 1 }, [1, 2], { differences: undefined, similarities: undefined, conflicts: { a: 1 } });

@@ -1,5 +1,11 @@
 import type { Predicate } from '../../types/predicate.type';
 import type { Selector } from '../../types/selector.type';
+import { $Value } from '../value/value.util';
+
+export type ArrayDiffOperation<T> =
+    | { type: 'keep'; sourceIndex: number; targetIndex: number }
+    | { type: 'delete'; sourceIndex: number }
+    | { type: 'insert'; targetIndex: number; value: T };
 
 export class $Array {
     public static isUnique(array: any[]): boolean {
@@ -104,5 +110,33 @@ export class $Array {
 
     public static last<T>(array: T[]): T {
         return array[array.length - 1];
+    }
+
+    public static diff<T>(base: T[], target: T[]): ArrayDiffOperation<T>[] {
+        const matrix: number[][] = Array.from({ length: base.length + 1 }, () => new Array(target.length + 1).fill(0));
+        for (let i = 1; i <= base.length; i++) {
+            for (let j = 1; j <= target.length; j++) {
+                matrix[i][j] = $Value.equals(base[i - 1], target[j - 1])
+                    ? matrix[i - 1][j - 1] + 1
+                    : Math.max(matrix[i - 1][j], matrix[i][j - 1]);
+            }
+        }
+        const operations: ArrayDiffOperation<T>[] = [];
+        let i = base.length;
+        let j = target.length;
+        while (i > 0 || j > 0) {
+            if (i > 0 && j > 0 && $Value.equals(base[i - 1], target[j - 1])) {
+                operations.push({ type: 'keep', sourceIndex: i - 1, targetIndex: j - 1 });
+                i--;
+                j--;
+            } else if (j > 0 && (i === 0 || matrix[i][j - 1] >= matrix[i - 1][j])) {
+                operations.push({ type: 'insert', targetIndex: j - 1, value: target[j - 1] });
+                j--;
+            } else {
+                operations.push({ type: 'delete', sourceIndex: i - 1 });
+                i--;
+            }
+        }
+        return operations.reverse();
     }
 }

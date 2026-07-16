@@ -13,6 +13,17 @@ describe($Changes.get.name, () => {
     test('should return null if change is null', 'a', null, null);
     test('should return new value if changed', 'a', 'b', 'b');
     test('should return new value if types are different', '1', 1, 1);
+    // string patch
+    test('should return a compact patch for a localized string edit', 'The quick brown fox', 'The slow brown fox', [4, 9, 'slow']);
+    test('should return a patch for a pure insertion', 'Hello there', 'Hello there, welcome to the team!', [11, 11, ', welcome to the team!']);
+    test('should return a patch for a pure deletion', 'Hello there, welcome to the team!', 'Hello there!', [11, 32, '']);
+    test('should return the full string when a patch would not serialize smaller', 'cat', 'cats', 'cats');
+    test('should return the full string when a is empty', '', 'hello', 'hello');
+    test('should return the full string when b is empty', 'hello', '', '');
+    test('should return a patch for a string property nested in an object', { title: 'Fix login bug', status: 'open' }, { title: 'Fix login timeout bug', status: 'closed' }, { title: [9, 9, ' timeout'], status: 'closed' });
+    // multi-hunk string patch
+    test('should return multiple hunks for edits far apart in a longer string', 'The report was reviewed by John Smith on Monday and approved by Jane Doe on Tuesday for release', 'The report was reviewed by Alex Smith on Monday and approved by Jane Doe on Tuesday for launch', [[27, 31, 'Alex'], [88, 95, 'launch']]);
+    test('should merge hunks separated by a small shared gap into a single hunk', 'My name is Rudi', 'Her name is Jani', 'Her name is Jani');
     // object
     test('should only return changed property of object', { name: 'foo', age: 23 }, { name: 'bar', age: 23 }, { name: 'bar' });
     test('should only return added property of object', { name: 'foo' }, { name: 'foo', age: 23 }, { age: 23 });

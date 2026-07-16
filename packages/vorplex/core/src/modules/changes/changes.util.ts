@@ -1,3 +1,6 @@
+import type { ArrayDiffOperation } from '../array/array.util';
+import { $Array } from '../array/array.util';
+import { $StringPatch } from '../string-patch/string-patch.util';
 import { $Value } from '../value/value.util';
 
 export type ArrayChange = Record<`$${number}` | `$${number}+` | `${'$'}{${string | number}}`, any | typeof $Changes.deleted>;
@@ -37,11 +40,7 @@ export interface ChangeRebase<T = any> {
     };
 }
 
-type ArrayOperation =
-    | { type: 'keep'; sourceIndex: number; targetIndex: number }
-    | { type: 'delete'; sourceIndex: number }
-    | { type: 'insert'; targetIndex: number; value: any }
-    | { type: 'update'; sourceIndex: number; targetIndex: number; value: any };
+type ArrayOperation = ArrayDiffOperation<any> | { type: 'update'; sourceIndex: number; targetIndex: number; value: any };
 
 export class $Changes {
 
@@ -94,40 +93,9 @@ export class $Changes {
                 }
                 return Object.keys(changes).length ? (changes as ArrayChange) : undefined;
             }
-            function getArrayOperations(base: any[], target: any[]): ArrayOperation[] {
-                function getLcsMatrix(a: any[], b: any[]): number[][] {
-                    const matrix: number[][] = Array.from({ length: a.length + 1 }, () => new Array(b.length + 1).fill(0));
-                    for (let i = 1; i <= a.length; i++) {
-                        for (let j = 1; j <= b.length; j++) {
-                            matrix[i][j] = $Value.equals(a[i - 1], b[j - 1])
-                                ? matrix[i - 1][j - 1] + 1
-                                : Math.max(matrix[i - 1][j], matrix[i][j - 1]);
-                        }
-                    }
-                    return matrix;
-                }
-                const matrix = getLcsMatrix(base, target);
-                const operations: ArrayOperation[] = [];
-                let i = base.length;
-                let j = target.length;
-                while (i > 0 || j > 0) {
-                    if (i > 0 && j > 0 && $Value.equals(base[i - 1], target[j - 1])) {
-                        operations.push({ type: 'keep', sourceIndex: i - 1, targetIndex: j - 1 });
-                        i--;
-                        j--;
-                    } else if (j > 0 && (i === 0 || matrix[i][j - 1] >= matrix[i - 1][j])) {
-                        operations.push({ type: 'insert', targetIndex: j - 1, value: target[j - 1] });
-                        j--;
-                    } else {
-                        operations.push({ type: 'delete', sourceIndex: i - 1 });
-                        i--;
-                    }
-                }
-                return operations.reverse();
-            }
             if (!target.length) return [] as any;
             if (base.every($Changes.valueHasId) && target.every($Changes.valueHasId)) return getIdBasedArrayChanges(base, target);
-            const operations = getArrayOperations(base, target);
+            const operations = $Array.diff(base, target);
             const paired: ArrayOperation[] = [];
             for (let i = 0; i < operations.length; i++) {
                 const current = operations[i];
@@ -167,6 +135,7 @@ export class $Changes {
         if (Array.isArray(a) !== Array.isArray(b)) return b;
         if (Array.isArray(a) && Array.isArray(b)) return getArrayChanges(a, b);
         if (typeof a === 'object' && typeof b === 'object') return getObjectChanges(a, b);
+        if (typeof a === 'string' && typeof b === 'string') return $StringPatch.diff(a, b);
         return b;
     }
 
@@ -180,7 +149,7 @@ export class $Changes {
         if (a === undefined && b === undefined) return { differences: undefined, similarities: undefined, conflicts: undefined };
         if (a === undefined) return { differences: undefined, similarities: undefined, conflicts: undefined };
         if (b === undefined) return { differences: a, similarities: undefined, conflicts: undefined };
-        if ($Value.isPrimitive(a) || $Value.isPrimitive(b) || Array.isArray(a) !== Array.isArray(b)) {
+        if ($Value.isPrimitive(a) || $Value.isPrimitive(b) || Array.isArray(a) !== Array.isArray(b) || $StringPatch.isChange(a) || $StringPatch.isChange(b)) {
             if ($Value.equals(a, b)) return { differences: undefined, similarities: a, conflicts: undefined };
             return { differences: undefined, similarities: undefined, conflicts: a };
         }
@@ -270,6 +239,7 @@ export class $Changes {
         }
         function apply(base: any, changes: any) {
             if (changes === undefined) return base;
+            if (typeof base === 'string' && $StringPatch.isChange(changes)) return $StringPatch.apply(base, changes);
             if (Array.isArray(changes)) return changes;
             if (typeof changes !== 'object' || changes === null) return changes;
 
@@ -327,15 +297,16 @@ export class $Changes {
             remoteCompare.similarities,
             localCompare.similarities
         );
+        const mergeLocal = $Changes.apply(sourceWithDifferences, localCompare.conflicts);
         return {
-            result: $Changes.apply(remote, localCompare.differences, localCompare.conflicts),
+            result: mergeLocal,
             conflict: {
                 local: localCompare,
                 remote: remoteCompare,
                 merge: {
                     source: sourceWithDifferences,
                     remote: $Changes.apply(sourceWithDifferences, remoteCompare.conflicts),
-                    local: $Changes.apply(sourceWithDifferences, localCompare.conflicts)
+                    local: mergeLocal
                 },
             },
         };

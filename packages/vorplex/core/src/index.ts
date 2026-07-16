@@ -72,6 +72,7 @@ export * from './modules/state/adaptors/entity/entity.interface';
 export * from './modules/storage/in-memory.model';
 export * from './modules/storage/local-storage.model';
 export * from './modules/storage/storage-provider.interface';
+export * from './modules/string-patch/string-patch.util';
 export * from './modules/string/string.util';
 export * from './modules/subscribable/subscribable.model';
 export * from './modules/subscribable/subscription.interface';

@@ -14,6 +14,14 @@ describe($Changes.apply.name, () => {
     test('should return changes if different from value', 'a', 'b', 'b');
     test('should return changes value is an object and changes is a primitive', { property: undefined }, 0, 0);
     test('should return changes value is an object and changes is an array', { property: undefined }, [], []);
+    // string patch
+    test('should apply a splice patch to a string', 'The quick brown fox', [4, 9, 'slow'], 'The slow brown fox');
+    test('should apply an insertion patch to a string', 'Hello there', [11, 11, ', welcome to the team!'], 'Hello there, welcome to the team!');
+    test('should apply a deletion patch to a string', 'Hello there, welcome to the team!', [11, 32, ''], 'Hello there!');
+    test('should apply a string patch nested in an object', { title: 'Fix login bug', status: 'open' }, { title: [10, 10, 'timeout '] }, { title: 'Fix login timeout bug', status: 'open' });
+    // multi-hunk string patch
+    test('should apply multiple non-overlapping hunks left to right', '0123456789', [[1, 2, 'A'], [4, 5, 'B'], [8, 9, 'C']], '0A23B567C9');
+    test('should apply multiple hunks to reconstruct edits far apart', 'The report was reviewed by John Smith on Monday and approved by Jane Doe on Tuesday for release', [[27, 31, 'Alex'], [88, 95, 'launch']], 'The report was reviewed by Alex Smith on Monday and approved by Jane Doe on Tuesday for launch');
     // object
     test('should return object with updated property', { name: 'foo', age: 23 }, { name: 'bar' }, { name: 'bar', age: 23 });
     test('should return object with deleted property', { name: 'foo', age: 23 }, { age: $Changes.deleted }, { name: 'foo' });
