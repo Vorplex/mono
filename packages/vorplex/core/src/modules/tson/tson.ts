@@ -284,6 +284,21 @@ export class $Tson {
             });
         return $Tson.any();
     }
+    public static getPaths(definition: TsonObjectDefinition): string[][] {
+        const paths: string[][] = [];
+        function traverse(definition: TsonDefinition, path: string[]) {
+            if (definition?.type !== 'object' || !definition.properties || Object.keys(definition.properties).length === 0) {
+                if (path.length) paths.push(path);
+                return;
+            }
+            for (const key of Object.keys(definition.properties)) {
+                traverse(definition.properties[key], [...path, key]);
+            }
+        }
+        traverse(definition, []);
+        return paths;
+    }
+
     public static getDefinitionAtPath(definition: TsonDefinition, path: SelectorPath): TsonDefinition | undefined {
         const resolve = (definition: TsonDefinition, segments: string[]): TsonDefinition | undefined => {
             if (definition == null) return undefined;

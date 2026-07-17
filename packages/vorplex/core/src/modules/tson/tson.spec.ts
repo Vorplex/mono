@@ -88,6 +88,52 @@ describe($Tson.name, () => {
         });
     });
 
+    describe($Tson.getPaths.name, () => {
+        it('should return empty array for a bare object definition', () => {
+            expect($Tson.getPaths($Tson.object())).toEqual([]);
+        });
+
+        it('should return empty array for a non-object definition', () => {
+            expect($Tson.getPaths($Tson.string())).toEqual([]);
+            expect($Tson.getPaths($Tson.record())).toEqual([]);
+        });
+
+        it('should return a path for each property', () => {
+            const definition = $Tson.object({
+                properties: {
+                    id: $Tson.string(),
+                    name: $Tson.string(),
+                },
+            });
+
+            expect($Tson.getPaths(definition)).toEqual([['id'], ['name']]);
+        });
+
+        it('should recurse into nested object properties', () => {
+            const definition = $Tson.object({
+                properties: {
+                    nested: $Tson.object({
+                        properties: {
+                            name: $Tson.string(),
+                        },
+                    }),
+                },
+            });
+
+            expect($Tson.getPaths(definition)).toEqual([['nested', 'name']]);
+        });
+
+        it('should treat a record property as a leaf', () => {
+            const definition = $Tson.object({
+                properties: {
+                    providers: $Tson.record({ property: $Tson.string() }),
+                },
+            });
+
+            expect($Tson.getPaths(definition)).toEqual([['providers']]);
+        });
+    });
+
     describe($Tson.getDefinitionAtPath.name, () => {
         it('should return undefined for paths through bare objects', () => {
             const result = $Tson.getDefinitionAtPath($Tson.object(), 'name');
