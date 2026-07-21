@@ -33,7 +33,7 @@ export class TsonRecord<T = any> extends TsonSchemaBase<Record<string, T>> {
             return [undefined, [new TsonError('Object expected', value, this)]];
         }
         result = {} as Record<string, any>;
-        if (!this.definition.property) return $Value.clone(value);
+        if (!this.definition.property) return [$Value.clone(value), []];
         for (const property in value) {
             if (failFast && errors.length > 0) break;
             const [propertyValue, propertyErrors] = $Tson.parse(this.definition.property).parse(value[property], failFast);

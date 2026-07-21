@@ -27,4 +27,15 @@ describe(TsonRecord.name, () => {
             expect(result).toBe(false);
         });
     });
+
+    describe(TsonRecord.prototype.parse.name, () => {
+        it('should return a [value, errors] tuple when no property schema is defined', () => {
+            const schema = new TsonRecord();
+
+            const [value, errors] = schema.parse({ a: 1, b: 'two' });
+
+            expect(value).toEqual({ a: 1, b: 'two' });
+            expect(errors).toEqual([]);
+        });
+    });
 });
