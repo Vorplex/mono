@@ -9,10 +9,6 @@ export type Setter<T> = {
 };
 export type SignalAccessor<T> = Getter<T> & Setter<T> & { readonly signal: Signal<T> };
 
-export type SignalProxy<T> =
-    T extends object ? SignalAccessor<T> & { readonly [K in keyof T]-?: SignalProxy<T[K]> }
-    : SignalAccessor<T>;
-
 export class Signal<T = any> {
 
     public value: T;
@@ -120,22 +116,6 @@ export class Signal<T = any> {
         const scope = Scope.current;
         if (!scope) throw new Error('Unable to register cleanup. No scope found');
         scope.registerCleanup(callback);
-    }
-
-    public static proxy<T>(select: (path: string[]) => SignalAccessor<any>): SignalProxy<T> {
-        function createProxy(path: string[]): SignalProxy<any> {
-            const fn = () => { };
-            return new Proxy(fn, {
-                get(_target: any, prop: string | symbol): any {
-                    if (typeof prop === 'symbol') return fn[prop];
-                    return createProxy([...path, prop]);
-                },
-                apply(_target: any, _this: any, args: any[]): any {
-                    return (select(path) as any)(...args);
-                }
-            });
-        }
-        return createProxy([]) as SignalProxy<T>;
     }
 
 }

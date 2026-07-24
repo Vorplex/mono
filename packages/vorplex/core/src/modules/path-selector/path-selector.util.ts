@@ -2,7 +2,27 @@ import { $Value } from '../value/value.util';
 
 export type SelectorPath<TValue = any, TResult = any> = string | string[] | ((value: TValue) => TResult);
 
+export type SelectorProxy<T> =
+    T extends object ? T & { readonly [K in keyof T]-?: SelectorProxy<T[K]> }
+    : T;
+
 export class $PathSelector {
+
+    public static proxy<T = any>(callback: (path: string[], args: any[]) => any): SelectorProxy<T> {
+        function createProxy(path: string[]): any {
+            const func = () => { };
+            return new Proxy(func, {
+                get(_target: any, prop: string | symbol): any {
+                    if (typeof prop === 'symbol') return func[prop];
+                    return createProxy([...path, prop]);
+                },
+                apply(_target: any, _this: any, args: any[]): any {
+                    return callback(path, args);
+                }
+            });
+        }
+        return createProxy([]) as SelectorProxy<T>;
+    }
 
     public static parse<T>(selector: SelectorPath<T>): string[] {
         if (selector == null) return [];
