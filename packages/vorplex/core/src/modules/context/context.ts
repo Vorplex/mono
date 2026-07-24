@@ -22,10 +22,15 @@ export class Context {
                     async [Symbol.asyncDispose]() { dispose(); }
                 };
             }
-            const result = args[1]();
-            if (result instanceof Promise) return result.finally(() => stack.pop());
-            stack.pop();
-            return result;
+            try {
+                const result = args[1]();
+                if (result instanceof Promise) return result.finally(() => stack.pop());
+                stack.pop();
+                return result;
+            } catch (error) {
+                stack.pop();
+                throw error;
+            }
         }
         return context;
     }
