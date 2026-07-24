@@ -1,6 +1,6 @@
 {
     "name": "@vorplex/node",
-    "version": "0.0.97",
+    "version": "0.0.98",
     "type": "module",
     "sideEffects": false,
     "files": [

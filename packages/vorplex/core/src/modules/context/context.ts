@@ -35,4 +35,18 @@ export class Context {
         return context;
     }
 
+    public static use<T>(callback: () => Awaitable<T>, ...contexts: (Disposable & AsyncDisposable)[]): Awaitable<T> {
+        const stack = new DisposableStack();
+        contexts.forEach(context => stack.use(context));
+        try {
+            const result = callback();
+            if (result instanceof Promise) return result.finally(() => stack.dispose());
+            stack.dispose();
+            return result;
+        } catch (error) {
+            stack.dispose();
+            throw error;
+        }
+    }
+
 }
