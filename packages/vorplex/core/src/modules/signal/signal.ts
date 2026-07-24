@@ -1,3 +1,4 @@
+import { $PathSelector } from '../path-selector/path-selector.util';
 import { $Value } from '../value/value.util';
 import { ComputationScope } from './scopes/computation';
 import { Scope } from './scopes/scope';
@@ -8,6 +9,9 @@ export type Setter<T> = {
     (update: (value: T) => T): T;
 };
 export type SignalAccessor<T> = Getter<T> & Setter<T> & { readonly signal: Signal<T> };
+export type SignalProxy<T> =
+    T extends object ? SignalAccessor<T> & { readonly [K in keyof T]-?: SignalProxy<T[K]> }
+    : SignalAccessor<T>;
 
 export class Signal<T = any> {
 
@@ -116,6 +120,10 @@ export class Signal<T = any> {
         const scope = Scope.current;
         if (!scope) throw new Error('Unable to register cleanup. No scope found');
         scope.registerCleanup(callback);
+    }
+
+    public static proxy<T>(select: (path: string[]) => SignalAccessor<any>): SignalProxy<T> {
+        return $PathSelector.proxy((path, args) => (select(path) as any)(...args)) as SignalProxy<T>;
     }
 
 }

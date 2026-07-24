@@ -1,5 +1,5 @@
-import { $PathSelector, SelectorPath, SelectorProxy } from '../path-selector/path-selector.util';
-import { Signal, SignalAccessor } from '../signal/signal';
+import { $PathSelector, SelectorPath } from '../path-selector/path-selector.util';
+import { Signal, SignalAccessor, SignalProxy } from '../signal/signal';
 import { Subscribable } from '../subscribable/subscribable.model';
 import type { Subscription } from '../subscribable/subscription.interface';
 import { $Value, ValueSet } from '../value/value.util';
@@ -22,10 +22,10 @@ type StateSelection<T> = {
 export class State<T = any, TReducer extends Reducer = EmptyReducer> extends Subscribable<StateChange<T>> {
 
     private readonly selections = new Map<string, StateSelection<any>>();
-    private _store?: SelectorProxy<SignalAccessor<T>>;
+    private _store?: SignalProxy<T>;
 
     public get value() { return this._value; };
-    public get store(): SelectorProxy<SignalAccessor<T>> { return this._store ??= $PathSelector.proxy(path => this.select(path)); }
+    public get store(): SignalProxy<T> { return this._store ??= Signal.proxy(path => this.select(path)); }
 
     constructor(private _value?: T, private reducer?: TReducer) {
         super();

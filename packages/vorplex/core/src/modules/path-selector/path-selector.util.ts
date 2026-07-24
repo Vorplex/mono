@@ -3,8 +3,9 @@ import { $Value } from '../value/value.util';
 export type SelectorPath<TValue = any, TResult = any> = string | string[] | ((value: TValue) => TResult);
 
 export type SelectorProxy<T> =
-    T extends object ? T & { readonly [K in keyof T]-?: SelectorProxy<T[K]> }
-    : T;
+    T extends object
+        ? { readonly [K in keyof T]-?: SelectorProxy<T[K]> } & ((...args: any[]) => any)
+        : ((...args: any[]) => any);
 
 export class $PathSelector {
 
