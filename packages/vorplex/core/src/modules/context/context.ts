@@ -23,10 +23,9 @@ export class Context {
                 };
             }
             const result = args[1]();
-            if (result instanceof Promise) {
-                return result.finally(() => stack.pop());
-            }
+            if (result instanceof Promise) return result.finally(() => stack.pop());
             stack.pop();
+            return result;
         }
         return context;
     }
