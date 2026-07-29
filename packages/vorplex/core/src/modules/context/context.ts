@@ -6,10 +6,13 @@ export class Context {
         const stack = [value];
         function context(): T
         function context(value: T): Disposable & AsyncDisposable
+        function context(factory: (current: T) => T): Disposable & AsyncDisposable
         function context<R>(value: T, callback: () => Awaitable<R>): Awaitable<R>
-        function context<R>(...args: [value?: T, callback?: () => Awaitable<R>]): T | Awaitable<R> | Disposable | AsyncDisposable {
+        function context<R>(factory: (current: T) => T, callback: () => Awaitable<R>): Awaitable<R>
+        function context<R>(...args: [value?: T | ((current: T) => T), callback?: () => Awaitable<R>]): T | Awaitable<R> | Disposable | AsyncDisposable {
             if (args.length === 0) return stack[stack.length - 1];
-            stack.push(args[0]);
+            const next = typeof args[0] === 'function' ? (args[0] as (current: T) => T)(stack[stack.length - 1]) : args[0];
+            stack.push(next);
             if (args.length === 1) {
                 let disposed: boolean;
                 const dispose = () => {

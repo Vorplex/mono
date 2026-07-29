@@ -1,6 +1,6 @@
 {
     "name": "@vorplex/compiler",
-    "version": "0.0.99",
+    "version": "0.0.100",
     "type": "module",
     "sideEffects": false,
     "files": [
