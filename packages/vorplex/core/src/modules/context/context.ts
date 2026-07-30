@@ -2,18 +2,18 @@ import { Awaitable } from '../../types/awaitable.type';
 
 export type Context<T> = {
     (): T;
-    (value: T): Disposable & AsyncDisposable;
-    (factory: (current: T) => T): Disposable & AsyncDisposable;
-    <R>(value: T, callback: () => Awaitable<R>): Awaitable<R>;
-    <R>(factory: (current: T) => T, callback: () => Awaitable<R>): Awaitable<R>;
+    (value: T): Disposable & AsyncDisposable & { value: T };
+    (factory: (current: T) => T): Disposable & AsyncDisposable & { value: T };
+    <R>(value: T, callback: (value: T) => Awaitable<R>): Awaitable<R>;
+    <R>(factory: (current: T) => T, callback: (value: T) => Awaitable<R>): Awaitable<R>;
 };
 
 function create<T>(value?: T): Context<T> {
     const stack = [value];
-    return <R>(...args: [value?: T | ((current: T) => T), callback?: () => Awaitable<R>]): T | Awaitable<R> | Disposable | AsyncDisposable => {
+    return <R>(...args: [value?: T | ((current: T) => T), callback?: (value: T) => Awaitable<R>]): T | Awaitable<R> | (Disposable & AsyncDisposable & { value: T }) => {
         if (args.length === 0) return stack[stack.length - 1];
-        const next = typeof args[0] === 'function' ? (args[0] as (current: T) => T)(stack[stack.length - 1]) : args[0];
-        stack.push(next);
+        const value = typeof args[0] === 'function' ? (args[0] as (current: T) => T)(stack[stack.length - 1]) : args[0];
+        stack.push(value);
         if (args.length === 1) {
             let disposed: boolean;
             const dispose = () => {
@@ -22,12 +22,13 @@ function create<T>(value?: T): Context<T> {
                 stack.pop();
             };
             return {
+                value: value,
                 [Symbol.dispose]() { dispose(); },
                 async [Symbol.asyncDispose]() { dispose(); }
             };
         }
         try {
-            const result = args[1]();
+            const result = args[1](value);
             if (result instanceof Promise) return result.finally(() => stack.pop());
             stack.pop();
             return result;
