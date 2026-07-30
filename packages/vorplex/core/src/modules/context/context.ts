@@ -8,7 +8,7 @@ export type Context<T> = {
     <R>(factory: (current: T) => T, callback: (value: T) => Awaitable<R>): Awaitable<R>;
 };
 
-function create<T>(value?: T): Context<T> {
+function create<T = any>(value?: T): Context<T> {
     const stack = [value];
     return <R>(...args: [value?: T | ((current: T) => T), callback?: (value: T) => Awaitable<R>]): T | Awaitable<R> | (Disposable & AsyncDisposable & { value: T }) => {
         if (args.length === 0) return stack[stack.length - 1];
