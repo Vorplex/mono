@@ -22,7 +22,7 @@ export class Signal<T = any> {
     private static flushing = false;
     private static readonly pendingComputations = new Set<ComputationScope>();
 
-    static create<T>(initial: T): SignalAccessor<T> {
+    public static create<T>(initial?: T): SignalAccessor<T> {
         const signal: Signal<T> = {
             value: initial,
             subscribers: new Set()
