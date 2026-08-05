@@ -6,7 +6,7 @@ export function useState<T extends any[], TValue>(state: { [K in keyof T]: State
 export function useState<TState extends any[], TValue = TState>(state: State<TState, any> | { [K in keyof TState]: State<TState[K], any> }, select?: (state: TState) => TValue): Accessor<TValue> {
     const states = Array.isArray(state) ? state : [state];
     const signals = states.map(state => {
-        const [get, set] = createSignal<any>(state.value);
+        const [get, set] = createSignal(state.value);
         const accessor = state.select();
         const scope = Signal.root(() => Signal.effect(() => set(accessor())));
         onCleanup(() => scope.dispose());

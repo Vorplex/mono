@@ -1,5 +1,5 @@
-import { $PathSelector, SelectorPath } from '../path-selector/path-selector.util';
-import { Signal, SignalAccessor, SignalProxy } from '../signal/signal';
+import { SelectorPath } from '../path-selector/path-selector.util';
+import { Signal } from '../signal/signal';
 import { Subscribable } from '../subscribable/subscribable.model';
 import type { Subscription } from '../subscribable/subscription.interface';
 import { $Value, ValueSet } from '../value/value.util';
@@ -13,22 +13,15 @@ export interface StateChange<T> {
     value: T;
 }
 
-type StateSelection<T> = {
-    path: string[];
-    signal: SignalAccessor<T>;
-    proxy: SignalAccessor<T>;
-};
-
 export class State<T = any, TReducer extends Reducer = EmptyReducer> extends Subscribable<StateChange<T>> {
 
-    private readonly selections = new Map<string, StateSelection<any>>();
-    private _store?: SignalProxy<T>;
+    public readonly signal: Signal<T>;
 
-    public get value() { return this._value; };
-    public get store(): SignalProxy<T> { return this._store ??= Signal.proxy(path => this.select(path)); }
+    public get value() { return this.signal.value; };
 
-    constructor(private _value?: T, private reducer?: TReducer) {
+    constructor(value?: T, private reducer?: TReducer) {
         super();
+        this.signal = Signal.create<T>(value);
     }
 
     public static combineLatest<T extends any[]>(states: { [K in keyof T]: State<T[K]> }, callback: (values: T) => void): Subscription {
@@ -117,45 +110,13 @@ export class State<T = any, TReducer extends Reducer = EmptyReducer> extends Sub
         else this.commit($Value.set(this.value, path, update as ValueSet<V>));
     }
 
-    public select<V = any>(path?: SelectorPath<T, V>): SignalAccessor<V> {
-        const segments = $PathSelector.parse<T>(path);
-        const key = $PathSelector.toString(segments);
-        const existing = this.selections.get(key);
-        if (existing) return existing.proxy;
-        const value = $Value.get(this.value, key);
-        const signal = Signal.create(value);
-        const selection: StateSelection<any> = {
-            path: segments,
-            signal,
-            proxy: new Proxy(signal, {
-                apply: (_target, _thisArg, args) => {
-                    if (args.length === 0) return signal();
-                    this.commit($Value.set(this.value, selection.path, args[0]));
-                    return selection.signal.signal.value;
-                }
-            })
-        };
-        this.selections.set(key, selection);
-        return selection.proxy;
-    }
-
     private commit(value: T): void {
         if (this.value === value) return;
         const event = {
             previousValue: this.value,
             value: value,
         };
-        this._value = value;
-        Signal.batch(() => {
-            for (const [key, selection] of this.selections) {
-                if (selection.signal.signal.subscribers.size === 0) {
-                    this.selections.delete(key);
-                    continue;
-                }
-                const value = $Value.get(this.value, selection.path);
-                selection.signal(value);
-            }
-        });
+        this.signal(value);
         this.emit(event);
     }
 

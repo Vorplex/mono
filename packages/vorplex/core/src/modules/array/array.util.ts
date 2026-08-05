@@ -8,6 +8,11 @@ export type ArrayDiffOperation<T> =
     | { type: 'insert'; targetIndex: number; value: T };
 
 export class $Array {
+
+    public static isArray<T>(value: any): value is T[] {
+        return Array.isArray(value);
+    }
+
     public static isUnique(array: any[]): boolean {
         return new Set(array).size === array.length;
     }

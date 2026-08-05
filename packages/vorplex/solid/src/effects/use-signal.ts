@@ -1,7 +1,7 @@
-import { Signal, SignalAccessor } from '@vorplex/core';
+import { Signal } from '@vorplex/core';
 import { from } from 'solid-js';
 
-export function useSignal<T>(signal: SignalAccessor<T>) {
+export function useSignal<T>(signal: Signal<T>) {
     return from<T>((set) => {
         const root = Signal.root(() => {
             Signal.effect(() => {
