@@ -177,6 +177,16 @@ export class Signal<T = any> {
         });
     }
 
+    public static untrack<T>(callback: () => T): T {
+        const previous = Scope.current;
+        Scope.current = null;
+        try {
+            return callback();
+        } finally {
+            Scope.current = previous;
+        }
+    }
+
     public static scope(callback: () => void): Scope {
         const scope = new Scope(callback, Scope.current);
         scope.run();
