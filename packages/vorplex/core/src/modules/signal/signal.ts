@@ -83,8 +83,11 @@ export class Signal<T = any> {
                 proxy: new Proxy(pathSignal, {
                     apply: (_target, _thisArg, args) => {
                         if (args.length === 0) return pathSignal();
-                        set($Value.set(signal.value, segments, args[0]) as T);
-                        return pathSignal.value;
+                        const [update] = args;
+                        const current = $Value.get(signal.value, segments);
+                        const value = typeof update === 'function' ? update(current) : update;
+                        set($Value.set(signal.value, segments, value));
+                        return value;
                     }
                 }) as Signal<V>
             };
