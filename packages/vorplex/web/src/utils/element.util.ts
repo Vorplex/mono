@@ -49,6 +49,10 @@ export class $Element {
         return remove;
     }
 
+    public static isEventAttribute(element: Element, attribute: string) {
+        return attribute.startsWith('on') && attribute in element;
+    }
+
     public static getEventProperties(elementTag: string): string[] {
         const target = document.createElement(elementTag);
         const events: string[] = [];
