@@ -97,6 +97,7 @@ export * from './types/awaitable.type';
 export * from './types/camel-to-kebab.type';
 export * from './types/extended.type';
 export * from './types/has-key.type';
+export * from './types/is-any.type';
 export * from './types/is-union.type';
 export * from './types/keys-of-type.type';
 export * from './types/keys-with-fix.type';

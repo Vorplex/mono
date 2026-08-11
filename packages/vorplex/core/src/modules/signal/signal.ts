@@ -1,3 +1,4 @@
+import { IsAny } from '../../types/is-any.type';
 import { $Array } from '../array/array.util';
 import { $PathSelector, SelectorPath } from '../path-selector/path-selector.util';
 import { $Value } from '../value/value.util';
@@ -15,7 +16,8 @@ export interface Signal<T = any> extends Getter<T>, Setter<T> {
     readonly proxy: SignalProxy<T>;
 }
 export type SignalProxy<T> =
-    T extends object ? Signal<T> & { readonly [K in keyof T]-?: SignalProxy<T[K]> }
+    IsAny<T> extends true ? Signal<T>
+    : [T] extends [object] ? Signal<T> & { readonly [K in keyof T]-?: SignalProxy<T[K]> }
     : Signal<T>;
 
 export class Signal<T = any> {
@@ -71,7 +73,7 @@ export class Signal<T = any> {
             return signal.value;
         };
 
-        const select = <V>(path?: SelectorPath<T, V>): Signal<V> => {
+        const select = <V = T>(path?: SelectorPath<T, V>): Signal<V> => {
             const segments = $PathSelector.parse<T>(path);
             const key = $PathSelector.toString(segments);
             const existing = selections.get(key);
@@ -212,7 +214,7 @@ export class Signal<T = any> {
     }
 
     public static proxy<T>(select: (path: string[]) => Signal): SignalProxy<T> {
-        return $PathSelector.proxy((path, args) => (select(path) as any)(...args)) as SignalProxy<T>;
+        return $PathSelector.proxy((path, args) => (select(path) as any)(...args)) as unknown as SignalProxy<T>;
     }
 
 }
