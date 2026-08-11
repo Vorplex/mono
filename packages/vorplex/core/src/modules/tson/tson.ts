@@ -19,6 +19,8 @@ type ExtendedObjectDefinition<T extends TsonObjectDefinition, TT extends TsonObj
 
 export class $Tson {
 
+    public static readonly definitions: TsonDefinition['type'][] = ['any', 'string', 'number', 'boolean', 'object', 'array', 'enum', 'record', 'union', 'ref'];
+
     public static string<T extends Omit<TsonStringDefinition, 'type'>>(definition?: T): T & Pick<TsonStringDefinition, 'type'> {
         return { type: 'string', ...(definition ?? {}) } as T & Pick<TsonStringDefinition, 'type'>;
     }
