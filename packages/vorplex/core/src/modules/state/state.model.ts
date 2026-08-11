@@ -79,6 +79,9 @@ export class State<T = any, TReducer extends Reducer = EmptyReducer> extends Sub
                         set: (value: any) => ({
                             [property]: value,
                         }),
+                        update: (update: any) => (state: any) => ({
+                            [property]: $Value.update(state[property], update),
+                        }),
                     },
                 };
                 Object.assign(reducer, this.reducer?.[property as string] ?? {});
