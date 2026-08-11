@@ -1,0 +1,4 @@
+<x-page name="settings-profile">
+    <h2>Profile</h2>
+    <p>Manage your name, email, and avatar.</p>
+</x-page>

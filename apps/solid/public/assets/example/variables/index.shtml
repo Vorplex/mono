@@ -1,0 +1,2 @@
+<x-import src="./app.variable.shtml"></x-import>
+<x-import src="./posts.variable.shtml"></x-import>

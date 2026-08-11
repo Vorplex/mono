@@ -11,6 +11,7 @@
         "@vorplex/api": "workspace:*",
         "@vorplex/compiler": "workspace:*",
         "@vorplex/core": "workspace:*",
+        "@vorplex/shtml": "workspace:*",
         "@vorplex/solid": "workspace:*",
         "@vorplex/web": "workspace:*",
         "monaco-editor": "^0.56.0",

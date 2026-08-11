@@ -1,0 +1,13 @@
+<x-router>
+    <x-route route="/"
+             page="dashboard"></x-route>
+    <x-route route="/posts"
+             page="posts"></x-route>
+    <x-route route="/posts/{id}"
+             page="posts"></x-route>
+    <x-route route="/posts/{id}/edit"
+             page="post-editor"></x-route>
+    <x-route route="/settings"
+             page="settings"></x-route>
+    <x-route route="/404" />
+</x-router>

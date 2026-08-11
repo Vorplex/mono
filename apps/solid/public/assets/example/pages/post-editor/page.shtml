@@ -1,0 +1,52 @@
+<x-page name="post-editor">
+    <x-import src="./script.ts"></x-import>
+    <x-import src="./style.css"></x-import>
+    <x-variable name="postId"></x-variable>
+    <x-variable name="title"></x-variable>
+    <x-variable name="body"></x-variable>
+    <x-variable name="userId"></x-variable>
+    <x-variable name="priority">"medium"</x-variable>
+    <div class="post-editor-wrapper">
+        <form class="post-editor-card"
+              onsubmit="onSubmit(event)">
+            <h2>{{postId() ? 'Edit Post' : 'New Post'}}</h2>
+            <label class="post-editor-field">
+                <span>Title</span>
+                <input class="post-editor-title"
+                       value="{{title()}}"
+                       onchange="title(event.target.value)" />
+            </label>
+            <label class="post-editor-field">
+                <span>Body</span>
+                <textarea class="post-editor-body"
+                          onchange="body(event.target.value)">{{body()}}</textarea>
+            </label>
+            <label class="post-editor-field">
+                <span>User Id</span>
+                <input class="post-editor-userid"
+                       type="number"
+                       value="{{userId()}}"
+                       onchange="userId(event.target.value)" />
+            </label>
+            <label class="post-editor-field">
+                <span>Priority</span>
+                <select class="post-editor-priority"
+                        onchange="priority(event.target.value)">
+                    <option value="low"
+                            selected="{{priority() === 'low'}}">Low</option>
+                    <option value="medium"
+                            selected="{{priority() === 'medium'}}">Medium</option>
+                    <option value="high"
+                            selected="{{priority() === 'high'}}">High</option>
+                </select>
+            </label>
+            <div class="post-editor-actions">
+                <button type="button"
+                        class="post-editor-cancel"
+                        onclick="cancel()">Cancel</button>
+                <button type="submit"
+                        class="post-editor-save">Save</button>
+            </div>
+        </form>
+    </div>
+</x-page>

@@ -1,0 +1,692 @@
+<x-app>
+    <x-packages>{ "lodash": "^4.17.21" }</x-packages>
+    <x-api name="jsonPlaceholder" url="https://jsonplaceholder.typicode.com">
+        <x-endpoint name="getPosts" path="/posts" method="GET">
+            <x-response type="array"></x-response>
+        </x-endpoint>
+        <x-endpoint name="getPost" path="/posts/{id}" method="GET">
+            <x-parameter name="id" required=""></x-parameter>
+            <x-response type="post"></x-response>
+        </x-endpoint>
+        <x-endpoint name="createPost" path="/posts" method="POST">
+            <x-body type="post"></x-body>
+            <x-response type="post"></x-response>
+        </x-endpoint>
+        <x-endpoint name="updatePost" path="/posts/{id}" method="PUT">
+            <x-parameter name="id" required=""></x-parameter>
+            <x-body type="post"></x-body>
+            <x-response type="post"></x-response>
+        </x-endpoint>
+        <x-endpoint name="deletePost" path="/posts/{id}" method="DELETE">
+            <x-parameter name="id" required=""></x-parameter>
+        </x-endpoint>
+    </x-api>
+
+
+    <x-service name="logger">
+        <script type="application/typescript">export default Shtml.defineService(shtml => class {
+    public log(message: string) {
+        console.log(message);
+    }
+});
+</script>
+    </x-service>
+    <x-asset name="logo" type="image/svg+xml">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-star-icon lucide-star">
+            <path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z">
+            </path>
+        </svg>
+    </x-asset>
+    <x-asset name="google" src="https://www.google.com/favicon.ico"></x-asset>
+    <x-page name="dashboard">
+        <script type="application/typescript">import { noop } from 'lodash';
+
+export default Shtml.definePage(shtml => class {
+    onMount() {
+        shtml.app.instance.loadPosts();
+        // Each script is evaluated in its own fresh module realization (see shtml/plan.md's open problem), so this
+        // is expected to log `false` — the app script's `noop` and this page's `noop` are not the same reference.
+        const identical = shtml.app.instance.getLodashNoop() === noop;
+        console.log(`CROSS SCRIPT MODULE IDENTITY: ${identical}`);
+    }
+    async previewNotFound() {
+        const result = await shtml.pages['404'].showModal();
+        console.log(`MODAL CLOSED WITH ${result}`);
+    }
+});
+</script>
+        <style>
+            .stat-grid {
+                display: flex;
+                gap: 1rem;
+                margin-bottom: 1.5rem;
+            }
+
+            .stat-card {
+                display: flex;
+                flex-direction: column;
+                gap: 0.25rem;
+                padding: 1rem 1.25rem;
+                border: 1px solid #e2e2e2;
+                border-radius: 8px;
+                min-width: 160px;
+            }
+
+            .stat-label {
+                font-size: 0.8rem;
+                color: #666;
+            }
+
+            .stat-value {
+                font-size: 1.5rem;
+                font-weight: 600;
+            }
+
+            .recent-post {
+                padding: 0.5rem 0;
+                border-bottom: 1px solid #eee;
+            }
+        </style>
+        <div class="shell">
+            <x-page-container page="header"></x-page-container>
+            <x-page-container page="nav"></x-page-container>
+            <main class="content">
+                <h1>Dashboard</h1>
+                <button class="preview-button" onclick="previewNotFound()">Preview 404</button>
+                <div class="stat-grid">
+                    <div class="stat-card">
+                        <span class="stat-label">Total posts</span>
+                        <span class="stat-value">{{posts().length}}</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-label">Latest post</span>
+                        <span class="stat-value">{{posts()[0]?.title ?? '—'}}</span>
+                    </div>
+                </div>
+                <h2>Recent posts</h2>
+                <x-if condition="{{!posts().length}}">
+                    <p class="empty">No posts loaded yet.</p>
+                </x-if>
+                <x-for each="{{posts().slice(0, 5)}}" as="post" track="id">
+                    <div class="recent-post">
+                        <strong>{{post.title()}}</strong>
+                        <p>{{post.body()}}</p>
+                    </div>
+                </x-for>
+            </main>
+        </div>
+    </x-page>
+
+    <x-page name="header">
+        <header class="topbar">
+            <img class="topbar-logo" src="{{asset.logo}}">
+            <h1 class="topbar-title">{{app.name()}}</h1>
+            <img class="topbar-favicon" src="{{asset.google}}">
+        </header>
+    </x-page>
+    <x-page name="nav">
+        <nav class="sidenav">
+            <a class="sidenav-link" href="#/" class.active="{{router.route() === '/'}}">
+                <x-icon name="layout-dashboard"></x-icon>
+                Dashboard
+            </a>
+            <a class="sidenav-link" href="#/posts" class.active="{{router.route() === '/posts'}}">
+                <x-icon name="file-text"></x-icon>
+                Posts
+            </a>
+            <a class="sidenav-link" href="#/settings" class.active="{{router.route() === '/settings'}}">
+                <x-icon name="settings"></x-icon>
+                Settings
+            </a>
+        </nav>
+    </x-page>
+
+    <x-page name="posts">
+        <script type="application/typescript">export default Shtml.definePage(shtml => class {
+    onMount() {
+        shtml.app.instance.loadPosts();
+        if (shtml.router.params.id) console.log(`VIEWING POST ${shtml.router.params.id}`);
+    }
+    addPost() {
+        shtml.pages['post-editor'].showModal();
+    }
+    editPost(id: number) {
+        shtml.router.navigate(`/posts/${id}/edit`);
+    }
+    editPostModal(id: number) {
+        shtml.pages['post-editor'].showModal({ data: { id } });
+    }
+    deletePost(id: number) {
+        shtml.app.instance.deletePost(id);
+    }
+});
+</script>
+        <style>
+            .posts-header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                margin-bottom: 1rem;
+            }
+
+            .add-post-button {
+                padding: 0.5rem 1rem;
+                border-radius: 6px;
+                border: 1px solid transparent;
+                background: #2563eb;
+                color: #fff;
+                font: inherit;
+                cursor: pointer;
+            }
+
+            .add-post-button:hover {
+                background: #1d4ed8;
+            }
+
+            .post-table {
+                width: 100%;
+            }
+
+            .post-table-row {
+                display: grid;
+                grid-template-columns: 1fr 2fr 100px auto;
+                gap: 0.5rem;
+                align-items: center;
+                padding: 0.5rem;
+                border-bottom: 1px solid #eee;
+            }
+
+            .post-table-head {
+                font-weight: 600;
+            }
+
+            .post-table-actions {
+                display: flex;
+                gap: 0.5rem;
+            }
+
+            .priority-badge {
+                display: flex;
+                align-items: center;
+                gap: 0.35rem;
+                text-transform: capitalize;
+            }
+
+            .priority-low {
+                color: #16a34a;
+            }
+
+            .priority-medium {
+                color: #ca8a04;
+            }
+
+            .priority-high {
+                color: #dc2626;
+            }
+        </style>
+        <div class="shell">
+            <x-page-container page="header"></x-page-container>
+            <x-page-container page="nav"></x-page-container>
+            <main class="content">
+                <div class="posts-header">
+                    <h1>Posts</h1>
+                    <button class="add-post-button" onclick="addPost()">Add Post</button>
+                </div>
+                <x-if condition="{{!posts().length}}">
+                    <p class="empty">No posts yet — create one above.</p>
+                </x-if>
+                <div class="post-table">
+                    <div class="post-table-row post-table-head">
+                        <span>Title</span>
+                        <span>Body</span>
+                        <span>Priority</span>
+                        <span></span>
+                    </div>
+                    <x-for each="{{posts()}}" as="post" track="id">
+                        <div class="post-table-row">
+                            <span>#{{}} {{post.title()}}</span>
+                            <span>{{post.body()}}</span>
+                            <span class="priority-badge priority-{{post.priority()}}">
+                                <x-icon name="{{post.priority() === 'high' ? 'arrow-up' : post.priority() === 'low' ? 'arrow-down' : 'arrow-right'}}"></x-icon>
+                                {{post.priority()}}
+                            </span>
+                            <span class="post-table-actions">
+                                <button onclick="editPost(post.id())">Edit</button>
+                                <button onclick="editPostModal(post.id())">Edit Modal</button>
+                                <button onclick="deletePost(post.id())">Delete</button>
+                            </span>
+                        </div>
+                    </x-for>
+                </div>
+            </main>
+        </div>
+    </x-page>
+
+    <x-page name="post-editor">
+        <script type="application/typescript">export default Shtml.definePage(shtml => class {
+    // Set in onMount before any template/event code runs — captures whether this page was reached via
+    // <x-route> (params.id) or shtml.pages['post-editor'].showModal({ data: { id } }), since Cancel/Save
+    // need to know whether to navigate back or close the modal.
+    routedEdit = false;
+
+    async onMount() {
+        const routeId = shtml.router.params.id;
+        this.routedEdit = routeId != null;
+        const id = routeId ?? shtml.modal.data?.id;
+        if (id == null) return;
+        shtml.page.variables.postId.set(Number(id));
+        const response = await shtml.apis.jsonPlaceholder.getPost.request({ parameters: { id } });
+        const post = await response.value();
+        shtml.page.variables.title.set(post.title);
+        shtml.page.variables.body.set(post.body);
+        shtml.page.variables.userId.set(String(post.userId));
+        // jsonplaceholder has no priority field — it's a client-only enrichment (see app script's loadPosts), so
+        // pull it from the already-loaded local list instead, falling back to a default for a direct deep link.
+        const existing = shtml.app.variables.posts.get().find((existing: { id: number }) => existing.id === Number(id));
+        shtml.page.variables.priority.set(existing?.priority ?? 'medium');
+    }
+    onSubmit(event: SubmitEvent) {
+        event.preventDefault();
+        const postId = shtml.page.variables.postId.get();
+        const post = {
+            title: shtml.page.variables.title.get(),
+            body: shtml.page.variables.body.get(),
+            userId: Number(shtml.page.variables.userId.get()),
+            priority: shtml.page.variables.priority.get()
+        };
+        if (postId) shtml.app.instance.updatePost({ id: postId, ...post });
+        else shtml.app.instance.createPost(post.title, post.body, post.userId, post.priority);
+        this.close();
+    }
+    cancel() {
+        this.close();
+    }
+    close() {
+        if (this.routedEdit) shtml.router.navigate('/posts');
+        else shtml.modal.close();
+    }
+});
+</script>
+        <style>
+            .post-editor-wrapper {
+                min-height: 100vh;
+                box-sizing: border-box;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 1.5rem;
+                background: rgba(0, 0, 0, 0.5);
+            }
+
+            .post-editor-card {
+                background: #fff;
+                border-radius: 10px;
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+                padding: 1.5rem;
+                width: 100%;
+                max-width: 420px;
+                box-sizing: border-box;
+                display: flex;
+                flex-direction: column;
+                gap: 0.75rem;
+            }
+
+            .post-editor-card h2 {
+                margin: 0 0 0.25rem;
+            }
+
+            .post-editor-field {
+                display: flex;
+                flex-direction: column;
+                gap: 0.25rem;
+                font-size: 0.9rem;
+            }
+
+            .post-editor-field input,
+            .post-editor-field textarea,
+            .post-editor-field select {
+                font: inherit;
+                padding: 0.5rem;
+                border: 1px solid #d0d0d0;
+                border-radius: 6px;
+                box-sizing: border-box;
+            }
+
+            .post-editor-actions {
+                display: flex;
+                justify-content: flex-end;
+                gap: 0.5rem;
+                margin-top: 0.5rem;
+            }
+
+            .post-editor-save,
+            .post-editor-cancel {
+                padding: 0.5rem 1.25rem;
+                border-radius: 6px;
+                border: 1px solid transparent;
+                font: inherit;
+                cursor: pointer;
+            }
+
+            .post-editor-save {
+                background: #2563eb;
+                color: #fff;
+            }
+
+            .post-editor-save:hover {
+                background: #1d4ed8;
+            }
+
+            .post-editor-cancel {
+                background: #fff;
+                border-color: #d0d0d0;
+                color: inherit;
+            }
+
+            .post-editor-cancel:hover {
+                background: #f5f5f5;
+            }
+        </style>
+        <x-variable name="postId"></x-variable>
+        <x-variable name="title"></x-variable>
+        <x-variable name="body"></x-variable>
+        <x-variable name="userId"></x-variable>
+        <x-variable name="priority">"medium"</x-variable>
+        <div class="post-editor-wrapper">
+            <form class="post-editor-card" onsubmit="onSubmit(event)">
+                <h2>{{postId() ? 'Edit Post' : 'New Post'}}</h2>
+                <label class="post-editor-field">
+                    <span>Title</span>
+                    <input class="post-editor-title" value="{{title()}}" onchange="title(event.target.value)">
+                </label>
+                <label class="post-editor-field">
+                    <span>Body</span>
+                    <textarea class="post-editor-body" onchange="body(event.target.value)">{{body()}}</textarea>
+                </label>
+                <label class="post-editor-field">
+                    <span>User Id</span>
+                    <input class="post-editor-userid" type="number" value="{{userId()}}" onchange="userId(event.target.value)">
+                </label>
+                <label class="post-editor-field">
+                    <span>Priority</span>
+                    <select class="post-editor-priority" onchange="priority(event.target.value)">
+                        <option value="low" selected="{{priority() === 'low'}}">Low</option>
+                        <option value="medium" selected="{{priority() === 'medium'}}">Medium</option>
+                        <option value="high" selected="{{priority() === 'high'}}">High</option>
+                    </select>
+                </label>
+                <div class="post-editor-actions">
+                    <button type="button" class="post-editor-cancel" onclick="cancel()">Cancel</button>
+                    <button type="submit" class="post-editor-save">Save</button>
+                </div>
+            </form>
+        </div>
+    </x-page>
+
+    <x-page name="settings">
+        <style>
+            .tabs {
+                display: flex;
+                gap: 0.25rem;
+                border-bottom: 1px solid #e2e2e2;
+                margin-bottom: 1rem;
+            }
+
+            .tab-button {
+                padding: 0.5rem 1rem;
+                border: none;
+                background: none;
+                border-bottom: 2px solid transparent;
+                cursor: pointer;
+                font: inherit;
+            }
+
+            .tab-button.active {
+                border-bottom-color: currentColor;
+                font-weight: 600;
+            }
+
+            .tab-content {
+                padding: 0.5rem 0;
+            }
+        </style>
+        <x-variable name="activeTab">"profile"</x-variable>
+        <div class="shell">
+            <x-page-container page="header"></x-page-container>
+            <x-page-container page="nav"></x-page-container>
+            <main class="content">
+                <h1>Settings</h1>
+                <div class="tabs">
+                    <button class="tab-button" class.active="{{activeTab() === 'profile'}}" onclick="activeTab('profile')">Profile</button>
+                    <button class="tab-button" class.active="{{activeTab() === 'preferences'}}" onclick="activeTab('preferences')">Preferences</button>
+                </div>
+                <div class="tab-content">
+                    <x-if condition="{{activeTab() === 'profile'}}">
+                        <x-page-container page="settings-profile"></x-page-container>
+                    </x-if>
+                    <x-if condition="{{activeTab() === 'preferences'}}">
+                        <x-page-container page="settings-preferences"></x-page-container>
+                    </x-if>
+                </div>
+            </main>
+        </div>
+    </x-page>
+
+    <x-page name="settings-profile">
+        <h2>Profile</h2>
+        <p>Manage your name, email, and avatar.</p>
+    </x-page>
+
+    <x-page name="settings-preferences">
+        <h2>Preferences</h2>
+        <p>Choose your theme and notification settings.</p>
+    </x-page>
+
+    <x-page name="404">
+        <script type="application/typescript">export default Shtml.definePage(shtml => class {
+    constructor() {
+        shtml.app.variables.app.set({ name: 'App Name' });
+        // shtml.app.variables.app.get();
+        // shtml.app.variables.app.reset();
+        // shtml.app.variables.app.validate();
+        const result = shtml.app.instance.sum(1, 2);
+    }
+    onMount() {
+
+    }
+    onAlertClick(event: MouseEvent) {
+        alert('Clicked!');
+    }
+    onBadgeDismissed(event: string) {
+        console.log(`BADGE EVENT ${event}`);
+    }
+});</script>
+        <style>
+            .not-found-wrapper {
+                min-height: 100vh;
+                box-sizing: border-box;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 1.5rem;
+                background: rgba(0, 0, 0, 0.5);
+            }
+
+            .not-found-card {
+                background: #fff;
+                border-radius: 10px;
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+                padding: 1.5rem;
+                display: flex;
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.75rem;
+            }
+        </style>
+        <div class="not-found-wrapper">
+            <div class="not-found-card">
+                <x-component-instance component="badge" text="Page not found" status="error" dismissed="onBadgeDismissed(event)"></x-component-instance>
+                <button onclick="onAlertClick(event)"></button>
+                <button class="modal-close" onclick="modal.close('closed')">Close</button>
+            </div>
+        </div>
+    <div><x-if><x-for><x-page-container page="dashboard"></x-page-container></x-for></x-if></div></x-page>
+    <x-router>
+        <x-route route="/" page="dashboard"></x-route>
+        <x-route route="/posts" page="posts"></x-route>
+        <x-route route="/posts/{id}" page="posts"></x-route>
+        <x-route route="/posts/{id}/edit" page="post-editor"></x-route>
+        <x-route route="/settings" page="settings"></x-route>
+        <x-route route="/404">
+        </x-route></x-router>
+    <x-component name="badge">
+        <script type="application/typescript">export default Shtml.defineComponent(shtml => class {
+    dismiss() {
+        console.log(`BADGE TEXT ${shtml.component.props.text()}`);
+        shtml.component.events.dismissed.emit('dismissed');
+    }
+});
+</script>
+        <style>
+            span {
+                &.success {
+                    color: lime;
+                }
+
+                &.warning {
+                    color: orange;
+                }
+
+                &.error {
+                    color: red;
+                }
+            }
+        </style>
+        <x-type name="badgeStatus">{ "type": "enum", "flags": ["success", "warning", "error"] }</x-type>
+        <x-property name="text" type="string"></x-property>
+        <x-property name="status" type="badgeStatus"></x-property>
+        <x-event name="dismissed" type="string"></x-event>
+        <span class.status="{{status()}}" style.font-size="{{text.length()}}" onclick="dismiss()">{{text()}}</span>
+    </x-component>
+    <x-variable name="app" type="app">
+        { "name": "My App" }
+    </x-variable>
+    <x-variable name="posts" type="array">[]</x-variable>
+
+    <script type="application/typescript">import { noop, upperCase } from 'lodash';
+
+export default Shtml.defineApp(shtml => class {
+    constructor() {
+        shtml.app.variables.app.set({ name: 'Post Manager' });
+        // shtml.app.variables.app.get();
+        // shtml.app.variables.app.reset();
+        // shtml.app.variables.app.validate();
+    }
+    onMount() {
+        console.log(upperCase('shtml packages are working'));
+        shtml.services.logger.log('SHTML SERVICES ARE WORKING');
+    }
+    sum(x, y) { return x + 1; }
+    // Exposes this script's own copy of a shared npm import so another script can check reference identity
+    // against its own copy of the same import — see shtml/plan.md's open problem on cross-script module identity.
+    getLodashNoop() { return noop; }
+    async loadPosts() {
+        const response = await shtml.apis.jsonPlaceholder.getPosts.request({ parameters: { _limit: 10 } });
+        const posts = await response.value();
+        // jsonplaceholder has no priority field — it's a client-only enrichment, derived deterministically from
+        // id (rather than a fixed default) purely so the demo table shows a mix of priorities.
+        const priorities = ['low', 'medium', 'high'];
+        shtml.app.variables.posts.set(posts.map((post: { id: number }) => ({ ...post, priority: priorities[post.id % priorities.length] })));
+    }
+    async createPost(title: string, body: string, userId: number, priority: string) {
+        const response = await shtml.apis.jsonPlaceholder.createPost.request({ body: { title, body, userId } });
+        const created = await response.value();
+        // jsonplaceholder always echoes id 101 for new posts; fake a unique id so track="id" can tell entries apart.
+        shtml.app.variables.posts.set([{ ...created, id: Date.now(), priority }, ...shtml.app.variables.posts.get()]);
+    }
+    async updatePost(post: { id: number; title: string; body: string; userId: number; priority: string }) {
+        await shtml.apis.jsonPlaceholder.updatePost.request({ parameters: { id: post.id }, body: post });
+        shtml.app.variables.posts.set(shtml.app.variables.posts.get().map((existing: { id: number }) => existing.id === post.id ? post : existing));
+    }
+    async deletePost(id: number) {
+        await shtml.apis.jsonPlaceholder.deletePost.request({ parameters: { id } });
+        shtml.app.variables.posts.set(shtml.app.variables.posts.get().filter((existing: { id: number }) => existing.id !== id));
+    }
+});
+</script>
+    <style>
+        .button {
+            background-color: black;
+        }
+
+        .shell {
+            display: grid;
+            grid-template-columns: 220px 1fr;
+            grid-template-rows: auto 1fr;
+            grid-template-areas:
+                'header header'
+                'nav main';
+            min-height: 100vh;
+        }
+
+        .topbar {
+            grid-area: header;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1.5rem;
+            border-bottom: 1px solid #e2e2e2;
+        }
+
+        .topbar-logo,
+        .topbar-favicon {
+            width: 24px;
+            height: 24px;
+        }
+
+        .topbar-title {
+            margin: 0;
+            font-size: 1.1rem;
+            flex: 1;
+        }
+
+        .sidenav {
+            grid-area: nav;
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+            padding: 1.5rem 1rem;
+            border-right: 1px solid #e2e2e2;
+        }
+
+        .sidenav-link {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 0.75rem;
+            border-radius: 6px;
+            color: inherit;
+            text-decoration: none;
+        }
+
+        .sidenav-link:hover {
+            background-color: #f0f0f0;
+        }
+
+        .sidenav-link.active {
+            background-color: #e2e2e2;
+            font-weight: 600;
+        }
+
+        .content {
+            grid-area: main;
+            padding: 1.5rem 2rem;
+        }
+
+        .empty {
+            color: #666;
+        }
+    </style>
+    <x-type name="app">{ "type": "object", "properties": { "name": { "type": "string" } } }</x-type>
+    <x-type name="post">{ "type": "object", "properties": { "id": { "type": "number" }, "userId": { "type": "number" }, "title": { "type": "string" }, "body": { "type": "string" } } }</x-type>
+</x-app>

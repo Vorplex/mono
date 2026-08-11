@@ -1,0 +1,27 @@
+<x-page name="settings">
+    <x-import src="./style.css"></x-import>
+    <x-variable name="activeTab">"profile"</x-variable>
+    <div class="shell">
+        <x-page-container page="header"></x-page-container>
+        <x-page-container page="nav"></x-page-container>
+        <main class="content">
+            <h1>Settings</h1>
+            <div class="tabs">
+                <button class="tab-button"
+                        class.active="{{activeTab() === 'profile'}}"
+                        onclick="activeTab('profile')">Profile</button>
+                <button class="tab-button"
+                        class.active="{{activeTab() === 'preferences'}}"
+                        onclick="activeTab('preferences')">Preferences</button>
+            </div>
+            <div class="tab-content">
+                <x-if condition="{{activeTab() === 'profile'}}">
+                    <x-page-container page="settings-profile"></x-page-container>
+                </x-if>
+                <x-if condition="{{activeTab() === 'preferences'}}">
+                    <x-page-container page="settings-preferences"></x-page-container>
+                </x-if>
+            </div>
+        </main>
+    </div>
+</x-page>

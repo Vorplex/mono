@@ -1,0 +1,35 @@
+<x-page name="dashboard">
+    <x-import src="./script.ts"></x-import>
+    <x-import src="./style.css"></x-import>
+    <div class="shell">
+        <x-page-container page="header"></x-page-container>
+        <x-page-container page="nav"></x-page-container>
+        <main class="content">
+            <h1>Dashboard</h1>
+            <button class="preview-button"
+                    onclick="previewNotFound()">Preview 404</button>
+            <div class="stat-grid">
+                <div class="stat-card">
+                    <span class="stat-label">Total posts</span>
+                    <span class="stat-value">{{posts().length}}</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">Latest post</span>
+                    <span class="stat-value">{{posts()[0]?.title ?? '—'}}</span>
+                </div>
+            </div>
+            <h2>Recent posts</h2>
+            <x-if condition="{{!posts().length}}">
+                <p class="empty">No posts loaded yet.</p>
+            </x-if>
+            <x-for each="{{posts().slice(0, 5)}}"
+                   as="post"
+                   track="id">
+                <div class="recent-post">
+                    <strong>{{post.title()}}</strong>
+                    <p>{{post.body()}}</p>
+                </div>
+            </x-for>
+        </main>
+    </div>
+</x-page>

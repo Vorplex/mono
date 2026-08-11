@@ -1,0 +1,1 @@
+<x-type name="post">{ "type": "object", "properties": { "id": { "type": "number" }, "userId": { "type": "number" }, "title": { "type": "string" }, "body": { "type": "string" } } }</x-type>

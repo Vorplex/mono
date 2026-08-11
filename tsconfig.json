@@ -41,6 +41,9 @@
             ],
             "@vorplex/chrome-extension": [
                 "./packages/vorplex/chrome-extension/src/index.ts"
+            ],
+            "@vorplex/shtml": [
+                "./packages/vorplex/shtml/src/index.ts"
             ]
         }
     }

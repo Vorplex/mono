@@ -1,0 +1,15 @@
+<x-page name="404">
+    <x-import src="./script.ts"></x-import>
+    <x-import src="./style.css"></x-import>
+    <div class="not-found-wrapper">
+        <div class="not-found-card">
+            <x-component-instance component="badge"
+                                  text="Page not found"
+                                  status="error"
+                                  dismissed="onBadgeDismissed(event)"></x-component-instance>
+            <button onclick="onAlertClick(event)"></button>
+            <button class="modal-close"
+                    onclick="modal.close('closed')">Close</button>
+        </div>
+    </div>
+</x-page>

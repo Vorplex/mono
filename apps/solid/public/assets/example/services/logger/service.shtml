@@ -1,0 +1,3 @@
+<x-service name="logger">
+    <x-import src="./script.ts"></x-import>
+</x-service>

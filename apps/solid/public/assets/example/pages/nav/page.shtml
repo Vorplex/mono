@@ -1,0 +1,22 @@
+<x-page name="nav">
+    <nav class="sidenav">
+        <a class="sidenav-link"
+           href="#/"
+           class.active="{{router.route() === '/'}}">
+            <x-icon name="layout-dashboard"></x-icon>
+            Dashboard
+        </a>
+        <a class="sidenav-link"
+           href="#/posts"
+           class.active="{{router.route() === '/posts'}}">
+            <x-icon name="file-text"></x-icon>
+            Posts
+        </a>
+        <a class="sidenav-link"
+           href="#/settings"
+           class.active="{{router.route() === '/settings'}}">
+            <x-icon name="settings"></x-icon>
+            Settings
+        </a>
+    </nav>
+</x-page>

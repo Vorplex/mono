@@ -1,0 +1,35 @@
+<x-api name="jsonPlaceholder"
+       url="https://jsonplaceholder.typicode.com">
+    <x-endpoint name="getPosts"
+                path="/posts"
+                method="GET">
+        <x-response type="array"></x-response>
+    </x-endpoint>
+    <x-endpoint name="getPost"
+                path="/posts/{id}"
+                method="GET">
+        <x-parameter name="id"
+                     required></x-parameter>
+        <x-response type="post"></x-response>
+    </x-endpoint>
+    <x-endpoint name="createPost"
+                path="/posts"
+                method="POST">
+        <x-body type="post"></x-body>
+        <x-response type="post"></x-response>
+    </x-endpoint>
+    <x-endpoint name="updatePost"
+                path="/posts/{id}"
+                method="PUT">
+        <x-parameter name="id"
+                     required></x-parameter>
+        <x-body type="post"></x-body>
+        <x-response type="post"></x-response>
+    </x-endpoint>
+    <x-endpoint name="deletePost"
+                path="/posts/{id}"
+                method="DELETE">
+        <x-parameter name="id"
+                     required></x-parameter>
+    </x-endpoint>
+</x-api>

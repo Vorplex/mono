@@ -1,0 +1,2 @@
+<x-import src="./logo.shtml"></x-import>
+<x-import src="./google.shtml"></x-import>

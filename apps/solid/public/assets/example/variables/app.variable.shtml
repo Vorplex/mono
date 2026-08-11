@@ -1,0 +1,4 @@
+<x-variable name="app"
+            type="app">
+    { "name": "My App" }
+</x-variable>

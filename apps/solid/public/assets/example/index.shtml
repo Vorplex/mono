@@ -1,0 +1,13 @@
+<x-app>
+    <x-packages>{ "lodash": "^4.17.21" }</x-packages>
+    <x-import src="./apis/index.shtml"></x-import>
+    <x-import src="./services/index.shtml"></x-import>
+    <x-import src="./assets/index.shtml"></x-import>
+    <x-import src="./pages/index.shtml"></x-import>
+    <x-import src="./router.shtml"></x-import>
+    <x-import src="./components/index.shtml"></x-import>
+    <x-import src="./variables/index.shtml"></x-import>
+    <x-import src="./script.ts"></x-import>
+    <x-import src="./style.css"></x-import>
+    <x-import src="./types/index.shtml"></x-import>
+</x-app>

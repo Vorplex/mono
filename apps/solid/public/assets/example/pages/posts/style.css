@@ -1,0 +1,61 @@
+.posts-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+}
+
+.add-post-button {
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    background: #2563eb;
+    color: #fff;
+    font: inherit;
+    cursor: pointer;
+}
+
+.add-post-button:hover {
+    background: #1d4ed8;
+}
+
+.post-table {
+    width: 100%;
+}
+
+.post-table-row {
+    display: grid;
+    grid-template-columns: 1fr 2fr 100px auto;
+    gap: 0.5rem;
+    align-items: center;
+    padding: 0.5rem;
+    border-bottom: 1px solid #eee;
+}
+
+.post-table-head {
+    font-weight: 600;
+}
+
+.post-table-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.priority-badge {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    text-transform: capitalize;
+}
+
+.priority-low {
+    color: #16a34a;
+}
+
+.priority-medium {
+    color: #ca8a04;
+}
+
+.priority-high {
+    color: #dc2626;
+}

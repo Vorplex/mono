@@ -1,0 +1,9 @@
+<x-page name="header">
+    <header class="topbar">
+        <img class="topbar-logo"
+             src="{{asset.logo}}" />
+        <h1 class="topbar-title">{{app.name()}}</h1>
+        <img class="topbar-favicon"
+             src="{{asset.google}}" />
+    </header>
+</x-page>

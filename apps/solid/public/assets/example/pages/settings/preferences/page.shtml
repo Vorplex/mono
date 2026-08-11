@@ -1,0 +1,4 @@
+<x-page name="settings-preferences">
+    <h2>Preferences</h2>
+    <p>Choose your theme and notification settings.</p>
+</x-page>

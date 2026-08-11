@@ -1,0 +1,43 @@
+<x-page name="posts">
+    <x-import src="./script.ts"></x-import>
+    <x-import src="./style.css"></x-import>
+    <div class="shell">
+        <x-page-container page="header"></x-page-container>
+        <x-page-container page="nav"></x-page-container>
+        <main class="content">
+            <div class="posts-header">
+                <h1>Posts</h1>
+                <button class="add-post-button"
+                        onclick="addPost()">Add Post</button>
+            </div>
+            <x-if condition="{{!posts().length}}">
+                <p class="empty">No posts yet — create one above.</p>
+            </x-if>
+            <div class="post-table">
+                <div class="post-table-row post-table-head">
+                    <span>Title</span>
+                    <span>Body</span>
+                    <span>Priority</span>
+                    <span></span>
+                </div>
+                <x-for each="{{posts()}}"
+                       as="post"
+                       track="id">
+                    <div class="post-table-row">
+                        <span>{{post.title()}}</span>
+                        <span>{{post.body()}}</span>
+                        <span class="priority-badge priority-{{post.priority()}}">
+                            <x-icon name="{{post.priority() === 'high' ? 'arrow-up' : post.priority() === 'low' ? 'arrow-down' : 'arrow-right'}}"></x-icon>
+                            {{post.priority()}}
+                        </span>
+                        <span class="post-table-actions">
+                            <button onclick="editPost(post.id())">Edit</button>
+                            <button onclick="editPostModal(post.id())">Edit Modal</button>
+                            <button onclick="deletePost(post.id())">Delete</button>
+                        </span>
+                    </div>
+                </x-for>
+            </div>
+        </main>
+    </div>
+</x-page>

@@ -1,0 +1,30 @@
+.stat-grid {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.stat-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 1rem 1.25rem;
+    border: 1px solid #e2e2e2;
+    border-radius: 8px;
+    min-width: 160px;
+}
+
+.stat-label {
+    font-size: 0.8rem;
+    color: #666;
+}
+
+.stat-value {
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.recent-post {
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #eee;
+}

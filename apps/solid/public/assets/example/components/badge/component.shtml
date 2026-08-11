@@ -1,0 +1,14 @@
+<x-component name="badge">
+    <x-import src="./script.ts"></x-import>
+    <x-import src="./style.css"></x-import>
+    <x-type name="badgeStatus">{ "type": "enum", "flags": ["success", "warning", "error"] }</x-type>
+    <x-property name="text"
+                type="string"></x-property>
+    <x-property name="status"
+                type="badgeStatus"></x-property>
+    <x-event name="dismissed"
+             type="string"></x-event>
+    <span class.status="{{status()}}"
+          style.font-size="{{text.length()}}"
+          onclick="dismiss()">{{text()}}</span>
+</x-component>

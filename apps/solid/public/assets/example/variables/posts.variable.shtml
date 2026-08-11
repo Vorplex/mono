@@ -1,0 +1,1 @@
+<x-variable name="posts" type="array">[]</x-variable>
