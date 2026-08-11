@@ -1,14 +1,15 @@
-import { createSignal, Signal, Setter } from 'solid-js';
+import { createSignal, Setter, Signal } from 'solid-js';
 
-const SignalCache: Record<string, any> = {};
+const SignalCache = new Map<any, any>();
 
-export function useCachedSignal<T>(cacheKey: string, value?: T): Signal<T> {
-    const [get, set] = createSignal(SignalCache[cacheKey] ?? value);
+export function useCachedSignal<T>(key: any, value?: T): Signal<T> {
+    const [get, set] = createSignal(SignalCache.get(key) ?? value);
     return [
         get,
-        ((value: Exclude<T, Function>) => {
-            SignalCache[cacheKey] = value;
-            set(value);
+        ((update: T | ((value: T) => T)) => {
+            const value = typeof update === 'function' ? (update as (value: T) => T)(get()) : update;
+            SignalCache.set(key, value);
+            return set(value as Exclude<T, Function>);
         }) as Setter<T>
     ];
 }
