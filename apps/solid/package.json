@@ -1,0 +1,25 @@
+{
+    "private": true,
+    "name": "solid",
+    "version": "1.0.0",
+    "type": "module",
+    "scripts": {
+        "dev": "tsx --watch ./esbuild.config.mts serve",
+        "build": "tsx ./esbuild.config.mts build"
+    },
+    "dependencies": {
+        "@vorplex/api": "workspace:*",
+        "@vorplex/compiler": "workspace:*",
+        "@vorplex/core": "workspace:*",
+        "@vorplex/solid": "workspace:*",
+        "@vorplex/web": "workspace:*",
+        "monaco-editor": "^0.56.0",
+        "solid-js": "workspace:*"
+    },
+    "devDependencies": {
+        "@babel/plugin-proposal-decorators": "^7.29.7",
+        "esbuild": "^0.28.2",
+        "esbuild-plugin-solid": "^0.6.0",
+        "typescript": "workspace:*"
+    }
+}
