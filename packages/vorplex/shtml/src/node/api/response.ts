@@ -5,7 +5,7 @@ import { NodeType } from '../node-type';
 
 export interface ShtmlApiResponse {
     id: string;
-    definition: string;
+    type: string;
 }
 
 export const ShtmlApiResponse = {
@@ -16,7 +16,7 @@ export const ShtmlApiResponse = {
     parse(element: Element, state: ShtmlDocumentState): ShtmlApiResponse {
         const response: ShtmlApiResponse = {
             id: ShtmlDom.getAttribute(element, 'id') ?? $Id.guid(),
-            definition: ShtmlDom.getAttribute(element, 'type') ?? 'any'
+            type: ShtmlDom.getAttribute(element, 'type') ?? 'any'
         };
         state.apiResponses[response.id] = response;
         return response;
@@ -24,7 +24,7 @@ export const ShtmlApiResponse = {
     to(response: ShtmlApiResponse): Element {
         const element = document.createElement(NodeType.ApiResponse);
         element.setAttribute('id', response.id);
-        element.setAttribute('type', response.definition);
+        element.setAttribute('type', response.type);
         return element;
     }
 };

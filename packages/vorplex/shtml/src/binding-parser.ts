@@ -33,9 +33,6 @@ export const BindingParser = {
             callback(value);
         });
     },
-    // A source is "literal" when it has no {{ }} expression segments at all -- nothing in it would ever be
-    // evaluated, so its text can be used directly. Preview relies on this to decide what it's allowed to
-    // apply without running BindingParser.evaluate.
     isLiteral(source: string): boolean {
         return $String.matchDelimited(source, ['{{', '}}']).every(segment => segment.type === 'text');
     },
@@ -70,8 +67,8 @@ export const BindingParser = {
         for (const [name, value] of Object.entries(attributes)) {
             const assetReference = BindingParser.isAsset(value);
             if (assetReference) {
-                // FIX context should be a signal itself to ensure component and app is reactive
-                const asset = (context.component ?? context.app).assetIds
+                const assetIds = context.componentId ? context.root.proxy.components[context.componentId].assetIds() : context.root.proxy.app.assetIds();
+                const asset = assetIds
                     .map(id => context.root.proxy.assets[id]())
                     .find(asset => asset.name === assetReference);
                 if (!asset) continue;
@@ -83,7 +80,7 @@ export const BindingParser = {
             if (!BindingParser.isLiteral(value)) continue;
             if ($Element.isEventAttribute(element, name)) continue;
             if (name.startsWith('class.')) {
-                element.classList.toggle(name.slice('class.'.length), !!value);
+                if (value) element.classList.add(name.slice('class.'.length));
                 continue;
             }
             if (name.startsWith('style.')) {

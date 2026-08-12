@@ -1,131 +1,79 @@
 import { $String } from '@vorplex/core';
 
 const MAX_EXPRESSION_LENGTH = 25;
-const EXPRESSION_PLACEHOLDER = '{{...}}';
+const EXPRESSION_PLACEHOLDER = 'ƒ';
 
-export interface SimpleReference {
+// A "simple reference" is an identifier followed by any number of .prop / ['key'] / [0] accesses and an
+// optional trailing no-arg call -- e.g. `post.author.profile.displayName` or `items[0]['name']` or `count()`.
+// Each regex matches one piece of that grammar at a fixed position (sticky `y` flag), so parsing is just
+// repeated matching forward through the string, never backtracking over the whole expression.
+const ROOT = /\s*([A-Za-z_$][\w$]*)/y;
+const ACCESS = /\s*(?:\.\s*([A-Za-z_$][\w$]*)|\[\s*("(?:\\[^\n\r\u2028\u2029]|[^"\\\n\r\u2028\u2029])*"|'(?:\\[^\n\r\u2028\u2029]|[^'\\\n\r\u2028\u2029])*'|\d+)\s*\])/y;
+const CALL = /\s*\(\s*\)/y;
+const TRAILING_WHITESPACE = /\s*$/y;
+
+interface ParsedReference {
     readonly normalized: string;
     readonly accesses: readonly string[];
+    readonly call: '' | '()';
 }
 
-function isIdentifierStart(character: string | undefined): boolean {
-    return Boolean(character && /[A-Za-z_$]/.test(character));
+function matchAt(pattern: RegExp, value: string, index: number): RegExpExecArray | null {
+    pattern.lastIndex = index;
+    return pattern.exec(value);
 }
 
-function isIdentifierPart(character: string | undefined): boolean {
-    return Boolean(character && /[A-Za-z0-9_$]/.test(character));
-}
-
-function skipWhitespace(value: string, start: number): number {
-    let index = start;
-    while (index < value.length && /\s/.test(value[index])) index++;
-    return index;
-}
-
-function readIdentifier(value: string, start: number): { value: string; end: number } | null {
-    if (!isIdentifierStart(value[start])) return null;
-    let end = start + 1;
-    while (isIdentifierPart(value[end])) end++;
-    return { value: value.slice(start, end), end };
-}
-
-function readStaticBracket(value: string, start: number): { value: string; end: number } | null {
-    let index = skipWhitespace(value, start + 1);
-    const quote = value[index];
-    if (quote === '\'' || quote === '"') {
-        const contentStart = index;
-        index++;
-        let closed = false;
-        while (index < value.length) {
-            const character = value[index++];
-            if (character === '\n' || character === '\r' || character === '\u2028' || character === '\u2029') return null;
-            if (character === '\\') {
-                if (index >= value.length || /[\n\r\u2028\u2029]/.test(value[index])) return null;
-                index++;
-            } else if (character === quote) {
-                closed = true;
-                break;
-            }
-        }
-        if (!closed) return null;
-        const key = value.slice(contentStart, index);
-        index = skipWhitespace(value, index);
-        if (value[index] !== ']') return null;
-        return { value: `[${key}]`, end: index + 1 };
-    }
-
-    const numberStart = index;
-    while (/[0-9]/.test(value[index] ?? '')) index++;
-    if (index === numberStart) return null;
-    const key = value.slice(numberStart, index);
-    index = skipWhitespace(value, index);
-    if (value[index] !== ']') return null;
-    return { value: `[${key}]`, end: index + 1 };
-}
-
-function parseSimpleReference(expression: string): SimpleReference | null {
-    let index = skipWhitespace(expression, 0);
-    const root = readIdentifier(expression, index);
+// Examples:
+//   "user.name"        -> { normalized: "user.name", accesses: [".name"], call: "" }
+//   "items[0]['name']" -> { normalized: "items[0]['name']", accesses: ["[0]", "['name']"], call: "" }
+//   "count()"          -> { normalized: "count()", accesses: [], call: "()" }
+//   " name() "         -> { normalized: "name()", accesses: [], call: "()" }   (surrounding whitespace is stripped)
+//   "a + b"            -> null                                                 (not a simple reference -- has an operator)
+//   "items[i]"         -> null                                                 (dynamic bracket access, not a static key)
+function parseSimpleReference(expression: string): ParsedReference | null {
+    const root = matchAt(ROOT, expression, 0);
     if (!root) return null;
-    index = root.end;
+    let index = root[0].length;
     const accesses: string[] = [];
-
     while (true) {
-        index = skipWhitespace(expression, index);
-        if (expression[index] === '.') {
-            index = skipWhitespace(expression, index + 1);
-            const property = readIdentifier(expression, index);
-            if (!property) return null;
-            accesses.push(`.${property.value}`);
-            index = property.end;
-            continue;
-        }
-        if (expression[index] === '[') {
-            const bracket = readStaticBracket(expression, index);
-            if (!bracket) return null;
-            accesses.push(bracket.value);
-            index = bracket.end;
-            continue;
-        }
-        break;
+        const access = matchAt(ACCESS, expression, index);
+        if (!access) break;
+        accesses.push(access[1] ? `.${access[1]}` : `[${access[2]}]`);
+        index += access[0].length;
     }
-
-    index = skipWhitespace(expression, index);
-    let call = '';
-    if (expression[index] === '(') {
-        index = skipWhitespace(expression, index + 1);
-        if (expression[index] !== ')') return null;
-        call = '()';
-        index++;
-    }
-    if (skipWhitespace(expression, index) !== expression.length) return null;
-    return { normalized: `${root.value}${accesses.join('')}${call}`, accesses };
+    const callMatch = matchAt(CALL, expression, index);
+    const call = callMatch ? '()' : '';
+    if (callMatch) index += callMatch[0].length;
+    if (!matchAt(TRAILING_WHITESPACE, expression, index)) return null;
+    return { normalized: `${root[1]}${accesses.join('')}${call}`, accesses, call };
 }
 
-function abbreviateReference(reference: SimpleReference): string {
-    let abbreviation = '';
-    for (let index = reference.accesses.length - 1; index >= 0; index--) {
-        const tail = reference.accesses.slice(index).join('').replace(/^\./, '');
+function isComplexExpression(reference: ParsedReference | null): reference is null {
+    return reference === null;
+}
+
+function isLongExpression(reference: ParsedReference): boolean {
+    return reference.normalized.length > MAX_EXPRESSION_LENGTH;
+}
+
+function trimExpression(reference: ParsedReference): string {
+    for (let index = 0; index <= reference.accesses.length; index++) {
+        const tail = reference.accesses.slice(index).join('').replace(/^\./, '') + reference.call;
         const candidate = `...${tail}`;
-        if (candidate.length > MAX_EXPRESSION_LENGTH) break;
-        abbreviation = candidate;
+        if (candidate.length <= MAX_EXPRESSION_LENGTH) return `{{${candidate}}}`;
     }
-    return abbreviation ? `{{${abbreviation}}}` : EXPRESSION_PLACEHOLDER;
+    return EXPRESSION_PLACEHOLDER;
 }
 
 function formatExpression(expression: string): string {
     const reference = parseSimpleReference(expression);
-    if (!reference) return EXPRESSION_PLACEHOLDER;
-    if (reference.normalized.length <= MAX_EXPRESSION_LENGTH) return `{{${reference.normalized}}}`;
-    return abbreviateReference(reference);
+    if (isComplexExpression(reference)) return EXPRESSION_PLACEHOLDER;
+    if (isLongExpression(reference)) return trimExpression(reference);
+    // return reference.normalized;
+    return `{${reference.normalized}}`;
 }
 
 export const ExpressionDisplay = {
-    // Recognizes "is this expression just a variable-path reference" (an identifier root followed by
-    // .prop / [static 'key'] / [123] accesses and an optional trailing no-arg call) without evaluating it.
-    // Returns null for anything else (operators, multiple calls, computed brackets, ...). Shared by mask()
-    // below and by consumers that need to validate or decompose a simple reference, e.g. a binding builder.
-    parseReference: parseSimpleReference,
     // Masks every {{ }} expression in a source string down to a short, non-evaluated preview -- this never
     // runs the expression, it only reformats its literal source text. Uses $String.matchDelimited (not a
     // regex split) so nested braces inside an expression, e.g. {{ { name: '' } }}, are matched as one segment

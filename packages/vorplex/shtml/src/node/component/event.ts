@@ -6,7 +6,7 @@ import { NodeType } from '../node-type';
 export interface ShtmlComponentEvent {
     id: string;
     name: string;
-    definition: string;
+    type: string;
 }
 
 export const ShtmlComponentEvent = {
@@ -18,7 +18,7 @@ export const ShtmlComponentEvent = {
         const event: ShtmlComponentEvent = {
             id: ShtmlDom.getAttribute(element, 'id') ?? $Id.guid(),
             name: ShtmlDom.getRequiredAttribute(element, 'name'),
-            definition: ShtmlDom.getAttribute(element, 'type') ?? 'any'
+            type: ShtmlDom.getAttribute(element, 'type') ?? 'any'
         };
         state.events[event.id] = event;
         return event;
@@ -27,7 +27,7 @@ export const ShtmlComponentEvent = {
         const element = document.createElement(NodeType.ComponentEvent);
         element.setAttribute('id', event.id);
         element.setAttribute('name', event.name);
-        element.setAttribute('type', event.definition);
+        element.setAttribute('type', event.type);
         return element;
     }
 };

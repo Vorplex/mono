@@ -29,7 +29,7 @@ export const VariableContextMenu: ContextMenuItem[] = [
             const variable: ShtmlVariable = {
                 id: $Id.guid(),
                 name: result.name,
-                definition: 'string'
+                type: 'string'
             };
             service.platform.shtml.state.reduce(reducer => [
                 reducer.variables.entity.create(variable),

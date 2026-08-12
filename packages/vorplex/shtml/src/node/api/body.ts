@@ -5,7 +5,7 @@ import { NodeType } from '../node-type';
 
 export interface ShtmlApiBody {
     id: string;
-    definition: string;
+    type: string;
 }
 
 export const ShtmlApiBody = {
@@ -16,7 +16,7 @@ export const ShtmlApiBody = {
     parse(element: Element, state: ShtmlDocumentState): ShtmlApiBody {
         const body: ShtmlApiBody = {
             id: ShtmlDom.getAttribute(element, 'id') ?? $Id.guid(),
-            definition: ShtmlDom.getAttribute(element, 'type') ?? 'any'
+            type: ShtmlDom.getAttribute(element, 'type') ?? 'any'
         };
         state.apiBodies[body.id] = body;
         return body;
@@ -24,7 +24,7 @@ export const ShtmlApiBody = {
     to(body: ShtmlApiBody): Element {
         const element = document.createElement(NodeType.ApiBody);
         element.setAttribute('id', body.id);
-        element.setAttribute('type', body.definition);
+        element.setAttribute('type', body.type);
         return element;
     }
 };

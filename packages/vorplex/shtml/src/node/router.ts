@@ -40,8 +40,6 @@ export const ShtmlRouter = {
         }
         return element;
     },
-    // The shtml.router surface (navigate/route/params) for scripts -- route/params are getters, not
-    // snapshotted values, so they always reflect the current routerState no matter when this object was built.
     createApi(view: Window, routerState: State<RouterState>): RouterApi {
         return {
             navigate: (route: string) => { view.location.hash = route; },
@@ -58,12 +56,7 @@ export const ShtmlRouter = {
         const host = document.createElement(NodeType.Router);
         host.style.display = 'contents';
         container.appendChild(host);
-        // ShtmlRouter.mount is only ever called from ShtmlApp.mount, passing appContext itself as context -- so
-        // context.nearest.app is always defined here.
-        const appContext = context.nearest.app!;
-        // Merges `router` into every page's locals so templates can bind e.g.
-        // class.active="{{router.route() === '/posts'}}" -- the same State also backs shtml.router.route/.params
-        // for scripts, just accessed as plain getters there.
+        const appContext = context.nearest.app;
         const routedContext = RenderContext.withLocals(context, { router: appContext.routerState.signal.proxy });
         Signal.effect(() => {
             const currentPath = path();

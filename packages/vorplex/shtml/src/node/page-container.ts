@@ -26,7 +26,7 @@ export const ShtmlPageContainer = {
             page: ShtmlDom.getRequiredAttribute(element, 'page')
         };
         state.pageContainers[item.id] = item;
-        return { id: item.id, type: item.type };
+        return { id: item.id, kind: item.type };
     },
     to(item: ShtmlPageContainer): Element {
         const element = document.createElement(NodeType.PageContainer);
@@ -34,7 +34,6 @@ export const ShtmlPageContainer = {
         element.setAttribute('page', item.page);
         return element;
     },
-    // Renders inline, sharing the caller's context (unlike <x-component-instance>) -- page-containers aren't isolated.
     mount(container: Node, item: ShtmlPageContainer, context: RenderContext): Scope {
         return Signal.scope(() => {
             BindingParser.bind(item.page, context.locals, pageName => {
@@ -45,26 +44,15 @@ export const ShtmlPageContainer = {
             });
         });
     },
-    // `page` is only ever resolved by literal, structural name lookup -- both here and in the real runtime,
-    // this was never evaluation. A dynamic ({{ }}) target can't be resolved without evaluating it, so it's
-    // left as an unresolved placeholder instead of guessed at.
     preview(container: Node, id: string, context: PreviewContext): Node {
         const host = document.createElement(NodeType.PageContainer);
         host.style.display = 'contents';
         container.appendChild(host);
         Signal.effect(() => {
             const name = context.root.proxy.pageContainers[id].page();
-            if (!BindingParser.isLiteral(name)) {
-                host.setAttribute('data-shtml-preview', 'unresolved');
-                return;
-            }
             const pages = context.root.proxy.pages();
-            const page = context.app.pageIds.map(pageId => pages[pageId]).find(page => page.name === name);
-            if (!page) {
-                host.setAttribute('data-shtml-preview', 'unknown');
-                return;
-            }
-            host.removeAttribute('data-shtml-preview');
+            const page = context.root.proxy.app.pageIds().map(pageId => pages[pageId]).find(page => page.name === name);
+            if (!page) return;
             ShtmlPage.preview(host, page.id, context);
         });
         Signal.cleanup(() => host.remove());

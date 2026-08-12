@@ -3,7 +3,7 @@ import { BindingParser } from '../binding-parser';
 import { PreviewContext } from '../preview-context';
 import { RenderContext } from '../render-context';
 import { ShtmlDocumentState } from '../shtml';
-import { NON_TEMPLATE_TAGS, NodeType } from './node-type';
+import { NodeType } from './node-type';
 import { ShtmlTemplate, ShtmlTemplateItem } from './template-item';
 
 export interface ShtmlElement {
@@ -15,11 +15,6 @@ export interface ShtmlElement {
 }
 
 export const ShtmlElement = {
-    from(parent: Element, state: ShtmlDocumentState): ShtmlTemplateItem[] {
-        const elements = Array.from(parent.children)
-            .filter(child => !NON_TEMPLATE_TAGS.has(child.tagName) && child.tagName !== NodeType.If && child.tagName !== NodeType.For);
-        return elements.map(element => ShtmlElement.parse(element, state));
-    },
     parse(element: Element, state: ShtmlDocumentState): ShtmlTemplateItem {
         const item: ShtmlElement = {
             id: $Id.guid(),
@@ -29,7 +24,7 @@ export const ShtmlElement = {
             template: ShtmlTemplate.from(element, state)
         };
         state.elements[item.id] = item;
-        return { id: item.id, type: item.type };
+        return { id: item.id, kind: item.type };
     },
     to(item: ShtmlElement, state: ShtmlDocumentState): Element {
         const element = document.createElement(item.tag);

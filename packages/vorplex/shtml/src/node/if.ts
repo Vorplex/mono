@@ -27,7 +27,7 @@ export const ShtmlIf = {
             template: ShtmlTemplate.from(element, state)
         };
         state.ifs[item.id] = item;
-        return { id: item.id, type: item.type };
+        return { id: item.id, kind: item.type };
     },
     to(item: ShtmlIf, state: ShtmlDocumentState): Element {
         const element = document.createElement(NodeType.If);
@@ -45,8 +45,6 @@ export const ShtmlIf = {
         });
         Signal.cleanup(() => host.remove());
     },
-    // No evaluation, so `condition` is never read: there's no "real" branch to pick, so the template mounts
-    // unconditionally, purely as an illustration of what this <x-if> renders.
     preview(container: Node, id: string, context: PreviewContext): Node {
         const host = document.createElement(NodeType.If);
         host.style.display = 'contents';

@@ -119,7 +119,7 @@ export function ExplorerTreeComponent() {
                     icon='variable' selected={isSelected(ExplorerNode.Variable, props.id)} select={() => select(ExplorerNode.Variable, props.id)}
                     label={<>
                         <span>{variable.name()}</span>
-                        <span style={{ color: Theme().secondary.subText }}>{variable.definition()}</span>
+                        <span style={{ color: Theme().secondary.subText }}>{variable.type()}</span>
                     </>}
                 />
             </Show>

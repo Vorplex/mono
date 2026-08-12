@@ -6,7 +6,7 @@ import { NodeType } from '../node-type';
 export interface ShtmlComponentProperty {
     id: string;
     name: string;
-    definition: string;
+    type: string;
 }
 
 export const ShtmlComponentProperty = {
@@ -18,7 +18,7 @@ export const ShtmlComponentProperty = {
         const property: ShtmlComponentProperty = {
             id: ShtmlDom.getAttribute(element, 'id') ?? $Id.guid(),
             name: ShtmlDom.getRequiredAttribute(element, 'name'),
-            definition: ShtmlDom.getAttribute(element, 'type') ?? 'any'
+            type: ShtmlDom.getAttribute(element, 'type') ?? 'any'
         };
         state.properties[property.id] = property;
         return property;
@@ -27,7 +27,7 @@ export const ShtmlComponentProperty = {
         const element = document.createElement(NodeType.ComponentProperty);
         element.setAttribute('id', property.id);
         element.setAttribute('name', property.name);
-        element.setAttribute('type', property.definition);
+        element.setAttribute('type', property.type);
         return element;
     }
 };

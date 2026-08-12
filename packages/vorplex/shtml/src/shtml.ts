@@ -13,7 +13,7 @@ import { ShtmlComponent } from './node/component/component';
 import { ShtmlComponentEvent } from './node/component/event';
 import { ShtmlComponentInstance } from './node/component/instance';
 import { ShtmlComponentProperty } from './node/component/property';
-import { ShtmlDefinition } from './node/definition';
+import { ShtmlType } from './node/type';
 import { ShtmlElement } from './node/element';
 import { ShtmlFor } from './node/for';
 import { ShtmlIcon } from './node/icon';
@@ -22,7 +22,7 @@ import { NodeType } from './node/node-type';
 import { ShtmlPage } from './node/page';
 import { ShtmlPageContainer } from './node/page-container';
 import { ShtmlService } from './node/service';
-import { ShtmlTemplate, ShtmlTemplateItem } from './node/template-item';
+import { ShtmlTemplateItem } from './node/template-item';
 import { ShtmlText } from './node/text';
 import { ShtmlVariable } from './node/variable';
 import { PreviewContext } from './preview-context';
@@ -36,7 +36,7 @@ export interface ShtmlDocumentState {
     services: EntityMap<ShtmlService>;
     assets: EntityMap<ShtmlAsset>;
     components: EntityMap<ShtmlComponent>;
-    definitions: EntityMap<ShtmlDefinition>;
+    types: EntityMap<ShtmlType>;
     elements: EntityMap<ShtmlElement>;
     texts: EntityMap<ShtmlText>;
     ifs: EntityMap<ShtmlIf>;
@@ -81,7 +81,7 @@ export class ShtmlDocument {
             services: {},
             assets: {},
             components: {},
-            definitions: {},
+            types: {},
             elements: {},
             texts: {},
             ifs: {},
@@ -118,29 +118,19 @@ export class ShtmlDocument {
         return ShtmlApp.mount(target, state.app, state, compiled);
     }
 
-    public async preview(container: Element, options: { page?: string; component?: string; resolveAsset?: (asset: ShtmlAsset) => string; styleSheets?: Getter<string | undefined>[] } = {}): Promise<{ dispose: () => void }> {
+    public async preview(container: Element, options: { target: { type: 'page' | 'component', id: string }, resolveAsset?: (asset: ShtmlAsset) => string, styleSheets?: Getter<string | undefined>[] }): Promise<{ dispose: () => void }> {
         await IconSheet.load();
-        const state = this.state.value;
-        const app = state.app;
         const scope = Signal.scope(() => {
             const context: PreviewContext = {
                 root: this.state.signal,
-                app,
                 resolveAsset: options.resolveAsset,
                 styleSheets: (options.styleSheets ?? []).map(css => StyleSheet.create(container.ownerDocument.defaultView, css))
             };
-            if (options.component) {
-                const definition = app.componentIds.map(id => state.components[id]).find(component => component.name === options.component);
-                if (!definition) throw new Error(`Unknown component "${options.component}"`);
-                const shadow = container.shadowRoot ?? container.attachShadow({ mode: 'open' });
-                StyleSheet.adopt(shadow, () => context.root.proxy.components[definition.id].style(), ...context.styleSheets);
-                ShtmlTemplate.preview(shadow, () => context.root.proxy.components[definition.id].template(), PreviewContext.withComponent(context, definition));
-                return;
+            if (options.target.type === 'component') {
+                ShtmlComponent.preview(container, options.target.id, context);
+            } else {
+                ShtmlPage.preview(container, options.target.id, context);
             }
-            const pageName = options.page ?? state.pages[app.pageIds[0]]?.name;
-            const page = app.pageIds.map(id => state.pages[id]).find(page => page.name === pageName);
-            if (!page) throw new Error(`Unknown page "${pageName}"`);
-            ShtmlPage.preview(container, page.id, context);
         });
         return { dispose: () => scope.dispose() };
     }
@@ -152,13 +142,13 @@ export class ShtmlDocument {
         const walkTemplate = (template: ShtmlTemplateItem[], forLocals: [string, TsonDefinition][]): [string, TsonDefinition][] | undefined => {
             for (const item of template) {
                 if (item.id === targetId) return forLocals;
-                if (item.type === NodeType.Element) {
+                if (item.kind === NodeType.Element) {
                     const found = walkTemplate(proxy.elements[item.id].template(), forLocals);
                     if (found) return found;
-                } else if (item.type === NodeType.If) {
+                } else if (item.kind === NodeType.If) {
                     const found = walkTemplate(proxy.ifs[item.id].template(), forLocals);
                     if (found) return found;
-                } else if (item.type === NodeType.For) {
+                } else if (item.kind === NodeType.For) {
                     const forNode = proxy.fors[item.id];
                     const added: [string, TsonDefinition][] = [[forNode.as() || 'item', { type: 'any' }]];
                     if (forNode.index()) added.push([forNode.index(), { type: 'any' }]);
@@ -170,22 +160,22 @@ export class ShtmlDocument {
             return undefined;
         };
 
-        const resolveDefinitions = (definitionIds: string[]): ShtmlDefinition[] =>
-            definitionIds.map(id => ({ id: proxy.definitions[id].id(), name: proxy.definitions[id].name(), definition: proxy.definitions[id].definition() }));
+        const resolveTypes = (typeIds: string[]): ShtmlType[] =>
+            typeIds.map(id => ({ id: proxy.types[id].id(), name: proxy.types[id].name(), type: proxy.types[id].type() }));
 
-        const resolveVariables = (variableIds: string[], definitions: ShtmlDefinition[]): [string, TsonDefinition][] =>
-            variableIds.map(id => [proxy.variables[id].name(), ShtmlDefinition.resolve(proxy.variables[id].definition(), definitions)]);
+        const resolveVariables = (variableIds: string[], types: ShtmlType[]): [string, TsonDefinition][] =>
+            variableIds.map(id => [proxy.variables[id].name(), ShtmlType.resolve(proxy.variables[id].type(), types)]);
 
         for (const pageId of app.pageIds()) {
             const page = proxy.pages[pageId];
             const forLocals = walkTemplate(page.template(), []);
             if (!forLocals) continue;
-            const definitions = resolveDefinitions(app.definitionIds());
+            const types = resolveTypes(app.typeIds());
             const reserved: [string, TsonDefinition][] = [['asset', { type: 'any' }], ['modal', { type: 'any' }]];
             if (app.router()) reserved.push(['router', { type: 'any' }]);
             return Object.fromEntries([
-                ...resolveVariables(app.variableIds(), definitions),
-                ...resolveVariables(page.variableIds(), definitions),
+                ...resolveVariables(app.variableIds(), types),
+                ...resolveVariables(page.variableIds(), types),
                 ...forLocals,
                 ...reserved
             ]);
@@ -196,11 +186,11 @@ export class ShtmlDocument {
                 const component = proxy.components[componentId];
                 const forLocals = walkTemplate(component.template(), []);
                 if (forLocals) {
-                    const definitions = resolveDefinitions(component.definitionIds());
+                    const types = resolveTypes(component.typeIds());
                     const propertyLocals: [string, TsonDefinition][] = component.propertyIds()
-                        .map(id => [proxy.properties[id].name(), ShtmlDefinition.resolve(proxy.properties[id].definition(), definitions)]);
+                        .map(id => [proxy.properties[id].name(), ShtmlType.resolve(proxy.properties[id].type(), types)]);
                     return Object.fromEntries([
-                        ...resolveVariables(component.variableIds(), definitions),
+                        ...resolveVariables(component.variableIds(), types),
                         ...propertyLocals,
                         ...forLocals,
                         ['asset', { type: 'any' }]

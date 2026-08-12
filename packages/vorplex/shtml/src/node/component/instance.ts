@@ -1,11 +1,11 @@
 import { $Id, Scope, Signal, State } from '@vorplex/core';
 import { BindingParser } from '../../binding-parser';
 import { PreviewContext } from '../../preview-context';
-import { StyleSheet } from '../../style-sheet';
 import { ComponentRenderContext, RenderContext, RenderContextType } from '../../render-context';
 import { ScriptCompiler } from '../../script-compiler';
 import { ShtmlDocumentState } from '../../shtml';
 import { ShtmlDom } from '../../shtml-dom';
+import { StyleSheet } from '../../style-sheet';
 import { ShtmlApi } from '../api/api';
 import { ShtmlAsset } from '../asset';
 import { NodeType } from '../node-type';
@@ -48,7 +48,7 @@ export const ShtmlComponentInstance = {
                 .reduce((attributes, name) => Object.assign(attributes, { [name]: element.getAttribute(name) }), {})
         };
         state.componentInstances[item.id] = item;
-        return { id: item.id, type: item.type };
+        return { id: item.id, kind: item.type };
     },
     to(item: ShtmlComponentInstance): Element {
         const element = document.createElement(NodeType.ComponentInstance);
@@ -106,16 +106,16 @@ export const ShtmlComponentInstance = {
                 };
                 componentContext.nearest = { component: componentContext };
 
-                const definitions = definition.definitionIds.map(id => state.definitions[id]);
+                const types = definition.typeIds.map(id => state.types[id]);
                 // A component script never gets its own variables/props as bare identifiers -- only via
                 // shtml.component.variables.<name> / shtml.component.props.<name>().
                 const componentShtml = {
                     component: {
-                        variables: ShtmlVariable.createApi(variables, variableStates, definitions),
+                        variables: ShtmlVariable.createApi(variables, variableStates, types),
                         props: Array.from(props).reduce((api, [name, propState]) => Object.assign(api, { [name]: () => propState.value }), {} as Record<string, () => any>),
                         events: eventsApi
                     },
-                    apis: ShtmlApi.createApi(definition.apiIds, state, definitions),
+                    apis: ShtmlApi.createApi(definition.apiIds, state, types),
                     services: ScriptCompiler.instantiateServices(definition.serviceIds, state, context.compiled, componentContext.serviceInstances)
                 };
                 const ComponentClass = ScriptCompiler.instantiate(context.compiled, definition.id, componentShtml);
@@ -157,7 +157,7 @@ export const ShtmlComponentInstance = {
                 return;
             }
             const components = context.root.proxy.components();
-            const scope = context.component ? context.component.componentIds : context.app.componentIds;
+            const scope = context.componentId ? context.root.proxy.components[context.componentId].componentIds() : context.root.proxy.app.componentIds();
             const definition = scope.map(componentId => components[componentId]).find(component => component.name === name);
             if (!definition) {
                 host.setAttribute('data-shtml-preview', 'unknown');
@@ -167,8 +167,8 @@ export const ShtmlComponentInstance = {
             // context.styleSheets last -- adoptedStyleSheets resolves equal-specificity conflicts by array
             // order, last wins, so the designer's own overlays (hover outline, selection highlight) stay
             // visible over whatever the component's own style declares for the same selector.
-            StyleSheet.adopt(shadow, () => definition.style, ...context.styleSheets);
-            ShtmlTemplate.preview(shadow, () => context.root.proxy.components[definition.id].template(), PreviewContext.withComponent(context, definition));
+            StyleSheet.adopt(shadow, () => context.root.proxy.components[definition.id].style(), ...context.styleSheets);
+            ShtmlTemplate.preview(shadow, () => context.root.proxy.components[definition.id].template(), { ...context, componentId: definition.id });
         });
         Signal.cleanup(() => host.remove());
         return host;

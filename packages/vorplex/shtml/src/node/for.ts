@@ -19,7 +19,6 @@ export interface ShtmlFor {
 }
 
 export const ShtmlFor = {
-    tag: 'X-FOR-ITEM',
     from(parent: Element, state: ShtmlDocumentState): ShtmlTemplateItem[] {
         const elements = Array.from(parent.querySelectorAll(`:scope > ${NodeType.For}`));
         return elements.map(element => ShtmlFor.parse(element, state));
@@ -36,7 +35,7 @@ export const ShtmlFor = {
             template: ShtmlTemplate.from(element, state)
         };
         state.fors[item.id] = item;
-        return { id: item.id, type: item.type };
+        return { id: item.id, kind: item.type };
     },
     to(item: ShtmlFor, state: ShtmlDocumentState): Element {
         const element = document.createElement(NodeType.For);
@@ -57,7 +56,7 @@ export const ShtmlFor = {
             () => BindingParser.parse(item.each, context.locals),
             entry => item.track ? $Value.get(entry.value, item.track) : entry.key,
             entry => {
-                const itemHost = document.createElement(ShtmlFor.tag);
+                const itemHost = document.createElement(NodeType.For);
                 itemHost.style.display = 'contents';
                 const locals: Record<string, any> = { [item.as]: entry.proxy.value };
                 if (item.index) locals[item.index] = entry.proxy.index;
@@ -72,9 +71,6 @@ export const ShtmlFor = {
         });
         Signal.cleanup(() => host.remove());
     },
-    // No evaluation, so `each` is never read: there's no list to iterate, so the item template mounts exactly
-    // once, unbound (`as`/`index`/`key` are known as names elsewhere, e.g. scope resolution -- never as values
-    // here), purely as an illustration of what one iteration of this <x-for> renders.
     preview(container: Node, id: string, context: PreviewContext): Node {
         const host = document.createElement(NodeType.For);
         host.style.display = 'contents';

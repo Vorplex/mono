@@ -31,7 +31,7 @@ export const PagePreviewComponent = defineComponent((props: { pageId: string }) 
             if (!target) return;
             const id = target.getAttribute('data-shtml-id')!;
             const template = shtml.elements[id].template();
-            if (template.length !== 1 || template[0].type !== NodeType.Text) return;
+            if (template.length !== 1 || template[0].kind !== NodeType.Text) return;
             const textId = template[0].id;
             const textNode = target.firstChild as Text;
 
@@ -75,12 +75,12 @@ export const PagePreviewComponent = defineComponent((props: { pageId: string }) 
     onCleanup(() => dispose?.());
 
     createResource(
-        () => mounted() && shtml.pages[props.pageId].name(),
+        () => mounted() && props.pageId,
         async (pageName) => {
             dispose?.();
             dispose = undefined;
             const preview = await service.platform.shtml.preview(frame.contentDocument!.body, {
-                page: pageName,
+                target: { type: 'page', id: props.pageId },
                 styleSheets: [
                     () => '[data-shtml-id]:hover:not(:has([data-shtml-id]:hover)) { outline: 2px solid #7d8cff; outline-offset: -1px; cursor: pointer; }',
                     () => {

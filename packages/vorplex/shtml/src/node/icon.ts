@@ -8,9 +8,6 @@ import { ShtmlDom } from '../shtml-dom';
 import { NodeType } from './node-type';
 import { ShtmlTemplateItem } from './template-item';
 
-const SVG_NS = 'http://www.w3.org/2000/svg';
-const SYMBOL_ATTRIBUTES = ['viewBox', 'width', 'height', 'fill', 'stroke', 'stroke-width', 'stroke-linecap', 'stroke-linejoin'];
-
 export interface ShtmlIcon {
     id: string;
     type: NodeType.Icon;
@@ -33,7 +30,7 @@ export const ShtmlIcon = {
                 .reduce((attributes, name) => Object.assign(attributes, { [name]: element.getAttribute(name) }), {})
         };
         state.icons[item.id] = item;
-        return { id: item.id, type: item.type };
+        return { id: item.id, kind: item.type };
     },
     to(item: ShtmlIcon): Element {
         const element = document.createElement(NodeType.Icon);
@@ -46,17 +43,9 @@ export const ShtmlIcon = {
         const host = document.createElement(NodeType.Icon);
         host.style.display = 'contents';
         container.appendChild(host);
-        const svg = document.createElementNS(SVG_NS, 'svg') as unknown as SVGElement;
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
         BindingParser.bindAttributes(svg, item.attributes, context.locals);
-        BindingParser.bind(item.name, context.locals, name => {
-            const symbol = name ? IconSheet.get(name) : undefined;
-            svg.replaceChildren(...(symbol ? Array.from(symbol.childNodes).map(child => child.cloneNode(true)) : []));
-            for (const attribute of SYMBOL_ATTRIBUTES) {
-                const value = symbol?.getAttribute(attribute);
-                if (value) svg.setAttribute(attribute, value);
-                else svg.removeAttribute(attribute);
-            }
-        });
+        BindingParser.bind(item.name, context.locals, name => IconSheet.apply(svg, name));
         host.appendChild(svg);
         Signal.cleanup(() => host.remove());
     },
@@ -64,19 +53,13 @@ export const ShtmlIcon = {
         const host = document.createElement(NodeType.Icon);
         host.style.display = 'contents';
         container.appendChild(host);
-        const svg = document.createElementNS(SVG_NS, 'svg') as unknown as SVGElement;
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
         host.appendChild(svg);
         Signal.effect(() => {
             const name = context.root.proxy.icons[id].name();
             const attributes = context.root.proxy.icons[id].attributes();
             BindingParser.applyPreviewAttributes(svg, attributes, context);
-            const symbol = BindingParser.isLiteral(name) && name ? IconSheet.get(name) : undefined;
-            svg.replaceChildren(...(symbol ? Array.from(symbol.childNodes).map(child => child.cloneNode(true)) : []));
-            for (const attribute of SYMBOL_ATTRIBUTES) {
-                const value = symbol?.getAttribute(attribute);
-                if (value) svg.setAttribute(attribute, value);
-                else svg.removeAttribute(attribute);
-            }
+            IconSheet.apply(svg, BindingParser.isLiteral(name) ? name : undefined);
         });
         Signal.cleanup(() => host.remove());
         return host;

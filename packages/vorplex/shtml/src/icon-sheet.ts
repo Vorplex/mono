@@ -7,18 +7,28 @@ export const IconSheet = {
         const response = await fetch('https://cdn.jsdelivr.net/npm/lucide-static/sprite.svg');
         const text = await response.text();
         const sheet = new DOMParser().parseFromString(text, 'image/svg+xml');
-        for (const symbol of Array.from(sheet.querySelectorAll('symbol'))) {
-            if (!symbol.hasAttribute('width')) symbol.setAttribute('width', '1em');
-            if (!symbol.hasAttribute('height')) symbol.setAttribute('height', '1em');
-            if (!symbol.hasAttribute('fill')) symbol.setAttribute('fill', 'none');
-            if (!symbol.hasAttribute('stroke')) symbol.setAttribute('stroke', 'currentColor');
-            if (!symbol.hasAttribute('stroke-width')) symbol.setAttribute('stroke-width', '2');
-            if (!symbol.hasAttribute('stroke-linecap')) symbol.setAttribute('stroke-linecap', 'round');
-            if (!symbol.hasAttribute('stroke-linejoin')) symbol.setAttribute('stroke-linejoin', 'round');
-            symbols.set(symbol.id, symbol);
-        }
+        for (const symbol of Array.from(sheet.querySelectorAll('symbol'))) symbols.set(symbol.id, symbol);
     },
-    get(name: string): Element | undefined {
-        return symbols?.get(name);
+    apply(svg: SVGElement, name: string): void {
+        const symbol = symbols?.get(name);
+        if (!symbol) {
+            svg.replaceChildren(...[]);
+            return;
+        }
+        const attributes = {
+            viewBox: symbol.getAttribute('viewBox'),
+            width: symbol.getAttribute('width') ?? '1em',
+            height: symbol.getAttribute('height') ?? '1em',
+            fill: symbol.getAttribute('fill') ?? 'none',
+            stroke: symbol.getAttribute('stroke') ?? 'currentColor',
+            'stroke-width': symbol.getAttribute('stroke-width') ?? '2',
+            'stroke-linecap': symbol.getAttribute('stroke-linecap') ?? 'round',
+            'stroke-linejoin': symbol.getAttribute('stroke-linejoin') ?? 'round'
+        };
+        for (const [attribute, value] of Object.entries(attributes)) {
+            if (svg.hasAttribute(attribute) || !value) continue;
+            svg.setAttribute(attribute, value);
+        }
+        svg.replaceChildren(...Array.from(symbol.childNodes).map(child => child.cloneNode(true)));
     }
 };

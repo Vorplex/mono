@@ -16,14 +16,6 @@ const MODAL_CLASS = 'x-modal';
 // so backdrop, centering, and sizing stay the mounted page's own styling responsibility, not the framework's.
 const stack: ModalFrame[] = [];
 
-let backdropStyleInjected = false;
-function ensureBackdropStyle(): void {
-    if (backdropStyleInjected) return;
-    backdropStyleInjected = true;
-    const style = document.createElement('style');
-    style.textContent = `.${MODAL_CLASS}::backdrop { background: transparent; }`;
-    document.head.appendChild(style);
-}
 
 export const ModalManager = {
     // Mounts `mount(container)` (a page) inside a fresh Signal.root -- independent of the caller's own scope,
@@ -32,7 +24,6 @@ export const ModalManager = {
     // `close` event, so there's exactly one teardown path regardless of how it closed.
     open(mount: (container: Node) => void, options: { data?: any } = {}): Promise<any> {
         return new Promise(resolve => {
-            ensureBackdropStyle();
             const host = document.createElement('dialog');
             host.className = MODAL_CLASS;
             host.style.cssText = 'position: fixed; inset: 0; margin: 0; padding: 0; border: none; width: 100%; height: 100%; max-width: none; max-height: none; background: transparent;';

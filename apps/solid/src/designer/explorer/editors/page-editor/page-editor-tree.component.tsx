@@ -1,8 +1,8 @@
-import { createMemo, Show, type JSX } from 'solid-js';
 import { $Array } from '@vorplex/core';
 import { ExpressionDisplay, NodeType, ShtmlTemplateItem } from '@vorplex/shtml';
 import { createStyle, defineComponent, useCachedSignal, useInjector, useStore } from '@vorplex/solid';
 import { classNames } from '@vorplex/web';
+import { createMemo, Show, type JSX } from 'solid-js';
 import { Icon } from '../../../../components/icon.component';
 import { VirtualList, type VirtualListItem } from '../../../../components/virtual-list.component';
 import { Theme } from '../../../../consts/theme';
@@ -67,7 +67,7 @@ export const PageEditorTreeComponent = defineComponent((props: { pageId: string 
         const items: VirtualListItem[] = [];
         const traverse = (template: ShtmlTemplateItem[], depth: number = 0) => {
             for (const item of template) {
-                switch (item.type) {
+                switch (item.kind) {
                     case NodeType.Text:
                         items.push({ key: item.id, content: () => <TextItem id={item.id} depth={depth} /> });
                         break;
@@ -88,13 +88,13 @@ export const PageEditorTreeComponent = defineComponent((props: { pageId: string 
                         break;
                 }
                 if (collapsedItems().includes(item.id)) continue;
-                if (item.type === NodeType.Element) {
+                if (item.kind === NodeType.Element) {
                     const template = shtml.elements[item.id].template();
-                    const isLeaf = template.length === 1 && template[0].type === NodeType.Text;
+                    const isLeaf = template.length === 1 && template[0].kind === NodeType.Text;
                     if (!isLeaf) traverse(template, depth + 1);
-                } else if (item.type === NodeType.If) {
+                } else if (item.kind === NodeType.If) {
                     traverse(shtml.ifs[item.id].template(), depth + 1);
-                } else if (item.type === NodeType.For) {
+                } else if (item.kind === NodeType.For) {
                     traverse(shtml.fors[item.id].template(), depth + 1);
                 }
             }
@@ -150,7 +150,7 @@ export const PageEditorTreeComponent = defineComponent((props: { pageId: string 
         const expanded = createMemo(() => !collapsedItems().includes(props.id));
         const leaf = createMemo(() => {
             const template = node.template();
-            if (template.length === 1 && template[0].type === NodeType.Text) {
+            if (template.length === 1 && template[0].kind === NodeType.Text) {
                 return ExpressionDisplay.mask(shtml.texts[template[0].id].content());
             }
         });

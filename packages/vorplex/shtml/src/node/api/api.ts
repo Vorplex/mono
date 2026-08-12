@@ -1,7 +1,7 @@
 import { $Id, $Tson } from '@vorplex/core';
 import { ShtmlDocumentState } from '../../shtml';
 import { ShtmlDom } from '../../shtml-dom';
-import { ShtmlDefinition } from '../definition';
+import { ShtmlType } from '../type';
 import { NodeType } from '../node-type';
 import { ShtmlApiEndpoint } from './endpoint';
 
@@ -48,7 +48,7 @@ export const ShtmlApi = {
         return element;
     },
     // Turns declaration-only <x-api>/<x-endpoint> schema into the shtml.apis.<api>.<endpoint>.request(...) surface.
-    createApi(apiIds: string[], state: ShtmlDocumentState, definitions: ShtmlDefinition[]): Record<string, Record<string, { request(options?: ApiRequestOptions): Promise<ApiRequestResult> }>> {
+    createApi(apiIds: string[], state: ShtmlDocumentState, types: ShtmlType[]): Record<string, Record<string, { request(options?: ApiRequestOptions): Promise<ApiRequestResult> }>> {
         const api: Record<string, Record<string, { request(options?: ApiRequestOptions): Promise<ApiRequestResult> }>> = {};
         for (const apiId of apiIds) {
             const definition = state.apis[apiId];
@@ -56,14 +56,14 @@ export const ShtmlApi = {
             for (const endpointId of definition.endpointIds) {
                 const endpoint = state.apiEndpoints[endpointId];
                 endpoints[endpoint.name] = {
-                    request: (options: ApiRequestOptions = {}) => ShtmlApi.request(definition, endpoint, state, definitions, options)
+                    request: (options: ApiRequestOptions = {}) => ShtmlApi.request(definition, endpoint, state, types, options)
                 };
             }
             api[definition.name] = endpoints;
         }
         return api;
     },
-    async request(api: ShtmlApi, endpoint: ShtmlApiEndpoint, state: ShtmlDocumentState, definitions: ShtmlDefinition[], options: ApiRequestOptions = {}): Promise<ApiRequestResult> {
+    async request(api: ShtmlApi, endpoint: ShtmlApiEndpoint, state: ShtmlDocumentState, types: ShtmlType[], options: ApiRequestOptions = {}): Promise<ApiRequestResult> {
         const parameters = options.parameters ?? {};
         const headers: Record<string, string> = { ...options.headers };
         for (const id of endpoint.parameterIds) {
@@ -101,7 +101,7 @@ export const ShtmlApi = {
                 if (!resolved) {
                     const response = endpoint.responseId ? state.apiResponses[endpoint.responseId] : undefined;
                     const json = await raw.json();
-                    const [parsed] = $Tson.parse(ShtmlDefinition.resolve(response?.definition ?? 'any', definitions)).parse(json);
+                    const [parsed] = $Tson.parse(ShtmlType.resolve(response?.type ?? 'any', types)).parse(json);
                     value = parsed;
                     resolved = true;
                 }

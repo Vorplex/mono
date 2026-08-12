@@ -26,7 +26,7 @@ export const ShtmlText = {
             content: node.textContent ?? ''
         };
         state.texts[text.id] = text;
-        return { id: text.id, type: text.type };
+        return { id: text.id, kind: text.type };
     },
     to(text: ShtmlText): Text {
         return document.createTextNode(text.content);
@@ -39,8 +39,6 @@ export const ShtmlText = {
         });
         Signal.cleanup(() => node.remove());
     },
-    // No evaluation: any {{ }} expression is masked down to its own abbreviated source (ExpressionDisplay)
-    // rather than run, so a text node's rendered content is always illustrative, never a real value.
     preview(container: Node, id: string, context: PreviewContext): Node {
         const node = document.createTextNode('');
         container.appendChild(node);

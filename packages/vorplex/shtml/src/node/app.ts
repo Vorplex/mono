@@ -7,7 +7,7 @@ import { ShtmlDom } from '../shtml-dom';
 import { ShtmlApi } from './api/api';
 import { ShtmlAsset } from './asset';
 import { ShtmlComponent } from './component/component';
-import { ShtmlDefinition } from './definition';
+import { ShtmlType } from './type';
 import { NodeType } from './node-type';
 import { ShtmlPackages } from './packages';
 import { ShtmlPage } from './page';
@@ -27,7 +27,7 @@ export interface ShtmlApp {
     router?: ShtmlRouter;
     assetIds: string[];
     componentIds: string[];
-    definitionIds: string[];
+    typeIds: string[];
     apiIds: string[];
 }
 
@@ -44,7 +44,7 @@ export const ShtmlApp = {
         const services = ShtmlService.from(element, state);
         const assets = ShtmlAsset.from(element, state);
         const components = ShtmlComponent.from(element, state);
-        const definitions = ShtmlDefinition.from(element, state);
+        const types = ShtmlType.from(element, state);
         const apis = ShtmlApi.from(element, state);
         return {
             id: ShtmlDom.getAttribute(element, 'id') ?? $Id.guid(),
@@ -57,7 +57,7 @@ export const ShtmlApp = {
             serviceIds: services.map(service => service.id),
             assetIds: assets.map(asset => asset.id),
             componentIds: components.map(component => component.id),
-            definitionIds: definitions.map(definition => definition.id),
+            typeIds: types.map(type => type.id),
             apiIds: apis.map(api => api.id),
             router: ShtmlRouter.from(element)
         };
@@ -70,7 +70,7 @@ export const ShtmlApp = {
         ShtmlDom.createStyle(element, app.style);
         if (app.packages) element.appendChild(ShtmlPackages.to(app.packages));
         if (app.router) element.appendChild(ShtmlRouter.to(app.router));
-        for (const id of app.definitionIds) element.appendChild(ShtmlDefinition.to(state.definitions[id]));
+        for (const id of app.typeIds) element.appendChild(ShtmlType.to(state.types[id]));
         for (const id of app.variableIds) element.appendChild(ShtmlVariable.to(state.variables[id]));
         for (const id of app.serviceIds) element.appendChild(ShtmlService.to(state.services[id]));
         for (const id of app.assetIds) element.appendChild(ShtmlAsset.to(state.assets[id]));
@@ -103,13 +103,13 @@ export const ShtmlApp = {
             };
             appContext.nearest = { app: appContext };
 
-            const definitions = app.definitionIds.map(id => state.definitions[id]);
+            const types = app.typeIds.map(id => state.types[id]);
             const appShtml = {
                 app: {
-                    variables: ShtmlVariable.createApi(variables, variableStates, definitions),
+                    variables: ShtmlVariable.createApi(variables, variableStates, types),
                     get instance() { return appContext.instance; }
                 },
-                apis: ShtmlApi.createApi(app.apiIds, state, definitions),
+                apis: ShtmlApi.createApi(app.apiIds, state, types),
                 services: ScriptCompiler.instantiateServices(app.serviceIds, state, compiled, appContext.serviceInstances),
                 router: ShtmlRouter.createApi(container.ownerDocument.defaultView, routerState),
                 pages: ShtmlPage.createApi(app.pageIds, appContext),

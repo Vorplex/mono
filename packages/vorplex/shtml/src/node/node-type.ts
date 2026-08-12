@@ -4,7 +4,7 @@ export enum NodeType {
     Packages = 'X-PACKAGES',
     Variable = 'X-VARIABLE',
     Router = 'X-ROUTER',
-    Definition = 'X-TYPE',
+    Type = 'X-TYPE',
     Service = 'X-SERVICE',
     Asset = 'X-ASSET',
     RouterRoute = 'X-ROUTE',
@@ -25,23 +25,3 @@ export enum NodeType {
     ApiBody = 'X-BODY',
     ApiResponse = 'X-RESPONSE'
 }
-
-// Structural tags that are addressed as their own named entities elsewhere in the document -- never
-// rendered content, so a page/component's template walk skips them entirely.
-export const NON_TEMPLATE_TAGS = new Set<string>([
-    NodeType.App,
-    NodeType.Page,
-    NodeType.Packages,
-    NodeType.Variable,
-    NodeType.Router,
-    NodeType.Definition,
-    NodeType.Service,
-    NodeType.Asset,
-    NodeType.RouterRoute,
-    NodeType.Component,
-    NodeType.ComponentProperty,
-    NodeType.ComponentEvent,
-    NodeType.Api,
-    'SCRIPT',
-    'STYLE'
-]);

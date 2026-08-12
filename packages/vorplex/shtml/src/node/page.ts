@@ -55,9 +55,7 @@ export const ShtmlPage = {
             host.style.display = 'contents';
             container.appendChild(host);
             const shadow = host.attachShadow({ mode: 'open' });
-            // ShtmlPage.mount is only ever reached through ShtmlApp.mount, ShtmlRouter.mount or
-            // ShtmlPageContainer.mount, all of which guarantee an app context exists somewhere up the chain.
-            const appContext = context.nearest.app!;
+            const appContext = context.nearest.app;
             const state = appContext.state;
             StyleSheet.adopt(shadow, () => appContext.app.style, () => page.style);
             const variables = page.variableIds.map(id => state.variables[id]);
@@ -73,16 +71,15 @@ export const ShtmlPage = {
                 variables: variableStates
             };
             pageContext.nearest = { ...context.nearest, page: pageContext };
-
             const appVariables = appContext.app.variableIds.map(id => state.variables[id]);
-            const definitions = appContext.app.definitionIds.map(id => state.definitions[id]);
+            const types = appContext.app.typeIds.map(id => state.types[id]);
             const pageShtml = {
                 app: {
-                    variables: ShtmlVariable.createApi(appVariables, appContext.variableStates, definitions),
+                    variables: ShtmlVariable.createApi(appVariables, appContext.variableStates, types),
                     get instance() { return appContext.instance; }
                 },
-                page: { variables: ShtmlVariable.createApi(variables, variableStates, definitions) },
-                apis: ShtmlApi.createApi(appContext.app.apiIds, state, definitions),
+                page: { variables: ShtmlVariable.createApi(variables, variableStates, types) },
+                apis: ShtmlApi.createApi(appContext.app.apiIds, state, types),
                 services: ScriptCompiler.instantiateServices(appContext.app.serviceIds, state, context.compiled, appContext.serviceInstances),
                 router: ShtmlRouter.createApi(container.ownerDocument.defaultView, appContext.routerState),
                 pages: ShtmlPage.createApi(appContext.app.pageIds, appContext),
@@ -91,7 +88,6 @@ export const ShtmlPage = {
             const PageClass = ScriptCompiler.instantiate(context.compiled, page.id, pageShtml);
             const instance = PageClass ? new PageClass() : undefined;
             pageContext.locals = { ...context.locals, modal: modalApi, ...ScriptCompiler.bindMethods(instance), ...variableLocals };
-
             ShtmlTemplate.mount(shadow, page.template, pageContext);
             instance?.onMount?.();
             Signal.cleanup(() => {
@@ -100,27 +96,17 @@ export const ShtmlPage = {
             });
         });
     },
-    // No evaluation: no script instantiation, no variables, no `page`/`app` shtml.* surface -- only the
-    // template and the (literal CSS, non-evaluated) app + page stylesheets. Pages aren't an isolation
-    // boundary, so `context` (including any `component` scope it carries) passes through unchanged, same as
-    // the real runtime's own PageContainer -> Page handoff.
     preview(container: Node, id: string, context: PreviewContext): Scope {
         return Signal.scope(() => {
             const host = document.createElement(NodeType.Page);
             host.style.display = 'contents';
             container.appendChild(host);
             const shadow = host.attachShadow({ mode: 'open' });
-            // context.styleSheets last -- adoptedStyleSheets resolves equal-specificity conflicts by array
-            // order, last wins, so the designer's own overlays (hover outline, selection highlight) stay
-            // visible over whatever the app/page's own style declares for the same selector.
             StyleSheet.adopt(shadow, () => context.root.proxy.app.style(), () => context.root.proxy.pages[id].style(), ...context.styleSheets);
             ShtmlTemplate.preview(shadow, () => context.root.proxy.pages[id].template(), context);
             Signal.cleanup(() => host.remove());
         });
     },
-    // Page scripts/templates reach every declared page through shtml.pages.<name> -- .show() only works when
-    // the app has no router (it owns page selection instead); .showModal() always works, mounting the page
-    // inside a fresh full-screen host that the page itself styles.
     createApi(pageIds: string[], appContext: AppRenderContext): Record<string, any> {
         const state = appContext.state;
         return pageIds.reduce((api, id) => {
