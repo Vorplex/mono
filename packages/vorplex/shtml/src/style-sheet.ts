@@ -2,7 +2,7 @@ import { Getter, Signal } from '@vorplex/core';
 
 export const StyleSheet = {
     create(realm: Window, css: Getter<string | undefined>): CSSStyleSheet {
-        const sheet = new realm.CSSStyleSheet();
+        const sheet = new (realm as unknown as { CSSStyleSheet: typeof CSSStyleSheet }).CSSStyleSheet();
         Signal.effect(() => sheet.replaceSync(css() ?? ''));
         return sheet;
     },

@@ -32,7 +32,8 @@
         "@vorplex/compiler": "workspace:*",
         "@vorplex/core": "workspace:*",
         "@vorplex/web": "workspace:*",
-        "tslib": "workspace:*"
+        "tslib": "workspace:*",
+        "typescript": "workspace:*"
     },
     "devDependencies": {
         "vitest": "workspace:*"
