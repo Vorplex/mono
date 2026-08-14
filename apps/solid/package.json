@@ -19,7 +19,7 @@
     },
     "devDependencies": {
         "@babel/plugin-proposal-decorators": "^7.29.7",
-        "esbuild": "^0.28.2",
+        "esbuild": "workspace:*",
         "esbuild-plugin-solid": "^0.6.0",
         "typescript": "workspace:*"
     }

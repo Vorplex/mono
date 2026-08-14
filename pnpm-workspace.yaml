@@ -12,6 +12,7 @@ overrides:
   '@types/pg': '^8.15.6'
   '@types/semver': '^7.7.1'
   '@types/ws': '^8.5.5'
+  'esbuild': '^0.28.2'
   'esbuild-wasm': '0.25.12'
   'formidable': '^3.5.0'
   'jose': '^6.1.3'
