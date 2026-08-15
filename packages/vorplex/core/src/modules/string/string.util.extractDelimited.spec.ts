@@ -110,4 +110,56 @@ describe($String.matchDelimited.name, () => {
             { type: 'match', value: ' {[ inner ]} ' },
         ],
     );
+
+    describe('same delimiter for open and close', () => {
+        test('should treat the next occurrence as the close, with no nesting', '"a"', ['"', '"'], [
+            { type: 'match', value: 'a' },
+        ]);
+
+        test('should extract multiple matches separated by text', 'x "a" y "b" z', ['"', '"'], [
+            { type: 'text', value: 'x ' },
+            { type: 'match', value: 'a' },
+            { type: 'text', value: ' y ' },
+            { type: 'match', value: 'b' },
+            { type: 'text', value: ' z' },
+        ]);
+
+        it('should throw when the closing delimiter is missing', () => {
+            expect(() => $String.matchDelimited('"a', ['"', '"'])).toThrow();
+        });
+    });
+
+    describe('escaping', () => {
+        it('should treat an escaped open as literal text, with the backslash stripped', () => {
+            expect($String.matchDelimited('\\{{ a }}', ['{{', '}}'])).toEqual([
+                { type: 'text', value: '{{ a }}' },
+            ]);
+        });
+
+        it('should treat an escaped close as literal and keep scanning for a real one', () => {
+            expect($String.matchDelimited('{{ a \\}} b }}', ['{{', '}}'])).toEqual([
+                { type: 'match', value: ' a }} b ' },
+            ]);
+        });
+
+        it('should support an escaped same-character delimiter', () => {
+            expect($String.matchDelimited('say \\"hi\\" for real', ['"', '"'])).toEqual([
+                { type: 'text', value: 'say "hi" for real' },
+            ]);
+        });
+
+        it('should not exempt a nesting-capable open just because it sits inside an already-open match -- an escape unconditionally strips a delimiter\'s meaning, so the outer match closes on the next real close and a now-unmatched close is left as stray text, same as anywhere else', () => {
+            expect($String.matchDelimited('{ \\{ test } }', ['{', '}'])).toEqual([
+                { type: 'match', value: ' { test ' },
+                { type: 'text', value: ' }' },
+            ]);
+        });
+
+        it('should apply the same unconditional rule regardless of which characters the delimiters use', () => {
+            expect($String.matchDelimited('( a \\( b ) c )', ['(', ')'])).toEqual([
+                { type: 'match', value: ' a ( b ' },
+                { type: 'text', value: ' c )' },
+            ]);
+        });
+    });
 });

@@ -57,6 +57,25 @@ export class $String {
     }
 
     public static matchDelimited(text: string, [open, close]: readonly [string, string]): { type: 'text' | 'match'; value: string }[] {
+        const maskedOpen = '\0\x01';
+        const maskedClose = '\0\x02';
+        const masked = text
+            .split(`\\${open}`)
+            .join(maskedOpen)
+            .split(`\\${close}`)
+            .join(maskedClose);
+        if (masked !== text) {
+            return $String
+            .matchDelimited(masked, [open, close])
+            .map(token => ({
+                type: token.type,
+                value: token.value
+                    .split(maskedOpen)
+                    .join(open)
+                    .split(maskedClose)
+                    .join(close)
+            }));
+        }
         if (!open || !close) throw new Error('Delimiters cannot be empty');
         const tokens: { type: 'text' | 'match'; value: string }[] = [];
         const characterMode = (() => {
@@ -110,15 +129,15 @@ export class $String {
                     index++;
                     continue;
                 }
-                if (text.startsWith(open, index)) {
-                    depth++;
-                    index += open.length;
-                } else if (text.startsWith(close, index)) {
+                if (text.startsWith(close, index)) {
                     if (--depth === 0) {
                         closingIndex = index;
                         break;
                     }
                     index += close.length;
+                } else if (text.startsWith(open, index)) {
+                    depth++;
+                    index += open.length;
                 } else {
                     index++;
                 }
