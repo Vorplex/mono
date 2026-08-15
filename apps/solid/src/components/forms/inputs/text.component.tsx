@@ -1,4 +1,3 @@
-import { defineComponent } from '@vorplex/solid';
 import { Classes } from '../../../consts/theme';
 
 export interface TextFormInput {
@@ -11,7 +10,7 @@ export interface TextFormInput {
     onChanged?: (value: string) => void;
 }
 
-export const TextFormInputComponent = defineComponent((props: TextFormInput) => {
+export function TextFormInputComponent(props: TextFormInput) {
     return (
         <input
             ref={ref => props.autoFocus && requestAnimationFrame(() => ref?.focus())}
@@ -24,5 +23,5 @@ export const TextFormInputComponent = defineComponent((props: TextFormInput) => 
             onChange={event => props.onChanged?.(event.currentTarget.value)}
         />
     );
-});
+}
 

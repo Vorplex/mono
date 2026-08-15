@@ -1,4 +1,3 @@
-import { defineComponent } from '@vorplex/solid';
 import { Classes } from '../../../consts/theme';
 
 export interface CheckboxFormInput {
@@ -8,7 +7,7 @@ export interface CheckboxFormInput {
     onChange?: (value: boolean) => void;
 }
 
-export const CheckboxFormInputComponent = defineComponent((props: CheckboxFormInput) => {
+export function CheckboxFormInputComponent(props: CheckboxFormInput) {
     return (
         <input
             type='checkbox'
@@ -22,4 +21,4 @@ export const CheckboxFormInputComponent = defineComponent((props: CheckboxFormIn
             }}
         />
     );
-});
+}

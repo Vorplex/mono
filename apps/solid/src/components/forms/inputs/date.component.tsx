@@ -1,4 +1,4 @@
-import { createStyle, defineComponent } from '@vorplex/solid';
+import { createStyle } from '@vorplex/solid';
 import { classNames } from '@vorplex/web';
 import { Show } from 'solid-js/web';
 import { Classes } from '../../../consts/theme';
@@ -29,7 +29,7 @@ const classes = createStyle(() => ({
     },
 }));
 
-export const DateFormInputComponent = defineComponent((props: DateFormInput) => {
+export function DateFormInputComponent(props: DateFormInput) {
     return (
         <div class={classes().inputContainer}>
             <input
@@ -49,4 +49,4 @@ export const DateFormInputComponent = defineComponent((props: DateFormInput) => 
             </Show>
         </div>
     );
-});
+}

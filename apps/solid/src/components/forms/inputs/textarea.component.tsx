@@ -1,4 +1,3 @@
-import { defineComponent } from '@vorplex/solid';
 import { Classes } from '../../../consts/theme';
 
 export interface TextAreaFormInput {
@@ -9,7 +8,7 @@ export interface TextAreaFormInput {
     onChange?: (value: string) => void;
 }
 
-export const TextAreaFormInputComponent = defineComponent((props: TextAreaFormInput) => {
+export function TextAreaFormInputComponent(props: TextAreaFormInput) {
     return (
         <textarea
             ref={ref => props.autoFocus && requestAnimationFrame(() => ref?.focus())}
@@ -22,4 +21,4 @@ export const TextAreaFormInputComponent = defineComponent((props: TextAreaFormIn
             onInput={(event) => props.onChange?.(event.currentTarget.value)}
         />
     );
-});
+}

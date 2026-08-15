@@ -1,4 +1,4 @@
-import { createStyle, defineComponent } from '@vorplex/solid';
+import { createStyle } from '@vorplex/solid';
 import { classNames } from '@vorplex/web';
 import { Classes } from '../../../consts/theme';
 
@@ -17,7 +17,7 @@ const classes = createStyle(() => ({
     },
 }));
 
-export const ColorFormInputComponent = defineComponent((props: ColorFormInput) => {
+export function ColorFormInputComponent(props: ColorFormInput) {
     return (
         <input
             ref={ref => props.autoFocus && ref?.focus()}
@@ -28,4 +28,4 @@ export const ColorFormInputComponent = defineComponent((props: ColorFormInput) =
             onInput={(event) => props.onChange?.(event.currentTarget.value)}
         />
     );
-});
+}

@@ -1,4 +1,4 @@
-import { createStyle, defineComponent } from '@vorplex/solid';
+import { createStyle } from '@vorplex/solid';
 import { classNames } from '@vorplex/web';
 import { createSignal } from 'solid-js';
 import { Classes, Theme } from '../../../consts/theme';
@@ -45,7 +45,7 @@ const classes = createStyle(() => ({
     },
 }));
 
-export const FileFormInputComponent = defineComponent((props: FileFormInput) => {
+export function FileFormInputComponent(props: FileFormInput) {
     const [names, setNames] = createSignal<string[]>([]);
     let inputRef: HTMLInputElement;
 
@@ -76,4 +76,4 @@ export const FileFormInputComponent = defineComponent((props: FileFormInput) => 
             />
         </div>
     );
-});
+}

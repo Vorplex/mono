@@ -1,5 +1,5 @@
 import { Awaitable } from '@vorplex/core';
-import { createStyle, defineComponent } from '@vorplex/solid';
+import { createStyle } from '@vorplex/solid';
 import { classNames } from '@vorplex/web';
 import { createSignal, type JSXElement } from 'solid-js';
 import { Match, Show, Switch } from 'solid-js/web';
@@ -136,7 +136,7 @@ export const FormInputClasses = createStyle(() => ({
     },
 }));
 
-export const FormInputErrorComponent = defineComponent((props: { error: string }) => {
+export function FormInputErrorComponent(props: { error: string }) {
     return (
         <Show when={props.error}>
             <div class={FormInputClasses().error}>
@@ -145,9 +145,9 @@ export const FormInputErrorComponent = defineComponent((props: { error: string }
             </div>
         </Show>
     );
-});
+}
 
-export const FormInputWarningComponent = defineComponent((props: { warning: string }) => {
+export function FormInputWarningComponent(props: { warning: string }) {
     return (
         <Show when={props.warning}>
             <div class={FormInputClasses().warning}>
@@ -156,9 +156,9 @@ export const FormInputWarningComponent = defineComponent((props: { warning: stri
             </div>
         </Show>
     );
-});
+}
 
-export const FormInputLabelComponent = defineComponent((props: { label: string; subText?: string }) => {
+export function FormInputLabelComponent(props: { label: string; subText?: string }) {
     return (
         <div class={FormInputClasses().labelRow}>
             <div class={FormInputClasses().label}>{props.label}</div>
@@ -167,19 +167,19 @@ export const FormInputLabelComponent = defineComponent((props: { label: string; 
             </Show>
         </div>
     );
-});
+}
 
-export const FormInputDescriptionComponent = defineComponent((props: { description: string }) => {
+export function FormInputDescriptionComponent(props: { description: string }) {
     return (
         <Show when={props.description}>
             <div class={FormInputClasses().description}>{props.description}</div>
         </Show>
     );
-});
+}
 
 type FormInputLayoutProps = FormLayoutProps & { children: JSXElement };
 
-export const FormInputLayoutComponent = defineComponent((props: FormInputLayoutProps) => {
+export function FormInputLayoutComponent(props: FormInputLayoutProps) {
     return (
         <div
             class={classNames(FormInputClasses().container, {
@@ -196,9 +196,9 @@ export const FormInputLayoutComponent = defineComponent((props: FormInputLayoutP
             <FormInputWarningComponent warning={props.warning} />
         </div>
     );
-});
+}
 
-export const InlineFormInputLayoutComponent = defineComponent((props: FormInputLayoutProps) => {
+export function InlineFormInputLayoutComponent(props: FormInputLayoutProps) {
     return (
         <div
             class={classNames(FormInputClasses().container, 'inline', {
@@ -217,9 +217,9 @@ export const InlineFormInputLayoutComponent = defineComponent((props: FormInputL
             {props.children}
         </div>
     );
-});
+}
 
-export const FormInputComponent = defineComponent((input: FormInputs) => {
+export function FormInputComponent(input: FormInputs) {
     return (
         <Switch>
             <Match when={input.type === 'text'}>
@@ -269,7 +269,7 @@ export const FormInputComponent = defineComponent((input: FormInputs) => {
             </Match>
         </Switch>
     );
-});
+}
 
 const classes = createStyle(() => ({
     container: {

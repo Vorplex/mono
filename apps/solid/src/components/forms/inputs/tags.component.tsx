@@ -1,5 +1,5 @@
 import { $Array } from '@vorplex/core';
-import { createStyle, defineComponent, ForIn } from '@vorplex/solid';
+import { createStyle, ForIn } from '@vorplex/solid';
 import { classNames } from '@vorplex/web';
 import { For, Show } from 'solid-js';
 import { Classes, Theme } from '../../../consts/theme';
@@ -61,7 +61,7 @@ const classes = createStyle(() => ({
     }
 }));
 
-export const TagsFormInputComponent = defineComponent((props: TagsFormInput) => {
+export function TagsFormInputComponent(props: TagsFormInput) {
     return (
         <div class={classNames(classes().container, Classes().input)} style={{ 'grid-template-columns': (props.value ?? []).map(key => 'max-content').concat(props.options ? 'max-content auto' : 'auto').join(' ') }} >
             <For each={props.value ?? []}>
@@ -121,4 +121,4 @@ export const TagsFormInputComponent = defineComponent((props: TagsFormInput) => 
             </Show>
         </div>
     );
-});
+}
