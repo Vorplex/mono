@@ -19,7 +19,7 @@ const classes = createStyle(() => ({
         alignItems: 'center',
         gap: '5px',
         padding: '5px 10px',
-        '&.selected': {
+        '&.descendant': {
             boxShadow: Theme().hoverShadow,
         },
         '&.hovered': {
@@ -28,7 +28,11 @@ const classes = createStyle(() => ({
         '&:hover': {
             cursor: 'pointer',
             boxShadow: Theme().hoverShadow,
-        }
+        },
+        '&.selected': {
+            background: Theme().info.color,
+            color: Theme().info.text,
+        },
     },
     chevron: {
         color: Theme().secondary.subText,
@@ -65,37 +69,38 @@ export const PageEditorTreeComponent = defineComponent((props: { pageId: string 
         const template = page()?.template();
         if (!Array.isArray(template)) return [];
         const items: VirtualListItem[] = [];
-        const traverse = (template: ShtmlTemplateItem[], depth: number = 0) => {
+        const traverse = (template: ShtmlTemplateItem[], depth: number = 0, path: string[] = []) => {
             for (const item of template) {
                 switch (item.kind) {
                     case NodeType.Text:
-                        items.push({ key: item.id, content: () => <TextItem id={item.id} depth={depth} /> });
+                        items.push({ key: item.id, content: () => <TextItem id={item.id} depth={depth} path={path} /> });
                         break;
                     case NodeType.Element:
-                        items.push({ key: item.id, content: () => <ElementItem id={item.id} depth={depth} /> });
+                        items.push({ key: item.id, content: () => <ElementItem id={item.id} depth={depth} path={path} /> });
                         break;
                     case NodeType.If:
-                        items.push({ key: item.id, content: () => <IfItem id={item.id} depth={depth} /> });
+                        items.push({ key: item.id, content: () => <IfItem id={item.id} depth={depth} path={path} /> });
                         break;
                     case NodeType.For:
-                        items.push({ key: item.id, content: () => <ForItem id={item.id} depth={depth} /> });
+                        items.push({ key: item.id, content: () => <ForItem id={item.id} depth={depth} path={path} /> });
                         break;
                     case NodeType.PageContainer:
-                        items.push({ key: item.id, content: () => <PageContainerItem id={item.id} depth={depth} /> });
+                        items.push({ key: item.id, content: () => <PageContainerItem id={item.id} depth={depth} path={path} /> });
                         break;
                     case NodeType.ComponentInstance:
-                        items.push({ key: item.id, content: () => <ComponentInstanceItem id={item.id} depth={depth} /> });
+                        items.push({ key: item.id, content: () => <ComponentInstanceItem id={item.id} depth={depth} path={path} /> });
                         break;
                 }
                 if (collapsedItems().includes(item.id)) continue;
+                const childPath = [...path, item.id];
                 if (item.kind === NodeType.Element) {
                     const template = shtml.elements[item.id].template();
                     const isLeaf = template.length === 1 && template[0].kind === NodeType.Text;
-                    if (!isLeaf) traverse(template, depth + 1);
+                    if (!isLeaf) traverse(template, depth + 1, childPath);
                 } else if (item.kind === NodeType.If) {
-                    traverse(shtml.ifs[item.id].template(), depth + 1);
+                    traverse(shtml.ifs[item.id].template(), depth + 1, childPath);
                 } else if (item.kind === NodeType.For) {
-                    traverse(shtml.fors[item.id].template(), depth + 1);
+                    traverse(shtml.fors[item.id].template(), depth + 1, childPath);
                 }
             }
         };
@@ -103,17 +108,22 @@ export const PageEditorTreeComponent = defineComponent((props: { pageId: string 
         return items;
     });
 
-    const TreeItem = defineComponent((props: { id: string; type: NodeType; depth: number; expandable?: boolean; expanded?: boolean; onToggle?: () => void; label: JSX.Element }) => {
+    const TreeItem = defineComponent((props: { id: string; type: NodeType; depth: number; path: string[]; expandable?: boolean; expanded?: boolean; onToggle?: () => void; label: JSX.Element }) => {
+        const descendant = createMemo(() => {
+            const selectedId = pageEditor.selectedTreeItem.id();
+            return selectedId != null && props.path.includes(selectedId);
+        });
         return (
             <div
                 class={classNames(classes().item, {
                     selected: pageEditor.selectedTreeItem.id() === props.id,
+                    descendant: descendant(),
                     hovered: pageEditor.hoveredTreeItem.id() === props.id
                 })}
                 style={{ 'padding-left': `${10 + props.depth * 16}px` }}
                 onClick={event => {
                     event.stopPropagation();
-                    pageEditor.selectedTreeItem({ type: props.type, id: props.id });
+                    pageEditor.selectedTreeItem({ type: props.type, id: props.id, path: props.path });
                 }}
                 onMouseEnter={() => pageEditor.hoveredTreeItem({ type: props.type, id: props.id })}
                 onMouseLeave={() => { if (pageEditor.hoveredTreeItem.id() === props.id) pageEditor.hoveredTreeItem(null); }}
@@ -133,11 +143,11 @@ export const PageEditorTreeComponent = defineComponent((props: { pageId: string 
         );
     });
 
-    const TextItem = defineComponent((props: { id: string; depth: number }) => {
+    const TextItem = defineComponent((props: { id: string; depth: number; path: string[] }) => {
         const node = shtml.texts[props.id];
         return (
             <Show when={node.id()}>
-                <TreeItem id={node.id()} type={NodeType.Text} depth={props.depth} label={<>
+                <TreeItem id={node.id()} type={NodeType.Text} depth={props.depth} path={props.path} label={<>
                     <span>Text</span>
                     <span>{node.content()}</span>
                 </>} />
@@ -145,7 +155,7 @@ export const PageEditorTreeComponent = defineComponent((props: { pageId: string 
         );
     });
 
-    const ElementItem = defineComponent((props: { id: string; depth: number }) => {
+    const ElementItem = defineComponent((props: { id: string; depth: number; path: string[] }) => {
         const node = shtml.elements[props.id];
         const expanded = createMemo(() => !collapsedItems().includes(props.id));
         const leaf = createMemo(() => {
@@ -158,7 +168,7 @@ export const PageEditorTreeComponent = defineComponent((props: { pageId: string 
         return (
             <Show when={node.id()}>
                 <TreeItem
-                    id={node.id()} type={NodeType.Element} depth={props.depth}
+                    id={node.id()} type={NodeType.Element} depth={props.depth} path={props.path}
                     expandable={expandable()} expanded={expanded()}
                     onToggle={() => setCollapsedItems(items => $Array.toggle(items, props.id))}
                     label={<>
@@ -178,14 +188,14 @@ export const PageEditorTreeComponent = defineComponent((props: { pageId: string 
         );
     });
 
-    const IfItem = defineComponent((props: { id: string; depth: number }) => {
+    const IfItem = defineComponent((props: { id: string; depth: number; path: string[] }) => {
         const node = shtml.ifs[props.id];
         const expanded = createMemo(() => !collapsedItems().includes(props.id));
         const expandable = createMemo(() => node.template().length > 0);
         return (
             <Show when={node.id()}>
                 <TreeItem
-                    id={node.id()} type={NodeType.If} depth={props.depth}
+                    id={node.id()} type={NodeType.If} depth={props.depth} path={props.path}
                     expandable={expandable()} expanded={expanded()}
                     onToggle={() => setCollapsedItems(items => $Array.toggle(items, props.id))}
                     label={<>
@@ -197,14 +207,14 @@ export const PageEditorTreeComponent = defineComponent((props: { pageId: string 
         );
     });
 
-    const ForItem = defineComponent((props: { id: string; depth: number }) => {
+    const ForItem = defineComponent((props: { id: string; depth: number; path: string[] }) => {
         const node = shtml.fors[props.id];
         const expanded = createMemo(() => !collapsedItems().includes(props.id));
         const expandable = createMemo(() => node.template().length > 0);
         return (
             <Show when={node.id()}>
                 <TreeItem
-                    id={node.id()} type={NodeType.For} depth={props.depth}
+                    id={node.id()} type={NodeType.For} depth={props.depth} path={props.path}
                     expandable={expandable()} expanded={expanded()}
                     onToggle={() => setCollapsedItems(items => $Array.toggle(items, props.id))}
                     label={<>
@@ -218,11 +228,11 @@ export const PageEditorTreeComponent = defineComponent((props: { pageId: string 
         );
     });
 
-    const PageContainerItem = defineComponent((props: { id: string; depth: number }) => {
+    const PageContainerItem = defineComponent((props: { id: string; depth: number; path: string[] }) => {
         const node = shtml.pageContainers[props.id];
         return (
             <Show when={node.id()}>
-                <TreeItem id={node.id()} type={NodeType.PageContainer} depth={props.depth} label={<>
+                <TreeItem id={node.id()} type={NodeType.PageContainer} depth={props.depth} path={props.path} label={<>
                     <span>Page</span>
                     <span>{node.page()}</span>
                 </>} />
@@ -230,11 +240,11 @@ export const PageEditorTreeComponent = defineComponent((props: { pageId: string 
         );
     });
 
-    const ComponentInstanceItem = defineComponent((props: { id: string; depth: number }) => {
+    const ComponentInstanceItem = defineComponent((props: { id: string; depth: number; path: string[] }) => {
         const node = shtml.componentInstances[props.id];
         return (
             <Show when={node.id()}>
-                <TreeItem id={node.id()} type={NodeType.ComponentInstance} depth={props.depth} label={<>
+                <TreeItem id={node.id()} type={NodeType.ComponentInstance} depth={props.depth} path={props.path} label={<>
                     <span>Component</span>
                     <span>{node.component()}</span>
                 </>} />
