@@ -20,6 +20,8 @@ export function ExplorerComponent() {
         <div style={{
             display: 'grid',
             "grid-template-columns": '350px auto',
+            gap: '5px',
+            padding: '5px',
             overflow: 'hidden'
         }}>
             <ExplorerTreeComponent />

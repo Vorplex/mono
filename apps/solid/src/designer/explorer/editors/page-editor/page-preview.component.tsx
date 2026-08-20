@@ -22,9 +22,11 @@ export const PagePreviewComponent = defineComponent((props: { pageId: string }) 
         frameDocument.body.style.margin = '0';
         frameDocument.addEventListener('click', event => {
             event.preventDefault();
-            const target = event.composedPath().find((node): node is HTMLElement => node instanceof HTMLElement && node.hasAttribute('data-shtml-id'));
+            const chain = event.composedPath().filter((node): node is HTMLElement => node instanceof HTMLElement && node.hasAttribute('data-shtml-id'));
+            const target = chain[0];
             if (!target) return;
-            service.pageEditor.state.update({ selectedTreeItem: { type: NodeType.Element, id: target.getAttribute('data-shtml-id')! } });
+            const ids = chain.map(node => node.getAttribute('data-shtml-id')!).reverse();
+            service.pageEditor.state.update({ selectedTreeItem: { type: NodeType.Element, id: ids[ids.length - 1], path: ids.slice(0, -1) } });
         });
         frameDocument.addEventListener('dblclick', event => {
             const target = event.composedPath().find((node): node is HTMLElement => node instanceof HTMLElement && node.hasAttribute('data-shtml-id'));

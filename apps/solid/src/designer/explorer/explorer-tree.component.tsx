@@ -12,8 +12,23 @@ import { ExplorerNode, ExplorerService } from './explorer.service';
 
 const classes = createStyle(() => ({
     tree: {
+    display: 'grid',
+    gridTemplateRows: 'max-content auto',
+    overflow: 'hidden',
         background: Theme().secondary.color,
-        color: Theme().secondary.text
+    color: Theme().secondary.text,
+    border: `1px solid ${Theme().outline.primary}`,
+    borderRadius: '5px'
+  },
+  header: {
+    display: 'flex',
+    gap: '5px',
+    alignItems: 'center',
+    padding: '5px',
+    fontWeight: 'bold',
+    background: Theme().primary.color,
+    color: Theme().primary.text,
+    borderBottom: `1px solid ${Theme().outline.primary}`
     },
     item: {
         display: 'flex',
@@ -136,10 +151,15 @@ export function ExplorerTreeComponent() {
     });
 
     const TypeItem = defineComponent((props: { id: string }) => {
-        const definition = shtml.definitions[props.id];
+    const type = shtml.types[props.id];
         return (
-            <Show when={definition.id()}>
-                <Row icon='shapes' selected={isSelected(ExplorerNode.Definition, props.id)} select={() => select(ExplorerNode.Definition, props.id)} label={<span>{definition.name()}</span>} />
+      <Show when={type.id()}>
+        <Row
+          icon='shapes'
+          selected={isSelected(ExplorerNode.Type, props.id)}
+          select={() => select(ExplorerNode.Type, props.id)}
+          label={<span>{type.name()}</span>}
+        />
             </Show>
         );
     });
@@ -204,29 +224,54 @@ export function ExplorerTreeComponent() {
     return (
         <Show when={app.id()}>
             <div class={classes().tree}>
-                <Row icon='milestone' selected={isSelected(ExplorerNode.Router, app.id())} select={() => select(ExplorerNode.Router, app.id())} label={<span>Router</span>} />
-                <Section id='app-variables' icon='variable' label='Variables' contextMenu={VariableContextMenu}>
-                    <For each={app.variableIds()}>{id => <VariableItem id={id} />}</For>
+        <div class={classes().header}>
+            <Icon name='layout-panel-left' />
+            <span>Explorer</span>
+        </div>
+        <div>
+          <Row
+            icon='milestone'
+            selected={isSelected(ExplorerNode.Router, app.id())}
+            select={() => select(ExplorerNode.Router, app.id())}
+            label={<span>Router</span>}
+          />
+          <Section
+            id='app-variables'
+            icon='variable'
+            label='Variables'
+            contextMenu={VariableContextMenu}
+          >
+            <For each={app.variableIds()}>
+              {(id) => <VariableItem id={id} />}
+            </For>
                 </Section>
                 <Section id='app-services' icon='file-code-corner' label='Services'>
-                    <For each={app.serviceIds()}>{id => <ServiceItem id={id} />}</For>
+            <For each={app.serviceIds()}>{(id) => <ServiceItem id={id} />}</For>
                 </Section>
                 <Section id='app-types' icon='shapes' label='Types'>
-                    <For each={app.definitionIds()}>{id => <TypeItem id={id} />}</For>
+            <For each={app.typeIds()}>{(id) => <TypeItem id={id} />}</For>
                 </Section>
                 <Section id='app-apis' icon='globe' label='APIs'>
-                    <For each={app.apiIds()}>{id => <ApiItem id={id} />}</For>
+            <For each={app.apiIds()}>{(id) => <ApiItem id={id} />}</For>
                 </Section>
                 <Section id='app-pages' icon='monitor' label='Pages'>
-                    <For each={app.pageIds()}>{id => <PageItem id={id} />}</For>
+            <For each={app.pageIds()}>{(id) => <PageItem id={id} />}</For>
                 </Section>
                 <Section id='app-components' icon='cuboid' label='Components'>
-                    <For each={app.componentIds()}>{id => <ComponentItem id={id} />}</For>
+            <For each={app.componentIds()}>
+              {(id) => <ComponentItem id={id} />}
+            </For>
                 </Section>
                 <Section id='app-assets' icon='image' label='Assets'>
-                    <For each={app.assetIds()}>{id => <AssetItem id={id} />}</For>
+            <For each={app.assetIds()}>{(id) => <AssetItem id={id} />}</For>
                 </Section>
-                <Row icon='boxes' selected={isSelected(ExplorerNode.Packages, app.id())} select={() => select(ExplorerNode.Packages, app.id())} label={<span>Packages</span>} />
+          <Row
+            icon='boxes'
+            selected={isSelected(ExplorerNode.Packages, app.id())}
+            select={() => select(ExplorerNode.Packages, app.id())}
+            label={<span>Packages</span>}
+          />
+        </div>
             </div>
         </Show>
     );

@@ -11,13 +11,13 @@ export enum ExplorerNode {
     Router,
     Asset,
     Packages,
-    Definition,
+    Type,
     Service
 }
 
 export interface PageEditorState {
     selectedItem?: { type: ExplorerNode, id: string };
-    mode: 'design' | 'preview';
+    mode: 'design' | 'preview' | 'shtml';
 }
 
 @Injectable({ global: true })

@@ -1,4 +1,4 @@
-import { Match, Show, Switch } from 'solid-js';
+import { createMemo, Match, Show, Switch } from 'solid-js';
 import { createStyle, useInjector, useStore } from '@vorplex/solid';
 import { RadioButtonComponent } from '../components/radio-button.component';
 import { Theme } from '../consts/theme';
@@ -6,6 +6,7 @@ import { PlatformService } from '../services/platform.service';
 import { ExplorerComponent } from './explorer/explorer.component';
 import { ExplorerService } from './explorer/explorer.service';
 import { PreviewComponent } from './preview/preview.component';
+import { MonacoComponent } from '../components/script-editor/script-editor.component';
 
 const classes = createStyle(() => ({
     container: {
@@ -33,6 +34,10 @@ export function DesignerComponent() {
 
     const shtml = useStore(service.platform.shtml.state);
     const explorerStore = useStore(service.explorer.state);
+    const raw = createMemo(() => {
+        shtml();
+        return service.platform.shtml.toShtml();
+    });
 
     return (
         <Show when={shtml()}>
@@ -40,6 +45,11 @@ export function DesignerComponent() {
                 <div class={classes().header}>
                     <RadioButtonComponent
                         options={[
+                            {
+                                icon: 'code-xml',
+                                label: 'SHTML',
+                                value: 'shtml'
+                            },
                             {
                                 icon: 'pencil-ruler',
                                 label: 'Design',
@@ -56,6 +66,12 @@ export function DesignerComponent() {
                     />
                 </div>
                 <Switch>
+                    <Match when={explorerStore.mode() === 'shtml'}>
+                        <MonacoComponent
+                            language='html'
+                            value={raw()}
+                        />
+                    </Match>
                     <Match when={explorerStore.mode() === 'design'}>
                         <ExplorerComponent />
                     </Match>

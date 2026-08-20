@@ -1,4 +1,4 @@
-import { $Tson } from '@vorplex/core';
+import { $String, $Tson } from '@vorplex/core';
 import { defineComponent, useInjector, useStore } from '@vorplex/solid';
 import { FormInputComponent } from '../../../../../../components/forms/form-input.component';
 import { PlatformService } from '../../../../../../services/platform.service';
@@ -25,13 +25,14 @@ export const ForPropertiesPanelComponent = defineComponent((props: { forId: stri
                 value={forNode.each()}
                 locals={service.platform.shtml.getLocals(forNode.id())}
                 accepts={$Tson.union({ union: [$Tson.array(), $Tson.object(), $Tson.record()] })}
+                onChange={value => forNode.each(value)}
             />
             <FormInputComponent
                 type={'text'}
                 label={'As'}
                 value={forNode.as()}
                 onChange={value => forNode.as(value)}
-                error={'Required'}
+                error={$String.isNullOrEmpty(forNode.as()) ? 'Required' : null}
             />
             <FormInputComponent
                 type={'text'}
