@@ -3,6 +3,7 @@ import { defineComponent, useInjector, useStore } from '@vorplex/solid';
 import { createResource, createSignal, onCleanup, onMount } from 'solid-js';
 import { PlatformService } from '../../../../services/platform.service';
 import { PageEditorService } from './page-editor.service';
+import { PanelComponent } from '../../../../components/panel.component';
 
 
 export const PagePreviewComponent = defineComponent((props: { pageId: string }) => {
@@ -78,7 +79,7 @@ export const PagePreviewComponent = defineComponent((props: { pageId: string }) 
 
     createResource(
         () => mounted() && props.pageId,
-        async (pageName) => {
+        async () => {
             dispose?.();
             dispose = undefined;
             const preview = await service.platform.shtml.preview(frame.contentDocument!.body, {
@@ -95,5 +96,9 @@ export const PagePreviewComponent = defineComponent((props: { pageId: string }) 
         }
     );
 
-    return <iframe ref={frame} style={{ display: 'block', width: '100%', height: '100%', border: 'none', 'background-color': 'white' }} />;
+    return (
+        <PanelComponent icon='pencil-ruler' title='Design'>
+            <iframe ref={frame} style={{ display: 'block', width: '100%', height: '100%', border: 'none', 'background-color': 'white' }} />
+        </PanelComponent>
+    );
 });

@@ -10,6 +10,7 @@ export const PageEditorComponent = defineComponent((props: { pageId: string }) =
             display: 'grid',
             'grid-template-columns': '300px auto 300px',
             'grid-template-rows': '100%',
+            gap: '5px',
             height: '100%',
             overflow: 'hidden'
         }}>

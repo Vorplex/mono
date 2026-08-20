@@ -4,16 +4,13 @@ import { createStyle, defineComponent, useCachedSignal, useInjector, useStore } 
 import { classNames } from '@vorplex/web';
 import { createMemo, Show, type JSX } from 'solid-js';
 import { Icon } from '../../../../components/icon.component';
+import { PanelComponent } from '../../../../components/panel.component';
 import { VirtualList, type VirtualListItem } from '../../../../components/virtual-list.component';
 import { Theme } from '../../../../consts/theme';
 import { PlatformService } from '../../../../services/platform.service';
 import { PageEditorService } from './page-editor.service';
 
 const classes = createStyle(() => ({
-    tree: {
-        background: Theme().secondary.color,
-        color: Theme().secondary.text
-    },
     item: {
         display: 'flex',
         alignItems: 'center',
@@ -253,13 +250,10 @@ export const PageEditorTreeComponent = defineComponent((props: { pageId: string 
     });
 
     return (
-        <div
-            class={classes().tree}
-            onClick={() => pageEditor.selectedTreeItem(null)}
-        >
-            <Show when={page()}>
+        <Show when={page()}>
+            <PanelComponent icon='list-tree' title='Nodes'>
                 <VirtualList items={items()} />
-            </Show>
-        </div>
+            </PanelComponent>
+        </Show>
     );
 });

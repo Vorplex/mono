@@ -1,6 +1,7 @@
 import { useInjector, useStore } from '@vorplex/solid';
 import { createResource, createSignal, onCleanup, onMount } from 'solid-js';
 import { PlatformService } from '../../services/platform.service';
+import { Theme } from '../../consts/theme';
 
 export function PreviewComponent() {
 
@@ -34,5 +35,5 @@ export function PreviewComponent() {
         }
     );
 
-    return <iframe ref={frame} style={{ display: 'block', width: '100%', height: '100%', border: 'none', 'background-color': 'white' }} />;
+    return <iframe ref={frame} style={{ display: 'block', width: '100%', height: '100%', 'background-color': 'white', "border-radius": '5px', border: `1px solid ${Theme().outline.primary}` }} />;
 }

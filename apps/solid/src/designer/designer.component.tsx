@@ -12,7 +12,9 @@ const classes = createStyle(() => ({
     container: {
         display: 'grid',
         gridTemplateRows: 'max-content auto',
-        overflow: 'hidden'
+        gap: '5px',
+        overflow: 'hidden',
+        padding: '5px',
     },
     header: {
         display: 'flex',
@@ -21,6 +23,13 @@ const classes = createStyle(() => ({
         padding: '5px',
         background: Theme().primary.color,
         color: Theme().primary.text,
+        overflow: 'hidden',
+        borderRadius: '5px',
+        border: `1px solid ${Theme().outline.primary}`
+    },
+    content: {
+        borderRadius: '5px',
+        border: `1px solid ${Theme().outline.primary}`,
         overflow: 'hidden'
     }
 }));
@@ -67,10 +76,12 @@ export function DesignerComponent() {
                 </div>
                 <Switch>
                     <Match when={explorerStore.mode() === 'shtml'}>
-                        <MonacoComponent
-                            language='html'
-                            value={raw()}
-                        />
+                        <div class={classes().content}>
+                            <MonacoComponent
+                                language='html'
+                                value={raw()}
+                            />
+                        </div>
                     </Match>
                     <Match when={explorerStore.mode() === 'design'}>
                         <ExplorerComponent />

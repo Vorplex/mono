@@ -1,6 +1,15 @@
-import { defineComponent, useInjector, useStore } from '@vorplex/solid';
+import { createStyle, defineComponent, useInjector, useStore } from '@vorplex/solid';
 import { FormInputComponent } from '../../../../../../components/forms/form-input.component';
 import { PlatformService } from '../../../../../../services/platform.service';
+import { PanelComponent } from '../../../../../../components/panel.component';
+
+const classes = createStyle(() => ({
+    properties: {
+        display: 'grid',
+        gridAutoRows: 'max-content',
+        overflowY: 'auto'
+    },
+}));
 
 export const IfPropertiesPanelComponent = defineComponent((props: { ifId: string }) => {
 
@@ -12,11 +21,15 @@ export const IfPropertiesPanelComponent = defineComponent((props: { ifId: string
     const ifNode = shtml.ifs[props.ifId];
 
     return (
-        <FormInputComponent
-            type={'textarea'}
-            label={'Condition'}
-            value={ifNode.condition()}
-            onChange={value => ifNode.condition(value)}
-        />
+        <PanelComponent icon='sliders-horizontal' title='If Properties'>
+            <div class={classes().properties}>
+                <FormInputComponent
+                    type={'textarea'}
+                    label={'Condition'}
+                    value={ifNode.condition()}
+                    onChange={value => ifNode.condition(value)}
+                />
+            </div>
+        </PanelComponent>
     );
 });
