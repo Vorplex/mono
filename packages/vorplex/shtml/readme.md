@@ -9,6 +9,7 @@ In attribute tables below: `name` is required, `name?` is optional, `*name` supp
 A complete, working app — no imports, no build config:
 
 ```html
+<script src="https://cdn.jsdelivr.net/gh/Vorplex/mono@shtml/packages/vorplex/shtml/bootstrap/shtml.js"></script>
 <x-app>
   <x-page name="home">
     <x-variable name="count">0</x-variable>
