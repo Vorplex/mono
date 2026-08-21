@@ -63,6 +63,14 @@ export class Injector {
                 provider = Injector.parseProvider(type);
                 Injector.providers.push(provider);
             }
+            if (provider.scope !== ProviderScopes.Singleton && this.parentInjector) {
+                const scopedProvider: IProvider = {
+                    ...provider,
+                    value: this.createProviderInstance(provider, ProviderScopes.Scoped),
+                };
+                this.providers.push(scopedProvider);
+                return scopedProvider;
+            }
             return provider;
         }
     }
