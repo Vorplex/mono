@@ -23,7 +23,7 @@ export const ShtmlText = {
         const text: ShtmlText = {
             id: $Id.guid(),
             type: NodeType.Text,
-            content: node.textContent ?? ''
+            content: node.textContent.replace(/\s+/g, ' ').trim()
         };
         state.texts[text.id] = text;
         return { id: text.id, kind: text.type };

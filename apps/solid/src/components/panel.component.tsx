@@ -1,5 +1,5 @@
-import { JSX } from "solid-js";
 import { createStyle } from "@vorplex/solid";
+import { JSX } from "solid-js";
 import { Theme } from "../consts/theme";
 import { Icon } from "./icon.component";
 
@@ -11,7 +11,8 @@ const classes = createStyle(() => ({
         background: Theme().secondary.color,
         color: Theme().secondary.text,
         border: `1px solid ${Theme().outline.primary}`,
-        borderRadius: '5px'
+        borderRadius: '5px',
+        height: '100%'
     },
     header: {
         display: 'flex',

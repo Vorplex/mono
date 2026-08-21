@@ -3,6 +3,7 @@ import { createPortal, ForIn, InjectorContext, Portal, useStore } from '@vorplex
 import { useContext } from 'solid-js';
 import { ButtonComponent } from '../components/button.component';
 import { FormInputComponent, FormInputs } from '../components/forms/form-input.component';
+import { Icon } from '../components/icon.component';
 import { ModalComponent, ModalComponentProps } from '../components/modal.component';
 
 @Injectable({ global: true })
@@ -28,6 +29,32 @@ export class ModalService {
             }
         });
         return Object.assign(result, { portal });
+    }
+
+    public async showConfirm(title: string, message: string) {
+        return await this.show<boolean>({
+            modal: modal => ({
+                backdropDismissal: true,
+                header: (
+                    <div style={{ display: 'grid', 'grid-auto-flow': 'column', 'grid-auto-columns': 'max-content', gap: '5px', 'align-items': 'center' }}>
+                        <Icon name={'info'} />
+                        <span>{title}</span>
+                    </div>
+                ),
+                body: <span innerText={message} style={{ height: '100%', overflow: 'auto' }} />,
+                footer: <>
+                    <ButtonComponent
+                        label={'Cancel'}
+                        onClick={() => modal.resolve(false)}
+                    />
+                    <ButtonComponent
+                        intent={'accent'}
+                        label={'Ok'}
+                        onClick={() => modal.resolve(true)}
+                    />
+                </>
+            })
+        });
     }
 
     public showForm<T extends Record<string, FormInputs>>(options: { title: string; form: T | State<T> }): Promise<{ [K in keyof T]: T[K]['value'] } | null> {

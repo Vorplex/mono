@@ -7,7 +7,17 @@ import { Icon } from '../../../../components/icon.component';
 import { PanelComponent } from '../../../../components/panel.component';
 import { VirtualList, type VirtualListItem } from '../../../../components/virtual-list.component';
 import { Theme } from '../../../../consts/theme';
+import { ContextMenuItem } from '../../../../directives/context-menu.directive';
 import { PlatformService } from '../../../../services/platform.service';
+import {
+    ComponentInstanceTreeItemContextMenu,
+    ElementTreeItemContextMenu,
+    ForTreeItemContextMenu,
+    IfTreeItemContextMenu,
+    PageContainerTreeItemContextMenu,
+    PageEditorTreeContextMenu,
+    TextTreeItemContextMenu
+} from './page-editor-tree.context-menu';
 import { PageEditorService } from './page-editor.service';
 
 const classes = createStyle(() => ({
@@ -105,7 +115,7 @@ export const PageEditorTreeComponent = defineComponent((props: { pageId: string 
         return items;
     });
 
-    const TreeItem = defineComponent((props: { id: string; type: NodeType; depth: number; path: string[]; expandable?: boolean; expanded?: boolean; onToggle?: () => void; label: JSX.Element }) => {
+    const TreeItem = defineComponent((props: { id: string; type: NodeType; depth: number; path: string[]; expandable?: boolean; expanded?: boolean; onToggle?: () => void; label: JSX.Element; contextMenu?: ContextMenuItem[] }) => {
         const descendant = createMemo(() => {
             const selectedId = pageEditor.selectedTreeItem.id();
             return selectedId != null && props.path.includes(selectedId);
@@ -124,6 +134,7 @@ export const PageEditorTreeComponent = defineComponent((props: { pageId: string 
                 }}
                 onMouseEnter={() => pageEditor.hoveredTreeItem({ type: props.type, id: props.id })}
                 onMouseLeave={() => { if (pageEditor.hoveredTreeItem.id() === props.id) pageEditor.hoveredTreeItem(null); }}
+                use:ContextMenuDirective={{ items: props.contextMenu ?? [] }}
             >
                 <Show when={props.expandable}>
                     <Icon
@@ -144,10 +155,13 @@ export const PageEditorTreeComponent = defineComponent((props: { pageId: string 
         const node = shtml.texts[props.id];
         return (
             <Show when={node.id()}>
-                <TreeItem id={node.id()} type={NodeType.Text} depth={props.depth} path={props.path} label={<>
-                    <span>Text</span>
-                    <span>{node.content()}</span>
-                </>} />
+                <TreeItem
+                    id={node.id()} type={NodeType.Text} depth={props.depth} path={props.path}
+                    contextMenu={TextTreeItemContextMenu(node.id())}
+                    label={<>
+                        <span>Text</span>
+                        <span>{node.content()}</span>
+                    </>} />
             </Show>
         );
     });
@@ -168,6 +182,7 @@ export const PageEditorTreeComponent = defineComponent((props: { pageId: string 
                     id={node.id()} type={NodeType.Element} depth={props.depth} path={props.path}
                     expandable={expandable()} expanded={expanded()}
                     onToggle={() => setCollapsedItems(items => $Array.toggle(items, props.id))}
+                    contextMenu={ElementTreeItemContextMenu(node.id())}
                     label={<>
                         <span>
                             <span style={{ color: Theme().accent.color }}>{node.tag()}</span>
@@ -195,6 +210,7 @@ export const PageEditorTreeComponent = defineComponent((props: { pageId: string 
                     id={node.id()} type={NodeType.If} depth={props.depth} path={props.path}
                     expandable={expandable()} expanded={expanded()}
                     onToggle={() => setCollapsedItems(items => $Array.toggle(items, props.id))}
+                    contextMenu={IfTreeItemContextMenu(node.id())}
                     label={<>
                         <span>If</span>
                         <span style={{ color: Theme().secondary.subText }}>{ExpressionDisplay.mask(node.condition())}</span>
@@ -214,6 +230,7 @@ export const PageEditorTreeComponent = defineComponent((props: { pageId: string 
                     id={node.id()} type={NodeType.For} depth={props.depth} path={props.path}
                     expandable={expandable()} expanded={expanded()}
                     onToggle={() => setCollapsedItems(items => $Array.toggle(items, props.id))}
+                    contextMenu={ForTreeItemContextMenu(node.id())}
                     label={<>
                         <span>For</span>
                         <span style={{ color: Theme().secondary.subText }}>{ExpressionDisplay.mask(node.each())}</span>
@@ -229,10 +246,13 @@ export const PageEditorTreeComponent = defineComponent((props: { pageId: string 
         const node = shtml.pageContainers[props.id];
         return (
             <Show when={node.id()}>
-                <TreeItem id={node.id()} type={NodeType.PageContainer} depth={props.depth} path={props.path} label={<>
-                    <span>Page</span>
-                    <span>{node.page()}</span>
-                </>} />
+                <TreeItem
+                    id={node.id()} type={NodeType.PageContainer} depth={props.depth} path={props.path}
+                    contextMenu={PageContainerTreeItemContextMenu(node.id())}
+                    label={<>
+                        <span>Page</span>
+                        <span>{node.page()}</span>
+                    </>} />
             </Show>
         );
     });
@@ -241,19 +261,28 @@ export const PageEditorTreeComponent = defineComponent((props: { pageId: string 
         const node = shtml.componentInstances[props.id];
         return (
             <Show when={node.id()}>
-                <TreeItem id={node.id()} type={NodeType.ComponentInstance} depth={props.depth} path={props.path} label={<>
-                    <span>Component</span>
-                    <span>{node.component()}</span>
-                </>} />
+                <TreeItem
+                    id={node.id()} type={NodeType.ComponentInstance} depth={props.depth} path={props.path}
+                    contextMenu={ComponentInstanceTreeItemContextMenu(node.id())}
+                    label={<>
+                        <span>Component</span>
+                        <span>{node.component()}</span>
+                    </>} />
             </Show>
         );
     });
 
     return (
         <Show when={page()}>
-            <PanelComponent icon='list-tree' title='Nodes'>
-                <VirtualList items={items()} />
-            </PanelComponent>
+            <div
+                style={{ height: '100%' }}
+                onClick={() => pageEditor.selectedTreeItem(null)}
+                use:ContextMenuDirective={{ items: PageEditorTreeContextMenu(NodeType.Page, props.pageId) }}
+            >
+                <PanelComponent icon='list-tree' title='Nodes'>
+                    <VirtualList items={items()} />
+                </PanelComponent>
+            </div>
         </Show>
     );
 });

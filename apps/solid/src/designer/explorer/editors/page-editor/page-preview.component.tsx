@@ -4,6 +4,7 @@ import { createResource, createSignal, onCleanup, onMount } from 'solid-js';
 import { PlatformService } from '../../../../services/platform.service';
 import { PageEditorService } from './page-editor.service';
 import { PanelComponent } from '../../../../components/panel.component';
+import { Theme } from '../../../../consts/theme';
 
 
 export const PagePreviewComponent = defineComponent((props: { pageId: string }) => {
@@ -89,6 +90,10 @@ export const PagePreviewComponent = defineComponent((props: { pageId: string }) 
                     () => {
                         const hovered = service.pageEditor.state.signal.proxy.hoveredTreeItem();
                         return hovered?.type === NodeType.Element ? `[data-shtml-id="${hovered.id}"] { outline: 2px solid #7d8cff; outline-offset: -1px; }` : '';
+                    },
+                    () => {
+                        const selected = service.pageEditor.state.signal.proxy.selectedTreeItem();
+                        return selected?.type === NodeType.Element ? `[data-shtml-id="${selected.id}"] { outline: 2px solid ${Theme().info.outline}; outline-offset: -1px; }` : '';
                     }
                 ]
             });

@@ -1,8 +1,10 @@
 import { $Tson, MapAdaptor } from '@vorplex/core';
+import { NodeType, ShtmlElement } from '@vorplex/shtml';
 import { createStyle, defineComponent, ForIn, useInjector, useStore } from '@vorplex/solid';
 import { $Element } from '@vorplex/web';
-import { createMemo, JSX } from 'solid-js';
+import { createMemo, JSX, Show } from 'solid-js';
 import { ButtonComponent } from '../../../../../../components/button.component';
+import { FormInputComponent } from '../../../../../../components/forms/form-input.component';
 import { Icon } from '../../../../../../components/icon.component';
 import { PanelComponent } from '../../../../../../components/panel.component';
 import { Theme } from '../../../../../../consts/theme';
@@ -84,6 +86,19 @@ export const ElementPropertiesPanelComponent = defineComponent((props: { element
             classes
         };
     });
+
+    const textValue = createMemo(() => {
+        const template = element.template();
+        if (!template) return undefined;
+        if (template.length === 0) return '';
+        if (template.length === 1 && template[0].kind === NodeType.Text) return shtml.texts[template[0].id].content();
+        return undefined;
+    });
+
+    function setText(value: string) {
+        const state = service.platform.shtml.state.value;
+        service.platform.shtml.state.set(ShtmlElement.setText(state.elements[props.elementId], state, value));
+    }
 
     function removeAttribute(name: string) {
         const next = { ...element.attributes() };
@@ -234,6 +249,14 @@ export const ElementPropertiesPanelComponent = defineComponent((props: { element
                         </ForIn>
                     </div>
                 </PropertiesPanelSectionComponent>
+                <Show when={textValue() !== undefined}>
+                    <FormInputComponent
+                        type={'textarea'}
+                        label={'Text'}
+                        value={textValue()}
+                        onChange={setText}
+                    />
+                </Show>
             </div>
         </PanelComponent>
     );
