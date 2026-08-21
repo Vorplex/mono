@@ -80,7 +80,7 @@ export const ShtmlApp = {
         return element;
     },
     mount(container: Node, app: ShtmlApp, state: ShtmlDocumentState, compiled: CompiledScripts): Scope {
-        return Signal.scope(() => {
+        return Signal.root(() => {
             const variables = app.variableIds.map(id => state.variables[id]);
             const { locals: variableLocals, states: variableStates } = ShtmlVariable.instantiate(variables);
             const routerState = new State<RouterState>({ route: '', params: {} });

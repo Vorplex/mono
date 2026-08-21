@@ -13,7 +13,6 @@ import { ShtmlComponent } from './node/component/component';
 import { ShtmlComponentEvent } from './node/component/event';
 import { ShtmlComponentInstance } from './node/component/instance';
 import { ShtmlComponentProperty } from './node/component/property';
-import { ShtmlType } from './node/type';
 import { ShtmlElement } from './node/element';
 import { ShtmlFor } from './node/for';
 import { ShtmlIcon } from './node/icon';
@@ -24,6 +23,7 @@ import { ShtmlPageContainer } from './node/page-container';
 import { ShtmlService } from './node/service';
 import { ShtmlTemplateItem } from './node/template-item';
 import { ShtmlText } from './node/text';
+import { ShtmlType } from './node/type';
 import { ShtmlVariable } from './node/variable';
 import { PreviewContext } from './preview-context';
 import { ScriptCompiler } from './script-compiler';
@@ -111,16 +111,14 @@ export class ShtmlDocument {
 
     public async mount(target: Element): Promise<Scope> {
         const state = this.state.value;
-        const [compiled] = await Promise.all([
-            ScriptCompiler.compile(state),
-            IconSheet.load()
-        ]);
+        IconSheet.load();
+        const compiled = await ScriptCompiler.compile(state);
         return ShtmlApp.mount(target, state.app, state, compiled);
     }
 
     public async preview(container: Element, options: { target: { type: 'page' | 'component', id: string }, resolveAsset?: (asset: ShtmlAsset) => string, styleSheets?: Getter<string | undefined>[] }): Promise<{ dispose: () => void }> {
-        await IconSheet.load();
-        const scope = Signal.scope(() => {
+        IconSheet.load();
+        const scope = Signal.root(() => {
             const context: PreviewContext = {
                 root: this.state.signal,
                 resolveAsset: options.resolveAsset,

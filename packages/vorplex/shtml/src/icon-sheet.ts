@@ -1,16 +1,26 @@
-let symbols: Map<string, Element>;
+import { Signal } from '@vorplex/core';
+
+const symbols = Signal.create<Map<string, Element>>();
+let loading: Promise<void> | undefined;
 
 export const IconSheet = {
-    async load(): Promise<void> {
-        if (symbols) return;
-        symbols = new Map<string, Element>();
-        const response = await fetch('https://cdn.jsdelivr.net/npm/lucide-static/sprite.svg');
-        const text = await response.text();
-        const sheet = new DOMParser().parseFromString(text, 'image/svg+xml');
-        for (const symbol of Array.from(sheet.querySelectorAll('symbol'))) symbols.set(symbol.id, symbol);
+    // Fire-and-forget: callers don't await this before mounting -- `apply` reads the `symbols` signal, so
+    // icons already on screen re-render themselves reactively the moment the sprite sheet lands.
+    load(): Promise<void> {
+        if (!loading) {
+            loading = (async () => {
+                const response = await fetch('https://cdn.jsdelivr.net/npm/lucide-static/sprite.svg');
+                const text = await response.text();
+                const sheet = new DOMParser().parseFromString(text, 'image/svg+xml');
+                const map = new Map<string, Element>();
+                for (const symbol of Array.from(sheet.querySelectorAll('symbol'))) map.set(symbol.id, symbol);
+                symbols(map);
+            })();
+        }
+        return loading;
     },
     apply(svg: SVGElement, name: string): void {
-        const symbol = symbols?.get(name);
+        const symbol = symbols()?.get(name);
         if (!symbol) {
             svg.replaceChildren(...[]);
             return;
