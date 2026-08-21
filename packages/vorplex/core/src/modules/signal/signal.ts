@@ -120,7 +120,11 @@ export class Signal<T = any> {
                 const queue = [...Signal.pendingComputations].sort((a, b) => a.depth - b.depth);
                 Signal.pendingComputations.clear();
                 for (const computation of queue) {
-                    computation.run();
+                    try {
+                        computation.run();
+                    } catch (error) {
+                        console.error('Uncaught error in reactive computation during flush', error);
+                    }
                 }
             }
         } finally {
