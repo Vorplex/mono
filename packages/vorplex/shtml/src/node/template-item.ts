@@ -16,6 +16,10 @@ export interface ShtmlTemplateItem {
     kind: NodeType;
 }
 
+export type ShtmlTemplateNode = ShtmlElement | ShtmlIf | ShtmlFor | ShtmlComponentInstance | ShtmlPageContainer | ShtmlIcon | ShtmlText;
+
+export type ShtmlTemplateTargetType = NodeType.Page | NodeType.Component | NodeType.Element | NodeType.If | NodeType.For;
+
 export const ShtmlTemplate = {
     from(parent: Element, state: ShtmlDocumentState): ShtmlTemplateItem[] {
         const items: ShtmlTemplateItem[] = [];
