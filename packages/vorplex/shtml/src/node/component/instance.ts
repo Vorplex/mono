@@ -75,6 +75,7 @@ export const ShtmlComponentInstance = {
                 const variables = definition.variableIds.map(id => state.variables[id]);
                 const { locals: variableLocals, states: variableStates } = ShtmlVariable.instantiate(variables);
                 const events = definition.eventIds.map(id => state.events[id]);
+                const eventLocals = events.reduce((locals, event) => Object.assign(locals, { [event.name]: (payload?: any) => eventsApi[event.name].emit(payload) }), {} as Record<string, any>);
                 const props = new Map<string, State<any>>();
                 const propLocals: Record<string, any> = {};
                 const eventsApi: Record<string, { emit(payload?: any): void }> = {};
@@ -82,7 +83,7 @@ export const ShtmlComponentInstance = {
                 // no assumed "on" prefix. An attribute matching a declared event wins over treating it as a prop.
                 for (const [attribute, value] of Object.entries(item.attributes)) {
                     if (events.some(event => event.name === attribute)) {
-                        eventsApi[attribute] = { emit: (payload?: any) => BindingParser.evaluate(value, { ...context.locals, event: payload }) };
+                        eventsApi[attribute] = { emit: (payload?: any) => BindingParser.invoke(value, { ...context.locals, event: payload }) };
                         continue;
                     }
                     const propState = new State<any>(undefined);
@@ -126,7 +127,8 @@ export const ShtmlComponentInstance = {
                     asset: ShtmlAsset.toLocal(definition.assetIds, state),
                     ...ScriptCompiler.bindMethods(instance),
                     ...variableLocals,
-                    ...propLocals
+                    ...propLocals,
+                    ...eventLocals
                 };
 
                 ShtmlTemplate.mount(shadow, definition.template, componentContext);

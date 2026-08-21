@@ -4,15 +4,18 @@ import { ShtmlAsset } from './node/asset';
 import { PreviewContext } from './preview-context';
 
 export const BindingParser = {
-    evaluate(expression: string, locals: Record<string, any>) {
+    invoke(expression: string, locals: Record<string, any>) {
         try {
             const names = Object.keys(locals);
-            const func = new Function(...names, `return (${expression});`);
+            const func = new Function(...names, expression);
             return func(...names.map(name => locals[name]));
         } catch (error) {
             console.error(`Failed to evaluate expression (${expression})`, { error, locals });
             throw error;
         }
+    },
+    evaluate(expression: string, locals: Record<string, any>) {
+        return BindingParser.invoke(`return (${expression})`, locals);
     },
     parse(source: string, locals: Record<string, any>): any {
         const values = [];
@@ -42,7 +45,7 @@ export const BindingParser = {
     bindAttributes(element: HTMLElement | SVGElement, attributes: Record<string, string>, locals: Record<string, any>): void {
         for (const [name, value] of Object.entries(attributes)) {
             if ($Element.isEventAttribute(element, name)) {
-                element.addEventListener(name.slice(2), event => BindingParser.evaluate(value, { ...locals, event }));
+                element.addEventListener(name.slice(2), event => BindingParser.invoke(value, { ...locals, event }));
             } else if (name.startsWith('class.')) {
                 const className = name.slice('class.'.length);
                 BindingParser.bind(value, locals, active => element.classList.toggle(className, !!active));
