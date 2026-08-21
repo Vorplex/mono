@@ -1,10 +1,11 @@
-import { $Id, Signal } from '@vorplex/core';
+import { $Id, $Value, EntityAdaptor, Signal } from '@vorplex/core';
 import { BindingParser } from '../binding-parser';
 import { PreviewContext } from '../preview-context';
 import { RenderContext } from '../render-context';
 import { ShtmlDocumentState } from '../shtml';
 import { NodeType } from './node-type';
 import { ShtmlTemplate, ShtmlTemplateItem } from './template-item';
+import { ShtmlText } from './text';
 
 export interface ShtmlElement {
     id: string;
@@ -50,5 +51,20 @@ export const ShtmlElement = {
         ShtmlTemplate.preview(element, () => context.root.proxy.elements[id].template(), context);
         Signal.cleanup(() => element.remove());
         return element;
+    },
+    getText(element: ShtmlElement, state: ShtmlDocumentState): string | undefined {
+        if (element.template.length === 0) return '';
+        const [only] = element.template;
+        if (element.template.length === 1 && only.kind === NodeType.Text) return state.texts[only.id].content;
+        return undefined;
+    },
+    setText(element: ShtmlElement, state: ShtmlDocumentState, value: string): ShtmlDocumentState {
+        const [only] = element.template;
+        if (element.template.length === 1 && only.kind === NodeType.Text) {
+            return $Value.set(state, s => s.texts[only.id].content, value);
+        }
+        const text: ShtmlText = { id: $Id.guid(), type: NodeType.Text, content: value };
+        const withText = { ...state, texts: EntityAdaptor.create(state.texts, text) };
+        return $Value.set(withText, s => s.elements[element.id].template, [{ id: text.id, kind: NodeType.Text }]);
     }
 };
