@@ -1,4 +1,4 @@
-import { Awaitable, EntityMap, Getter, Scope, Signal, State, TsonDefinition } from '@vorplex/core';
+import { $Array, Awaitable, EntityAdaptor, EntityMap, Getter, Scope, Signal, State, TsonDefinition } from '@vorplex/core';
 import { IconSheet } from './icon-sheet';
 import { ImportResolver } from './import-resolver';
 import { ShtmlApi } from './node/api/api';
@@ -21,7 +21,7 @@ import { NodeType } from './node/node-type';
 import { ShtmlPage } from './node/page';
 import { ShtmlPageContainer } from './node/page-container';
 import { ShtmlService } from './node/service';
-import { ShtmlTemplateItem } from './node/template-item';
+import { ShtmlTemplateItem, ShtmlTemplateNode, ShtmlTemplateTargetType } from './node/template-item';
 import { ShtmlText } from './node/text';
 import { ShtmlType } from './node/type';
 import { ShtmlVariable } from './node/variable';
@@ -107,6 +107,86 @@ export class ShtmlDocument {
     public toShtml(): string {
         const state = this.state.value;
         return ShtmlApp.to(state.app, state).outerHTML;
+    }
+
+    // Files `node` into its own EntityMap bucket and appends a reference to it onto `targetType`/`targetId`'s
+    // own template array -- the two things every "add a node to the tree" action needs done atomically.
+    public addNode(targetType: ShtmlTemplateTargetType, targetId: string, node: ShtmlTemplateNode): void {
+        this.state.set(state => {
+            switch (node.type) {
+                case NodeType.Element: state = { ...state, elements: EntityAdaptor.create(state.elements, node) }; break;
+                case NodeType.If: state = { ...state, ifs: EntityAdaptor.create(state.ifs, node) }; break;
+                case NodeType.For: state = { ...state, fors: EntityAdaptor.create(state.fors, node) }; break;
+                case NodeType.ComponentInstance: state = { ...state, componentInstances: EntityAdaptor.create(state.componentInstances, node) }; break;
+                case NodeType.PageContainer: state = { ...state, pageContainers: EntityAdaptor.create(state.pageContainers, node) }; break;
+                case NodeType.Icon: state = { ...state, icons: EntityAdaptor.create(state.icons, node) }; break;
+                case NodeType.Text: state = { ...state, texts: EntityAdaptor.create(state.texts, node) }; break;
+            }
+            const reference: ShtmlTemplateItem = { id: node.id, kind: node.type };
+            switch (targetType) {
+                case NodeType.Page: return { ...state, pages: EntityAdaptor.updateById(state.pages, targetId, page => ({ template: [...page.template, reference] })) };
+                case NodeType.Component: return { ...state, components: EntityAdaptor.updateById(state.components, targetId, item => ({ template: [...item.template, reference] })) };
+                case NodeType.Element: return { ...state, elements: EntityAdaptor.updateById(state.elements, targetId, item => ({ template: [...item.template, reference] })) };
+                case NodeType.If: return { ...state, ifs: EntityAdaptor.updateById(state.ifs, targetId, item => ({ template: [...item.template, reference] })) };
+                case NodeType.For: return { ...state, fors: EntityAdaptor.updateById(state.fors, targetId, item => ({ template: [...item.template, reference] })) };
+            }
+        });
+    }
+
+    // Strips `node`'s reference out of `targetType`/`targetId`'s own template array and deletes its entity --
+    // doesn't walk into `node`'s own descendants, so any entities they reference are left behind unreferenced
+    // (inert, same as an orphaned variable/service elsewhere in this app).
+    public removeNode(targetType: ShtmlTemplateTargetType, targetId: string, node: ShtmlTemplateItem): void {
+        this.state.set(state => {
+            switch (targetType) {
+                case NodeType.Page: state = { ...state, pages: EntityAdaptor.updateById(state.pages, targetId, page => ({ template: $Array.removeWhere(page.template, entry => entry.id === node.id, true) })) }; break;
+                case NodeType.Component: state = { ...state, components: EntityAdaptor.updateById(state.components, targetId, item => ({ template: $Array.removeWhere(item.template, entry => entry.id === node.id, true) })) }; break;
+                case NodeType.Element: state = { ...state, elements: EntityAdaptor.updateById(state.elements, targetId, item => ({ template: $Array.removeWhere(item.template, entry => entry.id === node.id, true) })) }; break;
+                case NodeType.If: state = { ...state, ifs: EntityAdaptor.updateById(state.ifs, targetId, item => ({ template: $Array.removeWhere(item.template, entry => entry.id === node.id, true) })) }; break;
+                case NodeType.For: state = { ...state, fors: EntityAdaptor.updateById(state.fors, targetId, item => ({ template: $Array.removeWhere(item.template, entry => entry.id === node.id, true) })) }; break;
+            }
+            switch (node.kind) {
+                case NodeType.Element: return { ...state, elements: EntityAdaptor.delete(state.elements, node.id) };
+                case NodeType.If: return { ...state, ifs: EntityAdaptor.delete(state.ifs, node.id) };
+                case NodeType.For: return { ...state, fors: EntityAdaptor.delete(state.fors, node.id) };
+                case NodeType.ComponentInstance: return { ...state, componentInstances: EntityAdaptor.delete(state.componentInstances, node.id) };
+                case NodeType.PageContainer: return { ...state, pageContainers: EntityAdaptor.delete(state.pageContainers, node.id) };
+                case NodeType.Icon: return { ...state, icons: EntityAdaptor.delete(state.icons, node.id) };
+                case NodeType.Text: return { ...state, texts: EntityAdaptor.delete(state.texts, node.id) };
+                default: return state;
+            }
+        });
+    }
+
+    // Nothing in ShtmlDocumentState stores a back-reference, so finding `id`'s owner means searching every
+    // place a reference to it could live: the app's own pageIds/componentIds, every page/component's template,
+    // and every element/if/for's template, plus every component's nested componentIds. Returns undefined for
+    // ids with no owner in any of those (root app, or a kind -- Route, Param, etc -- that never appears as a
+    // reference in the first place).
+    public getNodeParent(id: string): { type: NodeType; id: string } | undefined {
+        const state = this.state.value;
+        if (state.app.pageIds.includes(id) || state.app.componentIds.includes(id)) return { type: NodeType.App, id: state.app.id };
+        const references = (template: ShtmlTemplateItem[]) => template.some(item => item.id === id);
+        for (const page of Object.values(state.pages)) if (references(page.template)) return { type: NodeType.Page, id: page.id };
+        for (const component of Object.values(state.components)) {
+            if (references(component.template) || component.componentIds.includes(id)) return { type: NodeType.Component, id: component.id };
+        }
+        for (const element of Object.values(state.elements)) if (references(element.template)) return { type: NodeType.Element, id: element.id };
+        for (const item of Object.values(state.ifs)) if (references(item.template)) return { type: NodeType.If, id: item.id };
+        for (const item of Object.values(state.fors)) if (references(item.template)) return { type: NodeType.For, id: item.id };
+        return undefined;
+    }
+
+    // Walks up from `id` through successive getNodeParent() calls until it finds an ancestor of `type` (e.g.
+    // the nearest enclosing <x-for>) -- undefined if none exists before reaching the app root.
+    public getNodeParentOfType(id: string, type: NodeType): { type: NodeType; id: string } | undefined {
+        let current = this.getNodeParent(id);
+        while (current) {
+            if (current.type === type) return current;
+            if (current.type === NodeType.App) return undefined;
+            current = this.getNodeParent(current.id);
+        }
+        return undefined;
     }
 
     public async mount(target: Element): Promise<Scope> {
