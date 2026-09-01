@@ -10,9 +10,15 @@ export enum PopupPosition {
     Right = 1 << 3,
 }
 
+export enum PopupSize {
+    Width = 1 << 0,
+    Height = 1 << 1,
+}
+
 interface PopupOptionsBase {
     ghost?: boolean;
-    autoTransform?: boolean;
+    interactive?: boolean;
+    autoPosition?: boolean;
     render: (menu: Portal) => JSXElement;
     onDestroy?: () => void;
 }
@@ -21,6 +27,7 @@ interface AnchorPopupOptions extends PopupOptionsBase {
     anchor: {
         element: HTMLElement;
         position: PopupPosition;
+        size?: PopupSize;
     };
 }
 
@@ -37,9 +44,10 @@ function LocationPopup(props: { options: LocationPopupOptions; portal: Portal })
                 position: 'fixed',
                 top: `${props.options.location.y}px`,
                 left: `${props.options.location.x}px`,
-                transform: props.options.autoTransform
+                transform: props.options.autoPosition
                     ? `translate(${props.options.location.x > window.innerWidth / 2 ? '-100%' : '0%'}, ${props.options.location.y > window.innerHeight / 2 ? '-100%' : '0%'})`
                     : undefined,
+                'pointer-events': props.options.interactive ? 'auto' : undefined,
             }}
         >
             {props.options.render(props.portal)}
@@ -59,7 +67,7 @@ function AnchoredPopup(props: { options: AnchorPopupOptions; portal: Portal }) {
         return { point, transform: `translate(${left ? '0%' : right ? '-100%' : '-50%'}, ${top ? '-100%' : '0%'})` };
     };
 
-    const resolveFitted = (anchorRect: Rect, position: PopupPosition, size: Size, viewport: Size): Point => {
+    const resolveFitted = (anchorRect: Rect, position: PopupPosition, size: Size, viewport: Size, minSize: Size): { point: Point; maxSize: Size } => {
         let top = (position & PopupPosition.Top) !== 0;
         let left = (position & PopupPosition.Left) !== 0;
         let right = (position & PopupPosition.Right) !== 0 && !left;
@@ -74,28 +82,59 @@ function AnchoredPopup(props: { options: AnchorPopupOptions; portal: Portal }) {
         if (left && !fitsLeftAligned && fitsRightAligned) { left = false; right = true; }
         else if (right && !fitsRightAligned && fitsLeftAligned) { right = false; left = true; }
 
-        const x = left ? anchorRect.x : right ? anchorRect.x + anchorRect.width - size.width : anchorRect.x + anchorRect.width / 2 - size.width / 2;
-        const y = top ? anchorRect.y - size.height : anchorRect.y + anchorRect.height;
+        const centerX = anchorRect.x + anchorRect.width / 2;
+        const availableWidth = Math.max(0, left
+            ? viewport.width - anchorRect.x
+            : right
+                ? anchorRect.x + anchorRect.width
+                : 2 * Math.min(centerX, viewport.width - centerX));
+        const availableHeight = Math.max(0, top ? anchorRect.y : viewport.height - (anchorRect.y + anchorRect.height));
 
-        return $Point.create(
-            $Number.clamp(x, 0, Math.max(0, viewport.width - size.width)),
-            $Number.clamp(y, 0, Math.max(0, viewport.height - size.height)),
-        );
+        const maxWidth = Math.max(availableWidth, minSize.width);
+        const maxHeight = Math.max(availableHeight, minSize.height);
+
+        const clampedWidth = Math.min(size.width, maxWidth);
+        const clampedHeight = Math.min(size.height, maxHeight);
+
+        const x = left ? anchorRect.x : right ? anchorRect.x + anchorRect.width - clampedWidth : anchorRect.x + anchorRect.width / 2 - clampedWidth / 2;
+        const y = top ? anchorRect.y - clampedHeight : anchorRect.y + anchorRect.height;
+
+        return {
+            point: $Point.create(
+                $Number.clamp(x, 0, Math.max(0, viewport.width - clampedWidth)),
+                $Number.clamp(y, 0, Math.max(0, viewport.height - clampedHeight)),
+            ),
+            maxSize: { width: maxWidth, height: maxHeight },
+        };
     };
 
-    const { anchor, autoTransform } = props.options;
-    const initial = resolveStatic(anchor.element.getBoundingClientRect(), anchor.position);
+    const { anchor, autoPosition } = props.options;
+    const anchorRect = anchor.element.getBoundingClientRect();
+    const initial = resolveStatic(anchorRect, anchor.position);
     const [point, setPoint] = createSignal<Point>(initial.point);
     const [transform, setTransform] = createSignal<string | undefined>(initial.transform);
-    const [ready, setReady] = createSignal(!autoTransform);
+    const [maxWidth, setMaxWidth] = createSignal('');
+    const [maxHeight, setMaxHeight] = createSignal('');
+    const [ready, setReady] = createSignal(!autoPosition);
     let elementRef: HTMLDivElement | undefined;
 
+    const width = anchor.size && (anchor.size & PopupSize.Width) ? `${anchorRect.width}px` : '';
+    const height = anchor.size && (anchor.size & PopupSize.Height) ? `${anchorRect.height}px` : '';
+
     onMount(() => {
-        if (!autoTransform || !elementRef) return;
+        if (!autoPosition || !elementRef) return;
         const anchorRect = anchor.element.getBoundingClientRect();
         const size = { width: elementRef.offsetWidth, height: elementRef.offsetHeight };
+        const contentStyle = elementRef.firstElementChild ? getComputedStyle(elementRef.firstElementChild) : undefined;
+        const minSize = {
+            width: contentStyle ? parseFloat(contentStyle.minWidth) || 0 : 0,
+            height: contentStyle ? parseFloat(contentStyle.minHeight) || 0 : 0,
+        };
         const viewport = { width: window.innerWidth, height: window.innerHeight };
-        setPoint(resolveFitted(anchorRect, anchor.position, size, viewport));
+        const fitted = resolveFitted(anchorRect, anchor.position, size, viewport, minSize);
+        setPoint(fitted.point);
+        setMaxWidth(`${fitted.maxSize.width}px`);
+        setMaxHeight(`${fitted.maxSize.height}px`);
         setTransform(undefined);
         setReady(true);
     });
@@ -109,6 +148,12 @@ function AnchoredPopup(props: { options: AnchorPopupOptions; portal: Portal }) {
                 left: `${point().x}px`,
                 transform: transform(),
                 visibility: ready() ? 'visible' : 'hidden',
+                'pointer-events': props.options.interactive ? 'auto' : undefined,
+                width,
+                height,
+                'max-width': maxWidth(),
+                'max-height': maxHeight(),
+                overflow: 'auto',
             }}
         >
             {props.options.render(props.portal)}
