@@ -41,8 +41,8 @@ export interface ShtmlDocumentState {
     texts: EntityMap<ShtmlText>;
     ifs: EntityMap<ShtmlIf>;
     fors: EntityMap<ShtmlFor>;
-    properties: EntityMap<ShtmlComponentProperty>;
-    events: EntityMap<ShtmlComponentEvent>;
+    componentProperties: EntityMap<ShtmlComponentProperty>;
+    componentEvents: EntityMap<ShtmlComponentEvent>;
     componentInstances: EntityMap<ShtmlComponentInstance>;
     pageContainers: EntityMap<ShtmlPageContainer>;
     icons: EntityMap<ShtmlIcon>;
@@ -86,8 +86,8 @@ export class ShtmlDocument {
             texts: {},
             ifs: {},
             fors: {},
-            properties: {},
-            events: {},
+            componentProperties: {},
+            componentEvents: {},
             componentInstances: {},
             pageContainers: {},
             icons: {},
@@ -266,7 +266,7 @@ export class ShtmlDocument {
                 if (forLocals) {
                     const types = resolveTypes(component.typeIds());
                     const propertyLocals: [string, TsonDefinition][] = component.propertyIds()
-                        .map(id => [proxy.properties[id].name(), ShtmlType.resolve(proxy.properties[id].type(), types)]);
+                        .map(id => [proxy.componentProperties[id].name(), ShtmlType.resolve(proxy.componentProperties[id].type(), types)]);
                     return Object.fromEntries([
                         ...resolveVariables(component.variableIds(), types),
                         ...propertyLocals,

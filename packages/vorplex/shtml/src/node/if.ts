@@ -1,5 +1,5 @@
 import { $Id, Signal } from '@vorplex/core';
-import { BindingParser } from '../binding-parser';
+import { ExpressionParser } from '../expression-parser';
 import { PreviewContext } from '../preview-context';
 import { RenderContext } from '../render-context';
 import { ShtmlDocumentState } from '../shtml';
@@ -40,7 +40,7 @@ export const ShtmlIf = {
         const host = document.createElement(NodeType.If);
         host.style.display = 'contents';
         container.appendChild(host);
-        BindingParser.bind(item.condition, context.locals, active => {
+        ExpressionParser.bind(item.condition, context.locals, active => {
             if (active) ShtmlTemplate.mount(host, item.template, context);
         });
         Signal.cleanup(() => host.remove());

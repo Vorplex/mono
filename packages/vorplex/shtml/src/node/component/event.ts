@@ -20,7 +20,7 @@ export const ShtmlComponentEvent = {
             name: ShtmlDom.getRequiredAttribute(element, 'name'),
             type: ShtmlDom.getAttribute(element, 'type') ?? 'any'
         };
-        state.events[event.id] = event;
+        state.componentEvents[event.id] = event;
         return event;
     },
     to(event: ShtmlComponentEvent): Element {

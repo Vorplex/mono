@@ -1,5 +1,5 @@
 import { $Id, $Value, EntityAdaptor, Signal } from '@vorplex/core';
-import { BindingParser } from '../binding-parser';
+import { ExpressionParser } from '../expression-parser';
 import { PreviewContext } from '../preview-context';
 import { RenderContext } from '../render-context';
 import { ShtmlDocumentState } from '../shtml';
@@ -35,7 +35,7 @@ export const ShtmlElement = {
     },
     mount(container: Node, item: ShtmlElement, context: RenderContext): void {
         const element = document.createElement(item.tag);
-        BindingParser.bindAttributes(element, item.attributes, context.locals);
+        ExpressionParser.bindAttributes(element, item.attributes, context.locals);
         container.appendChild(element);
         ShtmlTemplate.mount(element, item.template, context);
         Signal.cleanup(() => element.remove());
@@ -46,7 +46,7 @@ export const ShtmlElement = {
         container.appendChild(element);
         Signal.effect(() => {
             const attributes = context.root.proxy.elements[id].attributes();
-            BindingParser.applyPreviewAttributes(element, { ...attributes, 'data-shtml-id': id }, context);
+            ExpressionParser.applyPreviewAttributes(element, { ...attributes, 'data-shtml-id': id }, context);
         });
         ShtmlTemplate.preview(element, () => context.root.proxy.elements[id].template(), context);
         Signal.cleanup(() => element.remove());

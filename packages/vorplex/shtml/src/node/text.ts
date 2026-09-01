@@ -1,6 +1,6 @@
 import { $Id, Signal } from '@vorplex/core';
-import { BindingParser } from '../binding-parser';
 import { ExpressionDisplay } from '../expression-display';
+import { ExpressionParser } from '../expression-parser';
 import { PreviewContext } from '../preview-context';
 import { RenderContext } from '../render-context';
 import { ShtmlDocumentState } from '../shtml';
@@ -34,7 +34,7 @@ export const ShtmlText = {
     mount(container: Node, item: ShtmlText, context: RenderContext): void {
         const node = document.createTextNode('');
         container.appendChild(node);
-        BindingParser.bind(item.content, context.locals, value => {
+        ExpressionParser.bind(item.content, context.locals, value => {
             node.textContent = value == null ? '' : String(value);
         });
         Signal.cleanup(() => node.remove());

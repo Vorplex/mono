@@ -1,6 +1,6 @@
 // **/*.ts
-export * from './binding-parser';
 export * from './expression-display';
+export * from './expression-parser';
 export * from './icon-sheet';
 export * from './import-resolver';
 export * from './modal-manager';

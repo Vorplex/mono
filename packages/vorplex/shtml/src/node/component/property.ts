@@ -20,7 +20,7 @@ export const ShtmlComponentProperty = {
             name: ShtmlDom.getRequiredAttribute(element, 'name'),
             type: ShtmlDom.getAttribute(element, 'type') ?? 'any'
         };
-        state.properties[property.id] = property;
+        state.componentProperties[property.id] = property;
         return property;
     },
     to(property: ShtmlComponentProperty): Element {

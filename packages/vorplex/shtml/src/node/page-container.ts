@@ -1,5 +1,5 @@
 import { $Id, Scope, Signal } from '@vorplex/core';
-import { BindingParser } from '../binding-parser';
+import { ExpressionParser } from '../expression-parser';
 import { PreviewContext } from '../preview-context';
 import { RenderContext } from '../render-context';
 import { ShtmlDocumentState } from '../shtml';
@@ -36,7 +36,7 @@ export const ShtmlPageContainer = {
     },
     mount(container: Node, item: ShtmlPageContainer, context: RenderContext): Scope {
         return Signal.scope(() => {
-            BindingParser.bind(item.page, context.locals, pageName => {
+            ExpressionParser.bind(item.page, context.locals, pageName => {
                 const appContext = context.nearest.app!;
                 const page = appContext.app.pageIds.map(id => appContext.state.pages[id]).find(page => page.name === pageName);
                 if (!page) throw new Error(`Unknown page "${pageName}"`);

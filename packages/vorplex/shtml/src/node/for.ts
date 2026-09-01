@@ -1,5 +1,5 @@
 import { $Id, $Value, Signal } from '@vorplex/core';
-import { BindingParser } from '../binding-parser';
+import { ExpressionParser } from '../expression-parser';
 import { PreviewContext } from '../preview-context';
 import { RenderContext } from '../render-context';
 import { ShtmlDocumentState } from '../shtml';
@@ -53,7 +53,7 @@ export const ShtmlFor = {
         host.style.display = 'contents';
         container.appendChild(host);
         const entries = Signal.keyed(
-            () => BindingParser.parse(item.each, context.locals),
+            () => ExpressionParser.parse(item.each, context.locals),
             entry => item.track ? $Value.get(entry.value, item.track) : entry.key,
             entry => {
                 const itemHost = document.createElement(NodeType.For);

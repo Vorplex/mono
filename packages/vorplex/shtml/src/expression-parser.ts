@@ -3,7 +3,7 @@ import { $Element } from '@vorplex/web';
 import { ShtmlAsset } from './node/asset';
 import { PreviewContext } from './preview-context';
 
-export const BindingParser = {
+export const ExpressionParser = {
     invoke(expression: string, locals: Record<string, any>) {
         try {
             const names = Object.keys(locals);
@@ -15,7 +15,7 @@ export const BindingParser = {
         }
     },
     evaluate(expression: string, locals: Record<string, any>) {
-        return BindingParser.invoke(`return (${expression})`, locals);
+        return ExpressionParser.invoke(`return (${expression})`, locals);
     },
     parse(source: string, locals: Record<string, any>): any {
         const values = [];
@@ -24,7 +24,7 @@ export const BindingParser = {
                 values.push(segment.value);
                 continue;
             }
-            const value = BindingParser.evaluate(segment.value, locals);
+            const value = ExpressionParser.evaluate(segment.value, locals);
             values.push(value);
         }
         if (values.length === 1) return values[0];
@@ -32,12 +32,19 @@ export const BindingParser = {
     },
     bind(source: string, locals: Record<string, any>, callback: (value: any) => void): void {
         Signal.effect(() => {
-            const value = BindingParser.parse(source, locals);
+            const value = ExpressionParser.parse(source, locals);
             callback(value);
         });
     },
     isLiteral(source: string): boolean {
         return $String.matchDelimited(source, ['{{', '}}']).every(segment => segment.type === 'text');
+    },
+    isLocal(source: string): { name: string; path: string } | null {
+        const segments = $String.matchDelimited(source, ['{{', '}}']);
+        if (segments.length !== 1 || segments[0].type !== 'match') return null;
+        const match = /^([A-Za-z_$][\w$]*)((?:\.[A-Za-z_$][\w$]*)*)\(\)$/.exec(segments[0].value.trim());
+        if (!match) return null;
+        return { name: match[1], path: match[2].replace(/^\./, '') };
     },
     isAsset(source: string): string {
         return /^\{\{\s*asset\.([A-Za-z_$][\w$]*)\s*\}\}$/.exec(source.trim())?.[1];
@@ -45,18 +52,18 @@ export const BindingParser = {
     bindAttributes(element: HTMLElement | SVGElement, attributes: Record<string, string>, locals: Record<string, any>): void {
         for (const [name, value] of Object.entries(attributes)) {
             if ($Element.isEventAttribute(element, name)) {
-                element.addEventListener(name.slice(2), event => BindingParser.invoke(value, { ...locals, event }));
+                element.addEventListener(name.slice(2), event => ExpressionParser.invoke(value, { ...locals, event }));
             } else if (name.startsWith('class.')) {
                 const className = name.slice('class.'.length);
-                BindingParser.bind(value, locals, active => element.classList.toggle(className, !!active));
+                ExpressionParser.bind(value, locals, active => element.classList.toggle(className, !!active));
             } else if (name.startsWith('style.')) {
                 const property = name.slice('style.'.length);
-                BindingParser.bind(value, locals, style => {
+                ExpressionParser.bind(value, locals, style => {
                     if (style == null || style === false) element.style.removeProperty(property);
                     else element.style.setProperty(property, String(style));
                 });
             } else {
-                BindingParser.bind(value, locals, resolved => {
+                ExpressionParser.bind(value, locals, resolved => {
                     if (resolved == null || resolved === false) element.removeAttribute(name);
                     else element.setAttribute(name, resolved === true ? '' : String(resolved));
                 });
@@ -68,7 +75,7 @@ export const BindingParser = {
             element.removeAttribute(attribute.name);
         }
         for (const [name, value] of Object.entries(attributes)) {
-            const assetReference = BindingParser.isAsset(value);
+            const assetReference = ExpressionParser.isAsset(value);
             if (assetReference) {
                 const assetIds = context.componentId ? context.root.proxy.components[context.componentId].assetIds() : context.root.proxy.app.assetIds();
                 const asset = assetIds
@@ -80,7 +87,7 @@ export const BindingParser = {
                 element.setAttribute(name, url);
                 continue;
             }
-            if (!BindingParser.isLiteral(value)) continue;
+            if (!ExpressionParser.isLiteral(value)) continue;
             if ($Element.isEventAttribute(element, name)) continue;
             if (name.startsWith('class.')) {
                 if (value) element.classList.add(name.slice('class.'.length));

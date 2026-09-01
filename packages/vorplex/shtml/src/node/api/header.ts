@@ -7,6 +7,7 @@ export interface ShtmlApiHeader {
     id: string;
     name: string;
     required: boolean;
+    description?: string;
 }
 
 export const ShtmlApiHeader = {
@@ -18,7 +19,8 @@ export const ShtmlApiHeader = {
         const header: ShtmlApiHeader = {
             id: ShtmlDom.getAttribute(element, 'id') ?? $Id.guid(),
             name: ShtmlDom.getRequiredAttribute(element, 'name'),
-            required: ShtmlDom.getBooleanAttribute(element, 'required')
+            required: ShtmlDom.getBooleanAttribute(element, 'required'),
+            description: ShtmlDom.getAttribute(element, 'description')
         };
         state.apiHeaders[header.id] = header;
         return header;
@@ -28,6 +30,7 @@ export const ShtmlApiHeader = {
         element.setAttribute('id', header.id);
         element.setAttribute('name', header.name);
         element.setAttribute('required', String(header.required));
+        if (header.description) element.setAttribute('description', header.description);
         return element;
     }
 };

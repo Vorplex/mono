@@ -1,5 +1,5 @@
 import { $Id, Signal } from '@vorplex/core';
-import { BindingParser } from '../binding-parser';
+import { ExpressionParser } from '../expression-parser';
 import { IconSheet } from '../icon-sheet';
 import { PreviewContext } from '../preview-context';
 import { RenderContext } from '../render-context';
@@ -44,8 +44,8 @@ export const ShtmlIcon = {
         host.style.display = 'contents';
         container.appendChild(host);
         const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        BindingParser.bindAttributes(svg, item.attributes, context.locals);
-        BindingParser.bind(item.name, context.locals, name => IconSheet.apply(svg, name));
+        ExpressionParser.bindAttributes(svg, item.attributes, context.locals);
+        ExpressionParser.bind(item.name, context.locals, name => IconSheet.apply(svg, name));
         host.appendChild(svg);
         Signal.cleanup(() => host.remove());
     },
@@ -58,8 +58,8 @@ export const ShtmlIcon = {
         Signal.effect(() => {
             const name = context.root.proxy.icons[id].name();
             const attributes = context.root.proxy.icons[id].attributes();
-            BindingParser.applyPreviewAttributes(svg, attributes, context);
-            IconSheet.apply(svg, BindingParser.isLiteral(name) ? name : undefined);
+            ExpressionParser.applyPreviewAttributes(svg, attributes, context);
+            IconSheet.apply(svg, ExpressionParser.isLiteral(name) ? name : undefined);
         });
         Signal.cleanup(() => host.remove());
         return host;

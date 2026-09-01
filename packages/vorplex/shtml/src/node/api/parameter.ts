@@ -7,6 +7,7 @@ export interface ShtmlApiParameter {
     id: string;
     name: string;
     required: boolean;
+    description?: string;
 }
 
 export const ShtmlApiParameter = {
@@ -18,7 +19,8 @@ export const ShtmlApiParameter = {
         const parameter: ShtmlApiParameter = {
             id: ShtmlDom.getAttribute(element, 'id') ?? $Id.guid(),
             name: ShtmlDom.getRequiredAttribute(element, 'name'),
-            required: ShtmlDom.getBooleanAttribute(element, 'required')
+            required: ShtmlDom.getBooleanAttribute(element, 'required'),
+            description: ShtmlDom.getAttribute(element, 'description')
         };
         state.apiParameters[parameter.id] = parameter;
         return parameter;
@@ -28,6 +30,7 @@ export const ShtmlApiParameter = {
         element.setAttribute('id', parameter.id);
         element.setAttribute('name', parameter.name);
         element.setAttribute('required', String(parameter.required));
+        if (parameter.description) element.setAttribute('description', parameter.description);
         return element;
     }
 };

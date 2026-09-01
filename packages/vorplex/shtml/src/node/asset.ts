@@ -3,12 +3,14 @@ import { ShtmlDocumentState } from '../shtml';
 import { ShtmlDom } from '../shtml-dom';
 import { NodeType } from './node-type';
 
+export type ShtmlAssetSource =
+    | { type: 'external'; url: string }
+    | { type: 'internal'; content: string; mimeType?: string };
+
 export interface ShtmlAsset {
     id: string;
     name: string;
-    url?: string;
-    mimeType?: string;
-    content?: string;
+    source: ShtmlAssetSource;
 }
 
 const resolvedUrls = new Map<string, string>();
@@ -23,9 +25,9 @@ export const ShtmlAsset = {
         const asset: ShtmlAsset = {
             id: ShtmlDom.getAttribute(element, 'id') ?? $Id.guid(),
             name: ShtmlDom.getRequiredAttribute(element, 'name'),
-            url,
-            mimeType: ShtmlDom.getAttribute(element, 'type'),
-            content: url ? undefined : element.innerHTML
+            source: url
+                ? { type: 'external', url }
+                : { type: 'internal', content: ShtmlDom.getContent(element), mimeType: ShtmlDom.getAttribute(element, 'type') }
         };
         state.assets[asset.id] = asset;
         return asset;
@@ -34,18 +36,18 @@ export const ShtmlAsset = {
         const element = document.createElement(NodeType.Asset);
         element.setAttribute('id', asset.id);
         element.setAttribute('name', asset.name);
-        if (asset.url) {
-            element.setAttribute('src', asset.url);
+        if (asset.source.type === 'external') {
+            element.setAttribute('src', asset.source.url);
         } else {
-            if (asset.mimeType) element.setAttribute('type', asset.mimeType);
-            if (asset.content) element.innerHTML = asset.content;
+            if (asset.source.mimeType) element.setAttribute('type', asset.source.mimeType);
+            if (asset.source.content) element.innerHTML = asset.source.content;
         }
         return element;
     },
     resolveUrl(asset: ShtmlAsset): string {
-        if (asset.url) return asset.url;
+        if (asset.source.type === 'external') return asset.source.url;
         if (!resolvedUrls.has(asset.id)) {
-            const url = URL.createObjectURL(new Blob([asset.content ?? ''], { type: asset.mimeType ?? 'application/octet-stream' }));
+            const url = URL.createObjectURL(new Blob([asset.source.content ?? ''], { type: asset.source.mimeType ?? 'application/octet-stream' }));
             resolvedUrls.set(asset.id, url);
         }
         return resolvedUrls.get(asset.id);

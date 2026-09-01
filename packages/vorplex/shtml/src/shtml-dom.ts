@@ -1,3 +1,4 @@
+import { $String } from '@vorplex/core';
 import { NodeType } from './node/node-type';
 
 export const ShtmlDom = {
@@ -22,10 +23,13 @@ export const ShtmlDom = {
         return Array.from(element?.querySelectorAll(`:scope > ${type}`) ?? []);
     },
     getScript(element: Element) {
-        return element?.querySelector(`:scope > script[type="application/typescript"]`)?.textContent;
+        return $String.dedent(element?.querySelector(`:scope > script[type="application/typescript"]`)?.textContent);
     },
     getStyle(element: Element) {
-        return element?.querySelector(`:scope > style`)?.textContent;
+        return $String.dedent(element?.querySelector(`:scope > style`)?.textContent);
+    },
+    getContent(element: Element) {
+        return $String.dedent(element?.innerHTML);
     },
     getJsonContent(element: Element) {
         return element?.textContent ? JSON.parse(element.textContent) : null;

@@ -1,5 +1,5 @@
 import { $Id, Scope, Signal, State } from '@vorplex/core';
-import { BindingParser } from '../../binding-parser';
+import { ExpressionParser } from '../../expression-parser';
 import { PreviewContext } from '../../preview-context';
 import { ComponentRenderContext, RenderContext, RenderContextType } from '../../render-context';
 import { ScriptCompiler } from '../../script-compiler';
@@ -63,7 +63,7 @@ export const ShtmlComponentInstance = {
     mount(container: Node, item: ShtmlComponentInstance, context: RenderContext): Scope {
         return Signal.scope(() => {
             const state = context.state;
-            BindingParser.bind(item.component, context.locals, componentName => {
+            ExpressionParser.bind(item.component, context.locals, componentName => {
                 const definition = resolveComponent(context, componentName);
                 if (!definition) throw new Error(`Unknown component "${componentName}"`);
                 const host = document.createElement(NodeType.ComponentInstance);
@@ -74,7 +74,7 @@ export const ShtmlComponentInstance = {
 
                 const variables = definition.variableIds.map(id => state.variables[id]);
                 const { locals: variableLocals, states: variableStates } = ShtmlVariable.instantiate(variables);
-                const events = definition.eventIds.map(id => state.events[id]);
+                const events = definition.eventIds.map(id => state.componentEvents[id]);
                 const eventLocals = events.reduce((locals, event) => Object.assign(locals, { [event.name]: (payload?: any) => eventsApi[event.name].emit(payload) }), {} as Record<string, any>);
                 const props = new Map<string, State<any>>();
                 const propLocals: Record<string, any> = {};
@@ -83,13 +83,13 @@ export const ShtmlComponentInstance = {
                 // no assumed "on" prefix. An attribute matching a declared event wins over treating it as a prop.
                 for (const [attribute, value] of Object.entries(item.attributes)) {
                     if (events.some(event => event.name === attribute)) {
-                        eventsApi[attribute] = { emit: (payload?: any) => BindingParser.invoke(value, { ...context.locals, event: payload }) };
+                        eventsApi[attribute] = { emit: (payload?: any) => ExpressionParser.invoke(value, { ...context.locals, event: payload }) };
                         continue;
                     }
                     const propState = new State<any>(undefined);
                     props.set(attribute, propState);
                     propLocals[attribute] = propState.signal.proxy;
-                    BindingParser.bind(value, context.locals, value => propState.set(value));
+                    ExpressionParser.bind(value, context.locals, value => propState.set(value));
                 }
                 for (const event of events) eventsApi[event.name] ??= { emit: () => { } };
 
@@ -154,7 +154,7 @@ export const ShtmlComponentInstance = {
         const shadow = host.attachShadow({ mode: 'open' });
         Signal.effect(() => {
             const name = context.root.proxy.componentInstances[id].component();
-            if (!BindingParser.isLiteral(name)) {
+            if (!ExpressionParser.isLiteral(name)) {
                 host.setAttribute('data-shtml-preview', 'unresolved');
                 return;
             }
