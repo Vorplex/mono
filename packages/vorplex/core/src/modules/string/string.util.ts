@@ -4,6 +4,16 @@ export class $String {
         return string?.replace(/^/gm, ' '.repeat(spaces));
     }
 
+    public static dedent(string: string): string {
+        if (string == null) return string;
+        const lines = string.split('\n');
+        const indents = lines
+            .filter(line => line.trim().length > 0)
+            .map(line => line.match(/^[ \t]*/)[0].length);
+        const minIndent = indents.length ? Math.min(...indents) : 0;
+        return lines.map(line => line.slice(minIndent)).join('\n').trim();
+    }
+
     public static toAlphanumeric(string: string, specialCharacterReplacement?: string): string {
         return string.replace(/[^a-zA-Z0-9]/g, specialCharacterReplacement ?? '');
     }
