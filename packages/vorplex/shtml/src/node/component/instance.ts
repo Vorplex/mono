@@ -48,7 +48,7 @@ export const ShtmlComponentInstance = {
                 .reduce((attributes, name) => Object.assign(attributes, { [name]: element.getAttribute(name) }), {})
         };
         state.componentInstances[item.id] = item;
-        return { id: item.id, kind: item.type };
+        return { id: item.id, type: item.type };
     },
     to(item: ShtmlComponentInstance): Element {
         const element = document.createElement(NodeType.ComponentInstance);

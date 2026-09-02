@@ -13,7 +13,7 @@ import { ShtmlText } from './text';
 
 export interface ShtmlTemplateItem {
     id: string;
-    kind: NodeType;
+    type: NodeType;
 }
 
 export type ShtmlTemplateNode = ShtmlElement | ShtmlIf | ShtmlFor | ShtmlComponentInstance | ShtmlPageContainer | ShtmlIcon | ShtmlText;
@@ -68,12 +68,12 @@ export const ShtmlTemplate = {
     },
     to(items: ShtmlTemplateItem[], state: ShtmlDocumentState): Node[] {
         return items.map(item => {
-            if (item.kind === NodeType.Text) return ShtmlText.to(state.texts[item.id]);
-            if (item.kind === NodeType.If) return ShtmlIf.to(state.ifs[item.id], state);
-            if (item.kind === NodeType.For) return ShtmlFor.to(state.fors[item.id], state);
-            if (item.kind === NodeType.ComponentInstance) return ShtmlComponentInstance.to(state.componentInstances[item.id]);
-            if (item.kind === NodeType.PageContainer) return ShtmlPageContainer.to(state.pageContainers[item.id]);
-            if (item.kind === NodeType.Icon) return ShtmlIcon.to(state.icons[item.id]);
+            if (item.type === NodeType.Text) return ShtmlText.to(state.texts[item.id]);
+            if (item.type === NodeType.If) return ShtmlIf.to(state.ifs[item.id], state);
+            if (item.type === NodeType.For) return ShtmlFor.to(state.fors[item.id], state);
+            if (item.type === NodeType.ComponentInstance) return ShtmlComponentInstance.to(state.componentInstances[item.id]);
+            if (item.type === NodeType.PageContainer) return ShtmlPageContainer.to(state.pageContainers[item.id]);
+            if (item.type === NodeType.Icon) return ShtmlIcon.to(state.icons[item.id]);
             return ShtmlElement.to(state.elements[item.id], state);
         });
     },
@@ -81,12 +81,12 @@ export const ShtmlTemplate = {
         return Signal.scope(() => {
             const state = context.state;
             for (const item of items) {
-                if (item.kind === NodeType.Text) ShtmlText.mount(container, state.texts[item.id], context);
-                else if (item.kind === NodeType.If) ShtmlIf.mount(container, state.ifs[item.id], context);
-                else if (item.kind === NodeType.For) ShtmlFor.mount(container, state.fors[item.id], context);
-                else if (item.kind === NodeType.ComponentInstance) ShtmlComponentInstance.mount(container, state.componentInstances[item.id], context);
-                else if (item.kind === NodeType.PageContainer) ShtmlPageContainer.mount(container, state.pageContainers[item.id], context);
-                else if (item.kind === NodeType.Icon) ShtmlIcon.mount(container, state.icons[item.id], context);
+                if (item.type === NodeType.Text) ShtmlText.mount(container, state.texts[item.id], context);
+                else if (item.type === NodeType.If) ShtmlIf.mount(container, state.ifs[item.id], context);
+                else if (item.type === NodeType.For) ShtmlFor.mount(container, state.fors[item.id], context);
+                else if (item.type === NodeType.ComponentInstance) ShtmlComponentInstance.mount(container, state.componentInstances[item.id], context);
+                else if (item.type === NodeType.PageContainer) ShtmlPageContainer.mount(container, state.pageContainers[item.id], context);
+                else if (item.type === NodeType.Icon) ShtmlIcon.mount(container, state.icons[item.id], context);
                 else ShtmlElement.mount(container, state.elements[item.id], context);
             }
         });
@@ -96,7 +96,7 @@ export const ShtmlTemplate = {
             items,
             entry => entry.value.id,
             entry => {
-                const { id, kind: type } = entry().value;
+                const { id, type } = entry().value;
                 if (type === NodeType.Text) return ShtmlText.preview(container, id, context);
                 if (type === NodeType.If) return ShtmlIf.preview(container, id, context);
                 if (type === NodeType.For) return ShtmlFor.preview(container, id, context);

@@ -1,4 +1,4 @@
-import { createStyle, defineComponent } from '@vorplex/solid';
+import { createStyle } from '@vorplex/solid';
 import { type JSXElement } from 'solid-js';
 import { Theme } from '../consts/theme';
 
@@ -26,7 +26,7 @@ const classes = createStyle(() => ({
         padding: '10px',
         fontSize: '16px',
         fontWeight: 'bold',
-        background: `linear-gradient(to bottom, ${Theme().primary.color}, ${Theme().background.color})`,
+        background: Theme().primary.color,
         color: Theme().primary.text,
         borderBottom: `1px solid ${Theme().outline.primary}`
     },
@@ -45,7 +45,7 @@ const classes = createStyle(() => ({
         gap: '5px',
         padding: '10px',
         overflow: 'hidden',
-        background: `linear-gradient(to top, ${Theme().secondary.color}, ${Theme().background.color})`,
+        background: Theme().secondary.color,
         color: Theme().secondary.text,
         borderTop: `1px solid ${Theme().outline.primary}`
     },
@@ -59,7 +59,7 @@ export type ModalComponentProps = {
     onDismiss?: () => void;
 };
 
-export const ModalComponent = defineComponent((props: ModalComponentProps) => {
+export function ModalComponent(props: ModalComponentProps) {
     return (
         <div
             class={classes().container}
@@ -74,4 +74,4 @@ export const ModalComponent = defineComponent((props: ModalComponentProps) => {
             </div>
         </div>
     );
-});
+}

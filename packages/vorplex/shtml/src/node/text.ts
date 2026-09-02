@@ -26,7 +26,7 @@ export const ShtmlText = {
             content: node.textContent.replace(/\s+/g, ' ').trim()
         };
         state.texts[text.id] = text;
-        return { id: text.id, kind: text.type };
+        return { id: text.id, type: text.type };
     },
     to(text: ShtmlText): Text {
         return document.createTextNode(text.content);

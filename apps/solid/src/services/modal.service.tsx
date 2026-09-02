@@ -5,6 +5,7 @@ import { ButtonComponent } from '../components/button.component';
 import { FormInputComponent, FormInputs } from '../components/forms/form-input.component';
 import { Icon } from '../components/icon.component';
 import { ModalComponent, ModalComponentProps } from '../components/modal.component';
+import { Theme } from '../consts/theme';
 
 @Injectable({ global: true })
 export class ModalService {
@@ -53,6 +54,28 @@ export class ModalService {
                         onClick={() => modal.resolve(true)}
                     />
                 </>
+            })
+        });
+    }
+
+    public showError(error: Error | string) {
+        return this.show({
+            modal: modal => ({
+                backdropDismissal: true,
+                header: (
+                    <div style={{ display: 'grid', 'grid-auto-flow': 'column', 'grid-auto-columns': 'max-content', gap: '5px', 'align-items': 'center', color: Theme().error.outline }}>
+                        <Icon name={'shield-x'} />
+                        <span>Error</span>
+                    </div>
+                ),
+                body: <span innerText={error instanceof Error && error.message ? error.message : String(error)} style={{ height: '100%', overflow: 'auto' }} />,
+                footer: (
+                    <ButtonComponent
+                        intent={'accent'}
+                        label={'Ok'}
+                        onClick={() => modal.resolve()}
+                    />
+                )
             })
         });
     }

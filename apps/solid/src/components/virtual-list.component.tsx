@@ -1,4 +1,3 @@
-import { defineComponent } from '@vorplex/solid';
 import type { JSX } from "solid-js";
 import { For, batch, createEffect, createMemo, createSignal, onCleanup, onMount, untrack } from "solid-js";
 
@@ -250,7 +249,7 @@ interface RowProps {
     children: () => JSX.Element;
 }
 
-const MeasuredRow = defineComponent((props: RowProps): JSX.Element => {
+function MeasuredRow(props: RowProps): JSX.Element {
     let element!: HTMLDivElement;
     onMount(() => props.observe(element, props.itemKey));
     onCleanup(() => props.unobserve(element));
@@ -263,7 +262,7 @@ const MeasuredRow = defineComponent((props: RowProps): JSX.Element => {
             {props.children()}
         </div>
     );
-});
+}
 
 type Anchor = readonly [key: ItemKey, offset: number, index: number];
 
@@ -662,11 +661,11 @@ export function VirtualList(props: DynamicVirtualListProps): JSX.Element {
             role={props.role}
             aria-label={props.ariaLabel}
             tabIndex={props.tabIndex ?? 0}
-            onScroll={handleScroll}
-            onWheel={cancelScrollRequest}
-            onKeyDown={cancelScrollRequest}
-            onTouchStart={cancelScrollRequest}
-            onPointerDown={cancelScrollRequest}
+            onScroll={event => handleScroll(event)}
+            onWheel={() => cancelScrollRequest()}
+            onKeyDown={() => cancelScrollRequest()}
+            onTouchStart={() => cancelScrollRequest()}
+            onPointerDown={() => cancelScrollRequest()}
             style={{
                 height: "100%",
                 ...props.style,

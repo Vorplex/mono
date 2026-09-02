@@ -25,7 +25,7 @@ export const ShtmlElement = {
             template: ShtmlTemplate.from(element, state)
         };
         state.elements[item.id] = item;
-        return { id: item.id, kind: item.type };
+        return { id: item.id, type: item.type };
     },
     to(item: ShtmlElement, state: ShtmlDocumentState): Element {
         const element = document.createElement(item.tag);
@@ -55,16 +55,16 @@ export const ShtmlElement = {
     getText(element: ShtmlElement, state: ShtmlDocumentState): string | undefined {
         if (element.template.length === 0) return '';
         const [only] = element.template;
-        if (element.template.length === 1 && only.kind === NodeType.Text) return state.texts[only.id].content;
+        if (element.template.length === 1 && only.type === NodeType.Text) return state.texts[only.id].content;
         return undefined;
     },
     setText(element: ShtmlElement, state: ShtmlDocumentState, value: string): ShtmlDocumentState {
         const [only] = element.template;
-        if (element.template.length === 1 && only.kind === NodeType.Text) {
+        if (element.template.length === 1 && only.type === NodeType.Text) {
             return $Value.set(state, s => s.texts[only.id].content, value);
         }
         const text: ShtmlText = { id: $Id.guid(), type: NodeType.Text, content: value };
         const withText = { ...state, texts: EntityAdaptor.create(state.texts, text) };
-        return $Value.set(withText, s => s.elements[element.id].template, [{ id: text.id, kind: NodeType.Text }]);
+        return $Value.set(withText, s => s.elements[element.id].template, [{ id: text.id, type: NodeType.Text }]);
     }
 };

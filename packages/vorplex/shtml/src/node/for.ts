@@ -35,7 +35,7 @@ export const ShtmlFor = {
             template: ShtmlTemplate.from(element, state)
         };
         state.fors[item.id] = item;
-        return { id: item.id, kind: item.type };
+        return { id: item.id, type: item.type };
     },
     to(item: ShtmlFor, state: ShtmlDocumentState): Element {
         const element = document.createElement(NodeType.For);

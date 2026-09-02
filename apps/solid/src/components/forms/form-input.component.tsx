@@ -2,24 +2,25 @@ import { Awaitable } from '@vorplex/core';
 import { createStyle } from '@vorplex/solid';
 import { classNames } from '@vorplex/web';
 import { createSignal, type JSXElement } from 'solid-js';
-import { Match, Show, Switch } from 'solid-js/web';
+import { Show } from 'solid-js/web';
 import { Theme } from '../../consts/theme';
 import { Icon } from '../icon.component';
 import { type CheckboxFormInput, CheckboxFormInputComponent } from './inputs/checkbox.component';
+import { type CodeFormInput, CodeFormInputComponent } from './inputs/code.component';
 import { type ColorFormInput, ColorFormInputComponent } from './inputs/color.component';
 import { type DateFormInput, DateFormInputComponent } from './inputs/date.component';
 import { type DropdownFormInput, DropdownFormInputComponent } from './inputs/dropdown.component';
 import { type FileFormInput, FileFormInputComponent } from './inputs/file.component';
+import { type ModalFormInput, ModalFormInputComponent } from './inputs/modal.component';
 import { type NumberFormInput, NumberFormInputComponent } from './inputs/number.component';
 import { type TagsFormInput, TagsFormInputComponent } from './inputs/tags.component';
+import { type TextOptionFormInput, TextOptionFormInputComponent } from './inputs/text-option.component';
 import { type TextFormInput, TextFormInputComponent } from './inputs/text.component';
 import { type TextAreaFormInput, TextAreaFormInputComponent } from './inputs/textarea.component';
 
-export type FormInputType = 'text' | 'number' | 'checkbox' | 'color' | 'date' | 'dropdown' | 'textarea' | 'code' | 'modal' | 'tags' | 'file';
+export type FormInputType = 'text' | 'text-option' | 'number' | 'checkbox' | 'color' | 'date' | 'dropdown' | 'textarea' | 'code' | 'modal' | 'tags' | 'file';
 
-type FormLayoutProps<TType extends FormInputType = FormInputType, TValue = any> = {
-    type: TType;
-    value?: TValue;
+type FormLayoutFields = {
     label: string;
     subText?: string;
     description?: string;
@@ -27,11 +28,18 @@ type FormLayoutProps<TType extends FormInputType = FormInputType, TValue = any> 
     warning?: string;
     hidden?: boolean;
     disabled?: boolean;
+    inline?: boolean;
+};
+
+type FormLayoutProps<TType extends FormInputType = FormInputType, TValue = any> = FormLayoutFields & {
+    type: TType;
+    value?: TValue;
     validate?: (value: TValue) => Awaitable<{ error?: string; warning?: string }>;
     onChange?: (value: TValue) => void;
 };
 
 export type TextFormGroup = TextFormInput & FormLayoutProps<'text', string>;
+export type TextOptionFormGroup = TextOptionFormInput & FormLayoutProps<'text-option', string>;
 export type CheckboxFormGroup = CheckboxFormInput & FormLayoutProps<'checkbox', boolean>;
 export type ColorFormGroup = ColorFormInput & FormLayoutProps<'color', string>;
 export type DateFormGroup = DateFormInput & FormLayoutProps<'date', Date>;
@@ -40,9 +48,12 @@ export type DropdownFormGroup = DropdownFormInput & FormLayoutProps<'dropdown', 
 export type TextAreaFormGroup = TextAreaFormInput & FormLayoutProps<'textarea', string>;
 export type TagsFormGroup = TagsFormInput & FormLayoutProps<'tags', string[]>;
 export type FileFormGroup = FileFormInput & FormLayoutProps<'file', File[]>;
+export type CodeFormGroup = CodeFormInput & FormLayoutProps<'code', string>;
+export type ModalFormGroup = ModalFormInput & FormLayoutProps<'modal', any>;
 
 export type FormInputs =
     | TextFormGroup
+    | TextOptionFormGroup
     | CheckboxFormGroup
     | ColorFormGroup
     | DateFormGroup
@@ -50,7 +61,9 @@ export type FormInputs =
     | DropdownFormGroup
     | TextAreaFormGroup
     | TagsFormGroup
-    | FileFormGroup;
+    | FileFormGroup
+    | CodeFormGroup
+    | ModalFormGroup;
 
 export const FormInputClasses = createStyle(() => ({
     container: {
@@ -79,14 +92,11 @@ export const FormInputClasses = createStyle(() => ({
             borderRadius: '0px 5px 5px 0px',
             borderLeft: `1px solid ${Theme().error.outline}`,
         },
-        '&:hover, &:focus-within': {
-            boxShadow: Theme().hoverShadow,
-        },
         '&.inline': {
             gridTemplateColumns: 'auto',
             gridAutoFlow: 'column',
             gridAutoColumns: 'max-content',
-            gap: '10px',
+            gap: '5px',
         },
     },
     layout: {
@@ -177,97 +187,73 @@ export function FormInputDescriptionComponent(props: { description: string }) {
     );
 }
 
-type FormInputLayoutProps = FormLayoutProps & { children: JSXElement };
+type FieldProps = FormLayoutFields & { children: JSXElement };
 
-export function FormInputLayoutComponent(props: FormInputLayoutProps) {
+export function FieldComponent(props: FieldProps) {
     return (
         <div
             class={classNames(FormInputClasses().container, {
+                inline: props.inline,
                 error: !!props.error,
                 warning: !!props.warning,
                 disabled: props.disabled,
                 hidden: props.hidden
             })}
         >
-            <FormInputLabelComponent label={props.label} subText={props.subText} />
-            <FormInputDescriptionComponent description={props.description} />
-            {props.children}
-            <FormInputErrorComponent error={props.error} />
-            <FormInputWarningComponent warning={props.warning} />
+            <Show
+                when={props.inline}
+                fallback={
+                    <>
+                        <FormInputLabelComponent label={props.label} subText={props.subText} />
+                        <FormInputDescriptionComponent description={props.description} />
+                        {props.children}
+                        <FormInputErrorComponent error={props.error} />
+                        <FormInputWarningComponent warning={props.warning} />
+                    </>
+                }
+            >
+                <div class={FormInputClasses().layout}>
+                    <FormInputLabelComponent label={props.label} subText={props.subText} />
+                    <FormInputDescriptionComponent description={props.description} />
+                    <FormInputErrorComponent error={props.error} />
+                    <FormInputWarningComponent warning={props.warning} />
+                </div>
+                {props.children}
+            </Show>
         </div>
     );
 }
 
-export function InlineFormInputLayoutComponent(props: FormInputLayoutProps) {
-    return (
-        <div
-            class={classNames(FormInputClasses().container, 'inline', {
-                error: !!props.error,
-                warning: !!props.warning,
-                disabled: props.disabled,
-                hidden: props.hidden
-            })}
-        >
-            <div class={FormInputClasses().layout}>
-                <FormInputLabelComponent label={props.label} subText={props.subText} />
-                <FormInputDescriptionComponent description={props.description} />
-                <FormInputErrorComponent error={props.error} />
-                <FormInputWarningComponent warning={props.warning} />
-            </div>
-            {props.children}
-        </div>
-    );
-}
+const FormFields: Record<FormInputType, (props: any) => JSXElement> = {
+    text: TextFormInputComponent,
+    'text-option': TextOptionFormInputComponent,
+    tags: TagsFormInputComponent,
+    textarea: TextAreaFormInputComponent,
+    number: NumberFormInputComponent,
+    checkbox: CheckboxFormInputComponent,
+    dropdown: DropdownFormInputComponent,
+    date: DateFormInputComponent,
+    color: ColorFormInputComponent,
+    file: FileFormInputComponent,
+    code: CodeFormInputComponent,
+    modal: ModalFormInputComponent,
+};
 
 export function FormInputComponent(input: FormInputs) {
+    const Input = FormFields[input.type];
     return (
-        <Switch>
-            <Match when={input.type === 'text'}>
-                <FormInputLayoutComponent type={input.type} label={input.label} subText={input.subText} description={input.description} error={input.error} warning={input.warning} disabled={input.disabled} hidden={input.hidden}>
-                    <TextFormInputComponent {...(input as TextFormInput)} />
-                </FormInputLayoutComponent>
-            </Match>
-            <Match when={input.type === 'tags'}>
-                <FormInputLayoutComponent type={input.type} label={input.label} subText={input.subText} description={input.description} error={input.error} warning={input.warning} disabled={input.disabled} hidden={input.hidden}>
-                    <TagsFormInputComponent {...(input as TagsFormInput)} />
-                </FormInputLayoutComponent>
-            </Match>
-            <Match when={input.type === 'textarea'}>
-                <FormInputLayoutComponent type={input.type} label={input.label} subText={input.subText} description={input.description} error={input.error} warning={input.warning} disabled={input.disabled} hidden={input.hidden}>
-                    <TextAreaFormInputComponent {...(input as TextAreaFormInput)} />
-                </FormInputLayoutComponent>
-            </Match>
-            <Match when={input.type === 'number'}>
-                <InlineFormInputLayoutComponent type={input.type} label={input.label} subText={input.subText} description={input.description} error={input.error} warning={input.warning} disabled={input.disabled} hidden={input.hidden}>
-                    <NumberFormInputComponent {...(input as NumberFormInput)} />
-                </InlineFormInputLayoutComponent>
-            </Match>
-            <Match when={input.type === 'checkbox'}>
-                <InlineFormInputLayoutComponent type={input.type} label={input.label} subText={input.subText} description={input.description} error={input.error} warning={input.warning} disabled={input.disabled} hidden={input.hidden}>
-                    <CheckboxFormInputComponent {...(input as CheckboxFormInput)} />
-                </InlineFormInputLayoutComponent>
-            </Match>
-            <Match when={input.type === 'dropdown'}>
-                <FormInputLayoutComponent type={input.type} label={input.label} subText={input.subText} description={input.description} error={input.error} warning={input.warning} disabled={input.disabled} hidden={input.hidden}>
-                    <DropdownFormInputComponent {...(input as DropdownFormInput)} />
-                </FormInputLayoutComponent>
-            </Match>
-            <Match when={input.type === 'date'}>
-                <InlineFormInputLayoutComponent type={input.type} label={input.label} subText={input.subText} description={input.description} error={input.error} warning={input.warning} disabled={input.disabled} hidden={input.hidden}>
-                    <DateFormInputComponent {...(input as DateFormInput)} />
-                </InlineFormInputLayoutComponent>
-            </Match>
-            <Match when={input.type === 'color'}>
-                <InlineFormInputLayoutComponent type={input.type} label={input.label} subText={input.subText} description={input.description} error={input.error} warning={input.warning} disabled={input.disabled} hidden={input.hidden}>
-                    <ColorFormInputComponent {...(input as ColorFormInput)} />
-                </InlineFormInputLayoutComponent>
-            </Match>
-            <Match when={input.type === 'file'}>
-                <FormInputLayoutComponent type={input.type} label={input.label} subText={input.subText} description={input.description} error={input.error} warning={input.warning} disabled={input.disabled} hidden={input.hidden}>
-                    <FileFormInputComponent {...(input as FileFormInput)} />
-                </FormInputLayoutComponent>
-            </Match>
-        </Switch>
+        <FieldComponent
+            label={input.label}
+            subText={input.subText}
+            description={input.description}
+            error={input.error}
+            warning={input.warning}
+            disabled={input.disabled}
+            hidden={input.hidden}
+            inline={input.inline}
+        >
+            <Input {...(input as any)} />
+        </FieldComponent>
     );
 }
 

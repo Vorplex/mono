@@ -1,4 +1,4 @@
-import { createStyle, defineComponent } from '@vorplex/solid';
+import { createStyle } from '@vorplex/solid';
 import { classNames } from '@vorplex/web';
 import { Show } from 'solid-js';
 import { Theme } from '../consts/theme';
@@ -28,7 +28,7 @@ const classes = createStyle(() => ({
     }
 }));
 
-export const InfoIconComponent = defineComponent((props: { type?: 'info' | 'error', hidden?: boolean }) => {
+export function InfoIconComponent(props: { type?: 'info' | 'error', hidden?: boolean }) {
     return (
         <Show when={!props.hidden}>
             <div
@@ -36,4 +36,4 @@ export const InfoIconComponent = defineComponent((props: { type?: 'info' | 'erro
             />
         </Show>
     );
-});
+}

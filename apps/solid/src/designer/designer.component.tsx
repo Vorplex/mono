@@ -1,12 +1,12 @@
-import { createMemo, Match, Show, Switch } from 'solid-js';
 import { createStyle, useInjector, useStore } from '@vorplex/solid';
+import { createMemo, Match, Show, Switch } from 'solid-js';
 import { RadioButtonComponent } from '../components/radio-button.component';
+import { MonacoComponent } from '../components/script-editor/script-editor.component';
 import { Theme } from '../consts/theme';
 import { PlatformService } from '../services/platform.service';
 import { ExplorerComponent } from './explorer/explorer.component';
 import { ExplorerService } from './explorer/explorer.service';
 import { PreviewComponent } from './preview/preview.component';
-import { MonacoComponent } from '../components/script-editor/script-editor.component';
 
 const classes = createStyle(() => ({
     container: {

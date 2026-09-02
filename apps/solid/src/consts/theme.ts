@@ -134,8 +134,18 @@ export const Classes = createStyle(() => ({
         borderRadius: '5px',
         border: `1px solid ${Theme().outline.primary}`,
         padding: '5px 10px',
+        width: '100%',
+        minWidth: '0px',
         background: Theme().input.color,
         color: Theme().input.text,
+        '&.flat': {
+            border: '1px solid transparent',
+            background: 'inherit',
+            color: 'inherit',
+            '&:not(:focus-within):hover': {
+                border: `1px dashed ${Theme().outline.primary}`
+            }
+        },
         '&:focus-within': {
             border: `1px solid ${Theme().info.outline}`,
             background: Theme().info.color,
@@ -153,7 +163,8 @@ export const Classes = createStyle(() => ({
     toggle: {
         appearance: 'none',
         width: '44px',
-        height: '27px',
+        minWidth: '44px',
+        height: '28px',
         borderRadius: '999px',
         border: `1px solid ${Theme().outline.primary}`,
         background: 'transparent',
@@ -208,10 +219,26 @@ export const Classes = createStyle(() => ({
         padding: '5px',
         background: Theme().input.color,
         color: Theme().input.text,
+        '&.flat': {
+            border: '1px solid transparent',
+            background: 'inherit',
+            color: 'inherit',
+            '&:not(:focus-within):hover': {
+                border: `1px dashed ${Theme().outline.primary}`
+            }
+        },
         '&:focus-within': {
             border: `1px solid ${Theme().info.outline}`,
             background: Theme().info.color,
             color: Theme().info.text,
+        },
+        '&::placeholder': {
+            color: Theme().input.placeholder
+        },
+        '&:disabled': {
+            pointerEvents: 'none',
+            background: Theme().disabled.color,
+            color: Theme().disabled.text
         },
     }
 }));

@@ -27,7 +27,7 @@ export const ShtmlIf = {
             template: ShtmlTemplate.from(element, state)
         };
         state.ifs[item.id] = item;
-        return { id: item.id, kind: item.type };
+        return { id: item.id, type: item.type };
     },
     to(item: ShtmlIf, state: ShtmlDocumentState): Element {
         const element = document.createElement(NodeType.If);

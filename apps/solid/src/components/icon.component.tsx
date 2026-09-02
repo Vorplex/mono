@@ -1,4 +1,3 @@
-import { defineComponent } from '@vorplex/solid';
 import { splitProps, type JSX } from 'solid-js';
 
 const SHEET_URL = 'https://cdn.jsdelivr.net/npm/lucide-static/sprite.svg';
@@ -1787,7 +1786,7 @@ export type Icon =
     | 'zoom-in'
     | 'zoom-out';
 
-export const Icon = defineComponent((props: { name: Icon } & JSX.SvgSVGAttributes<SVGSVGElement>) => {
+export function Icon(props: { name: Icon } & JSX.SvgSVGAttributes<SVGSVGElement>) {
     const [local, rest] = splitProps(props, ['name', 'style']);
 
     return (
@@ -1805,4 +1804,4 @@ export const Icon = defineComponent((props: { name: Icon } & JSX.SvgSVGAttribute
             <use href={`#${local.name}`}></use>
         </svg>
     );
-});
+}

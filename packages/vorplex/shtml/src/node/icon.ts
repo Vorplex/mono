@@ -30,7 +30,7 @@ export const ShtmlIcon = {
                 .reduce((attributes, name) => Object.assign(attributes, { [name]: element.getAttribute(name) }), {})
         };
         state.icons[item.id] = item;
-        return { id: item.id, kind: item.type };
+        return { id: item.id, type: item.type };
     },
     to(item: ShtmlIcon): Element {
         const element = document.createElement(NodeType.Icon);

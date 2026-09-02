@@ -1,4 +1,4 @@
-import { createPopup, createStyle, defineComponent, PopupPosition } from '@vorplex/solid';
+import { createPopup, createStyle, PopupPosition, PopupSize } from '@vorplex/solid';
 import { $Element } from '@vorplex/web';
 import { Accessor, createEffect, For, onCleanup, Show } from 'solid-js';
 import { ButtonComponent } from '../components/button.component';
@@ -22,11 +22,11 @@ const classes = createStyle(() => ({
         color: Theme().primary.text,
         border: `1px solid ${Theme().outline.primary}`,
         borderRadius: '5px',
-        minWidth: '200px',
+        minWidth: '150px',
     },
 }));
 
-export const ContextMenuComponent = defineComponent((props: { items: ContextMenuItem[], onItemClicked?: (item: ContextMenuItem) => void }) => {
+export function ContextMenuComponent(props: { items: ContextMenuItem[], onItemClicked?: (item: ContextMenuItem) => void }) {
     return (
         <div class={classes().container}>
             <For each={props.items}>
@@ -47,10 +47,10 @@ export const ContextMenuComponent = defineComponent((props: { items: ContextMenu
             </For>
         </div>
     );
-});
+}
 
 export interface ContextMenuDirectiveProps {
-    position?: PopupPosition;
+    anchor?: { element?: Accessor<HTMLElement>, position: PopupPosition, size?: PopupSize };
     items: ContextMenuItem[];
     action?: 'contextmenu' | 'click';
 }
@@ -63,9 +63,9 @@ export function ContextMenuDirective(element: HTMLElement, props: Accessor<Conte
             if (props().items.length) {
                 element.setAttribute('data-context-menu-open', 'true');
                 createPopup({
-                    anchor: props().position ? { element, position: props().position } : undefined,
-                    location: !props().position ? { x: event.clientX, y: event.clientY } : undefined,
-                    autoTransform: true,
+                    anchor: props().anchor ? { element: props().anchor.element() ?? element, position: props().anchor.position, size: props().anchor.size } : undefined,
+                    location: !props().anchor ? { x: event.clientX, y: event.clientY } : undefined,
+                    autoPosition: true,
                     render: (portal) => <ContextMenuComponent items={props().items} onItemClicked={() => portal.destroy()} />,
                     onDestroy: () => element.removeAttribute('data-context-menu-open')
                 });

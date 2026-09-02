@@ -1,10 +1,10 @@
-import { defineComponent, useInjector } from '@vorplex/solid';
+import { defineRemountingComponent, useInjector } from '@vorplex/solid';
 import * as monaco from 'monaco-editor';
 import { createEffect, createSignal, onCleanup, onMount, Show } from 'solid-js';
 import { Theme } from '../../consts/theme';
 import { MonacoService } from './monaco.service';
 
-export const MonacoDiffComponent = defineComponent((props: { markers?: monaco.editor.IMarkerData[], scrollPosition?: { top: number, left: number }, original: string; modified: string; language?: string; readonly?: boolean, inline?: boolean, hideUnchangedRegions?: boolean, onChanging?: (value: string) => void, onChange?: (value: string) => void, onScroll?: (event: monaco.IScrollEvent) => void }) => {
+export const MonacoDiffComponent = defineRemountingComponent((props: { markers?: monaco.editor.IMarkerData[], scrollPosition?: { top: number, left: number }, original: string; modified: string; language?: string; readonly?: boolean, inline?: boolean, hideUnchangedRegions?: boolean, onChanging?: (value: string) => void, onChange?: (value: string) => void, onScroll?: (event: monaco.IScrollEvent) => void }) => {
     const services = useInjector({
         monaco: MonacoService,
     });

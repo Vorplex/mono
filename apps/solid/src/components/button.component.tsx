@@ -1,5 +1,5 @@
 import { Awaitable } from '@vorplex/core';
-import { createStyle, defineComponent } from '@vorplex/solid';
+import { createStyle } from '@vorplex/solid';
 import { classNames } from '@vorplex/web';
 import { createSignal, JSX, Show, splitProps } from 'solid-js';
 import { Theme } from '../consts/theme';
@@ -118,7 +118,7 @@ const classes = createStyle(() => ({
     },
 }));
 
-export const ButtonComponent = defineComponent((props: ButtonProps) => {
+export function ButtonComponent(props: ButtonProps) {
     const [local, rest] = splitProps(props, [
         'appearance',
         'intent',
@@ -175,4 +175,4 @@ export const ButtonComponent = defineComponent((props: ButtonProps) => {
             />
         </button>
     );
-});
+}

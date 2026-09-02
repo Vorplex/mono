@@ -26,7 +26,7 @@ export const ShtmlPageContainer = {
             page: ShtmlDom.getRequiredAttribute(element, 'page')
         };
         state.pageContainers[item.id] = item;
-        return { id: item.id, kind: item.type };
+        return { id: item.id, type: item.type };
     },
     to(item: ShtmlPageContainer): Element {
         const element = document.createElement(NodeType.PageContainer);

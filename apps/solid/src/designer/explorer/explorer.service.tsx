@@ -1,12 +1,15 @@
-import { Injectable, InjectInstance, State } from '@vorplex/core';
-import { PageEditorService } from './editors/page-editor/page-editor.service';
+import { Injectable, State } from '@vorplex/core';
+import { NodeType } from '@vorplex/shtml';
 
 export enum ExplorerNode {
     Page,
-    PageScript,
-    PageStyle,
     Component,
+    ComponentEvent,
+    ComponentProperty,
+    Script,
+    Style,
     Api,
+    ApiEndpoint,
     Variable,
     Router,
     Asset,
@@ -15,35 +18,48 @@ export enum ExplorerNode {
     Service
 }
 
-export interface PageEditorState {
-    selectedItem?: { type: ExplorerNode, id: string };
+export type VariableScope =
+    | { type: 'app' }
+    | { type: 'page'; pageId: string }
+    | { type: 'component'; componentId: string };
+
+export type ContainerTarget =
+    | { type: NodeType.App; id: string }
+    | { type: NodeType.Page; id: string }
+    | { type: NodeType.Component; id: string };
+
+export type ExplorerSelectedItem =
+    | { type: ExplorerNode.Page; id: string }
+    | { type: ExplorerNode.Component; id: string }
+    | { type: ExplorerNode.Script; id: string; container: ContainerTarget }
+    | { type: ExplorerNode.Style; id: string; container: ContainerTarget }
+    | { type: ExplorerNode.Api; id: string }
+    | { type: ExplorerNode.ApiEndpoint; id: string }
+    | { type: ExplorerNode.Variable; id: string; scope: VariableScope }
+    | { type: ExplorerNode.ComponentProperty; id: string; componentId: string }
+    | { type: ExplorerNode.ComponentEvent; id: string; componentId: string }
+    | { type: ExplorerNode.Router; id: string }
+    | { type: ExplorerNode.Asset; id: string }
+    | { type: ExplorerNode.Packages; id: string }
+    | { type: ExplorerNode.Type; id: string }
+    | { type: ExplorerNode.Service; id: string };
+
+export interface ExplorerState {
+    selectedItem?: ExplorerSelectedItem;
     mode: 'design' | 'preview' | 'shtml';
 }
 
 @Injectable({ global: true })
 export class ExplorerService {
 
-    declare public static inject: { pageEditor: () => typeof PageEditorService };
-
-    public readonly state = new State<PageEditorState>({
+    public readonly state = new State<ExplorerState>({
         mode: 'design'
     });
 
-    constructor(private services: InjectInstance<typeof ExplorerService.inject>) {
-
-    }
-
-    public selectItem(type: ExplorerNode, id: string) {
+    public selectItem(item: ExplorerSelectedItem) {
         this.state.update({
-            selectedItem: {
-                type,
-                id
-            }
+            selectedItem: item
         });
-        this.services.pageEditor.state.update({ selectedTreeItem: null });
     }
 
 }
-ExplorerService.inject = {
-    pageEditor: () => PageEditorService
-};

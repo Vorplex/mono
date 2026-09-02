@@ -122,7 +122,7 @@ export class ShtmlDocument {
                 case NodeType.Icon: state = { ...state, icons: EntityAdaptor.create(state.icons, node) }; break;
                 case NodeType.Text: state = { ...state, texts: EntityAdaptor.create(state.texts, node) }; break;
             }
-            const reference: ShtmlTemplateItem = { id: node.id, kind: node.type };
+            const reference: ShtmlTemplateItem = { id: node.id, type: node.type };
             switch (targetType) {
                 case NodeType.Page: return { ...state, pages: EntityAdaptor.updateById(state.pages, targetId, page => ({ template: [...page.template, reference] })) };
                 case NodeType.Component: return { ...state, components: EntityAdaptor.updateById(state.components, targetId, item => ({ template: [...item.template, reference] })) };
@@ -145,7 +145,7 @@ export class ShtmlDocument {
                 case NodeType.If: state = { ...state, ifs: EntityAdaptor.updateById(state.ifs, targetId, item => ({ template: $Array.removeWhere(item.template, entry => entry.id === node.id, true) })) }; break;
                 case NodeType.For: state = { ...state, fors: EntityAdaptor.updateById(state.fors, targetId, item => ({ template: $Array.removeWhere(item.template, entry => entry.id === node.id, true) })) }; break;
             }
-            switch (node.kind) {
+            switch (node.type) {
                 case NodeType.Element: return { ...state, elements: EntityAdaptor.delete(state.elements, node.id) };
                 case NodeType.If: return { ...state, ifs: EntityAdaptor.delete(state.ifs, node.id) };
                 case NodeType.For: return { ...state, fors: EntityAdaptor.delete(state.fors, node.id) };
@@ -220,13 +220,13 @@ export class ShtmlDocument {
         const walkTemplate = (template: ShtmlTemplateItem[], forLocals: [string, TsonDefinition][]): [string, TsonDefinition][] | undefined => {
             for (const item of template) {
                 if (item.id === targetId) return forLocals;
-                if (item.kind === NodeType.Element) {
+                if (item.type === NodeType.Element) {
                     const found = walkTemplate(proxy.elements[item.id].template(), forLocals);
                     if (found) return found;
-                } else if (item.kind === NodeType.If) {
+                } else if (item.type === NodeType.If) {
                     const found = walkTemplate(proxy.ifs[item.id].template(), forLocals);
                     if (found) return found;
-                } else if (item.kind === NodeType.For) {
+                } else if (item.type === NodeType.For) {
                     const forNode = proxy.fors[item.id];
                     const added: [string, TsonDefinition][] = [[forNode.as() || 'item', { type: 'any' }]];
                     if (forNode.index()) added.push([forNode.index(), { type: 'any' }]);

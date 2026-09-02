@@ -1,4 +1,4 @@
-import { createPopup, createStyle, defineComponent, Portal } from '@vorplex/solid';
+import { createPopup, createStyle, Portal } from '@vorplex/solid';
 import { $Element, classNames } from '@vorplex/web';
 import { onCleanup, type Accessor } from 'solid-js';
 import { Theme } from '../consts/theme';
@@ -62,9 +62,9 @@ export const TooltipPosition = {
 } as const;
 export type TooltipPosition = typeof TooltipPosition[keyof typeof TooltipPosition];
 
-export const TooltipComponent = defineComponent((props: { tip: string, position: TooltipPosition }) => {
+export function TooltipComponent(props: { tip: string, position: TooltipPosition }) {
     return <div class={classNames(classes().tooltip, props.position)}>{props.tip}</div>;
-});
+}
 
 export interface TooltipDirectiveProps {
     tip: string;
