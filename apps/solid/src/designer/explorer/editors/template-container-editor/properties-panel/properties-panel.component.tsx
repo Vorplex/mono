@@ -6,6 +6,7 @@ import { ElementPropertiesPanelComponent } from './properties-panels/element-pro
 import { ForPropertiesPanelComponent } from './properties-panels/for-properties-panel.component';
 import { IfPropertiesPanelComponent } from './properties-panels/if-properties-panel.component';
 import { PageContainerPropertiesPanelComponent } from './properties-panels/page-container.component';
+import { TextPropertiesPanelComponent } from './properties-panels/text-properties-panel.component';
 
 export function PropertiesPanelComponent() {
 
@@ -24,6 +25,9 @@ export function PropertiesPanelComponent() {
             </Match>
             <Match when={editor.selectedTreeItem.type() === NodeType.Element}>
                 <ElementPropertiesPanelComponent elementId={editor.selectedTreeItem.id()} />
+            </Match>
+            <Match when={editor.selectedTreeItem.type() === NodeType.Text}>
+                <TextPropertiesPanelComponent textId={editor.selectedTreeItem.id()} />
             </Match>
         </Switch>
     );

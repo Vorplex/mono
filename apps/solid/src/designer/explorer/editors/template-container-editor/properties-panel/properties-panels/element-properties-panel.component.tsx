@@ -9,7 +9,7 @@ import { Icon } from '../../../../../../components/icon.component';
 import { PanelComponent } from '../../../../../../components/panel.component';
 import { Theme } from '../../../../../../consts/theme';
 import { PlatformService } from '../../../../../../services/platform.service';
-import { BindingInputComponent } from '../binding-value-editor.component';
+import { ExpressionInputComponent } from '../expression-input.component';
 
 const classes = createStyle(() => ({
     properties: {
@@ -147,7 +147,7 @@ export const ElementPropertiesPanelComponent = defineRemountingComponent((props:
                                         onBlur={value => element.attributes(attributes => MapAdaptor.rename(attributes, attributeName, value.currentTarget.innerText))}>
                                         {attributeName}
                                     </span>
-                                    <BindingInputComponent
+                                    <ExpressionInputComponent
                                         locals={locals()}
                                         value={attributeValue()}
                                         accepts={$Tson.string()}
@@ -180,7 +180,7 @@ export const ElementPropertiesPanelComponent = defineRemountingComponent((props:
                                         onBlur={value => element.attributes(attributes => MapAdaptor.rename(attributes, attributeName, value.currentTarget.innerText))}>
                                         {attributeName}
                                     </span>
-                                    <BindingInputComponent
+                                    <ExpressionInputComponent
                                         locals={locals()}
                                         value={attributeValue()}
                                         accepts={$Tson.string()}
@@ -213,7 +213,7 @@ export const ElementPropertiesPanelComponent = defineRemountingComponent((props:
                                         onBlur={value => element.attributes(attributes => MapAdaptor.rename(attributes, attributeName, value.currentTarget.innerText))}>
                                         {attributeName}
                                     </span>
-                                    <BindingInputComponent
+                                    <ExpressionInputComponent
                                         locals={locals()}
                                         value={attributeValue()}
                                         accepts={$Tson.string()}
@@ -246,7 +246,7 @@ export const ElementPropertiesPanelComponent = defineRemountingComponent((props:
                                         onBlur={value => element.attributes(attributes => MapAdaptor.rename(attributes, attributeName, value.currentTarget.innerText))}>
                                         {attributeName}
                                     </span>
-                                    <BindingInputComponent
+                                    <ExpressionInputComponent
                                         locals={locals()}
                                         value={attributeValue()}
                                         accepts={$Tson.string()}
@@ -264,7 +264,7 @@ export const ElementPropertiesPanelComponent = defineRemountingComponent((props:
                 </PropertiesPanelSectionComponent>
                 <Show when={textValue() !== undefined}>
                     <FieldComponent label={'Text'}>
-                        <BindingInputComponent
+                        <ExpressionInputComponent
                             locals={locals()}
                             value={textValue()}
                             accepts={$Tson.string()}

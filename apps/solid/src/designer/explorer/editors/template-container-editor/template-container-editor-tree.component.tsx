@@ -158,8 +158,8 @@ export function TemplateContainerEditorTreeComponent(props: { target: TemplateCo
                     id={node.id()} type={NodeType.Text} depth={props.depth} path={props.path}
                     contextMenu={TextTreeItemContextMenu(node.id())}
                     label={<>
-                        <span>Text</span>
-                        <span>{node.content()}</span>
+                        <span style={{ color: Theme().accent.color }}>text</span>
+                        <span style={{ color: Theme().secondary.subText }}>"{ExpressionDisplay.mask(node.content())}"</span>
                     </>} />
             </Show>
         );

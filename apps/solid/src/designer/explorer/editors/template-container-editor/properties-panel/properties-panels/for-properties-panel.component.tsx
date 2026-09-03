@@ -3,7 +3,7 @@ import { createStyle, defineRemountingComponent, useInjector, useStore } from '@
 import { FieldComponent, FormInputComponent } from '../../../../../../components/forms/form-input.component';
 import { PanelComponent } from '../../../../../../components/panel.component';
 import { PlatformService } from '../../../../../../services/platform.service';
-import { BindingInputComponent } from '../binding-value-editor.component';
+import { ExpressionInputComponent } from '../expression-input.component';
 
 const classes = createStyle(() => ({
     properties: {
@@ -26,7 +26,7 @@ export const ForPropertiesPanelComponent = defineRemountingComponent((props: { f
         <PanelComponent icon='sliders-horizontal' title='For Properties'>
             <div class={classes().properties}>
                 <FieldComponent label={'Each'}>
-                    <BindingInputComponent
+                    <ExpressionInputComponent
                         value={forNode.each()}
                         locals={service.platform.shtml.getLocals(forNode.id())}
                         accepts={$Tson.union({ union: [$Tson.array(), $Tson.object(), $Tson.record()] })}

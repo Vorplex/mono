@@ -42,7 +42,7 @@ const classes = createStyle(() => ({
     }
 }));
 
-export function BindingInputComponent(props: { value: string, locals: Record<string, TsonDefinition>, accepts: TsonDefinition, onChange?: (value: string) => void }) {
+export function ExpressionInputComponent(props: { value: string, locals: Record<string, TsonDefinition>, accepts: TsonDefinition, onChange?: (value: string) => void }) {
     const openExpressionModal = async () => {
         const result = await showExpressionModal({ value: props.value, locals: props.locals, accepts: props.accepts });
         if (result !== undefined) props.onChange?.(result);
@@ -52,7 +52,7 @@ export function BindingInputComponent(props: { value: string, locals: Record<str
             <input
                 class={classes().input}
                 value={props.value}
-                onChange={event => props.onChange(event.currentTarget.value)}
+                onInput={event => props.onChange(event.currentTarget.value)}
             />
             <ButtonComponent
                 class={classes().button}

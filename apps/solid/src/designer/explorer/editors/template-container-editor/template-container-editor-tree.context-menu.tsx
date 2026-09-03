@@ -1,5 +1,5 @@
 import { $Id } from '@vorplex/core';
-import { NodeType, ShtmlComponentInstance, ShtmlElement, ShtmlFor, ShtmlIcon, ShtmlIf, ShtmlPageContainer, ShtmlTemplateItem, ShtmlTemplateTargetType } from '@vorplex/shtml';
+import { NodeType, ShtmlComponentInstance, ShtmlElement, ShtmlFor, ShtmlIcon, ShtmlIf, ShtmlPageContainer, ShtmlTemplateItem, ShtmlTemplateTargetType, ShtmlText } from '@vorplex/shtml';
 import { useInjector } from '@vorplex/solid';
 import { useContext } from 'solid-js';
 import { ContextMenuItem } from '../../../../directives/context-menu.directive';
@@ -32,6 +32,16 @@ const AddForContextMenuItem = (targetType: ShtmlTemplateTargetType, targetId: st
     onClick: () => {
         const service = useInjector({ platform: PlatformService });
         const node: ShtmlFor = { id: $Id.guid(), type: NodeType.For, each: '[]', as: 'item', template: [] };
+        service.platform.shtml.addNode(targetType, targetId, node);
+    }
+});
+
+const AddTextContextMenuItem = (targetType: ShtmlTemplateTargetType, targetId: string): ContextMenuItem => ({
+    icon: 'type',
+    text: 'Add Text',
+    onClick: () => {
+        const service = useInjector({ platform: PlatformService });
+        const node: ShtmlText = { id: $Id.guid(), type: NodeType.Text, content: '' };
         service.platform.shtml.addNode(targetType, targetId, node);
     }
 });
@@ -84,6 +94,7 @@ const DeleteContextMenuItem = (node: ShtmlTemplateItem): ContextMenuItem => ({
 
 export const TemplateContainerTreeContextMenu = (targetType: ShtmlTemplateTargetType, targetId: string): ContextMenuItem[] => [
     AddElementContextMenuItem(targetType, targetId),
+    AddTextContextMenuItem(targetType, targetId),
     AddIfContextMenuItem(targetType, targetId),
     AddForContextMenuItem(targetType, targetId),
     AddComponentInstanceContextMenuItem(targetType, targetId),
@@ -97,6 +108,7 @@ export const TextTreeItemContextMenu = (id: string): ContextMenuItem[] => [
 
 export const ElementTreeItemContextMenu = (id: string): ContextMenuItem[] => [
     AddElementContextMenuItem(NodeType.Element, id),
+    AddTextContextMenuItem(NodeType.Element, id),
     AddIfContextMenuItem(NodeType.Element, id),
     AddForContextMenuItem(NodeType.Element, id),
     AddComponentInstanceContextMenuItem(NodeType.Element, id),
@@ -107,6 +119,7 @@ export const ElementTreeItemContextMenu = (id: string): ContextMenuItem[] => [
 
 export const IfTreeItemContextMenu = (id: string): ContextMenuItem[] => [
     AddElementContextMenuItem(NodeType.If, id),
+    AddTextContextMenuItem(NodeType.If, id),
     AddIfContextMenuItem(NodeType.If, id),
     AddForContextMenuItem(NodeType.If, id),
     AddComponentInstanceContextMenuItem(NodeType.If, id),
@@ -117,6 +130,7 @@ export const IfTreeItemContextMenu = (id: string): ContextMenuItem[] => [
 
 export const ForTreeItemContextMenu = (id: string): ContextMenuItem[] => [
     AddElementContextMenuItem(NodeType.For, id),
+    AddTextContextMenuItem(NodeType.For, id),
     AddIfContextMenuItem(NodeType.For, id),
     AddForContextMenuItem(NodeType.For, id),
     AddComponentInstanceContextMenuItem(NodeType.For, id),
