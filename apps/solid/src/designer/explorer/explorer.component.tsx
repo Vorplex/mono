@@ -30,7 +30,7 @@ export function ExplorerComponent() {
     return (
         <div style={{
             display: 'grid',
-            'grid-template-columns': '350px auto',
+            'grid-template-columns': '300px auto',
             "grid-template-rows": '1fr',
             gap: '5px',
             overflow: 'hidden'
