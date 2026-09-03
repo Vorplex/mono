@@ -129,6 +129,7 @@ export class $Value {
                 return true;
             }
             if (typeof a === 'object') {
+                if (typeof a.toJSON === 'function' && typeof b.toJSON === 'function') return recurse(a.toJSON(), b.toJSON(), refs);
                 const keysA = Object.keys(a);
                 const keysB = Object.keys(b);
                 if (keysA.length !== keysB.length) return false;

@@ -132,13 +132,13 @@ export class Signal<T = any> {
         }
     }
 
-    public static memo<T>(callback: () => T): Getter<T> {
+    public static memo<T>(callback: () => T, equals = (a: any, b: any) => $Value.equals(a, b)): Getter<T> {
         let initialized = false;
         let value!: T;
         const signal = Signal.create<T>(undefined as T);
         Signal.effect(() => {
             const next = callback();
-            if (initialized && $Value.equals(value, next)) return;
+            if (initialized && equals(value, next)) return;
             initialized = true;
             value = next;
             signal(next);
@@ -180,7 +180,7 @@ export class Signal<T = any> {
             for (const stale of entries.values()) stale.root.dispose();
             entries = next;
             return result;
-        });
+        }, (a: U[], b: U[]) => a.length === b.length && a.every((item, index) => item === b[index]));
     }
 
     public static untrack<T>(callback: () => T): T {

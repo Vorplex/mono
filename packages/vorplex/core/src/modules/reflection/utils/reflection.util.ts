@@ -4,6 +4,11 @@ import type { Type } from '../types/type.type';
 export class $Reflection {
     private constructor() { }
 
+    public static isAnonymousObject(value: any) {
+        const prototype = Object.getPrototypeOf(value);
+        return prototype === Object.prototype || prototype === null;
+    };
+
     /**
      * Returns the names of the parameters of the given function
      *
