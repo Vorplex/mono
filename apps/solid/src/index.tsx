@@ -1,5 +1,5 @@
-import { render } from 'solid-js/web';
 import { createStyle, InjectorContext } from '@vorplex/solid';
+import { render } from 'solid-js/web';
 import { PlatformInjector } from './consts/platform.injector';
 import { Theme } from './consts/theme';
 import { DesignerComponent } from './designer/designer.component';

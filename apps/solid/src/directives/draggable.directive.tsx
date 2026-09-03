@@ -93,7 +93,7 @@ export function DropzoneDirective(element: HTMLElement, props: Accessor<Dropzone
         cleanup();
         const properties = props();
         listeners.push($Element.addEventListener(element, 'dragover', event => {
-            if (event.currentTarget === DRAG_DATA.element) return;
+            if (!DRAG_DATA || event.currentTarget === DRAG_DATA.element) return;
             const accept = properties.accepts[DRAG_DATA.type];
             if (!accept) return;
             if (accept.condition && !accept.condition({ data: DRAG_DATA.data, event, area: element.getAttribute('data-dropzone-accepted-area') as DropzoneAcceptArea })) return;
@@ -109,6 +109,7 @@ export function DropzoneDirective(element: HTMLElement, props: Accessor<Dropzone
             cleanupAccept();
         }));
         listeners.push($Element.addEventListener(element, 'drop', event => {
+            if (!DRAG_DATA) return;
             const accept = properties.accepts[DRAG_DATA.type];
             accept.dropped({
                 data: DRAG_DATA.data,

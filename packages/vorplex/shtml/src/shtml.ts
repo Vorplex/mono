@@ -109,8 +109,6 @@ export class ShtmlDocument {
         return ShtmlApp.to(state.app, state).outerHTML;
     }
 
-    // Files `node` into its own EntityMap bucket and appends a reference to it onto `targetType`/`targetId`'s
-    // own template array -- the two things every "add a node to the tree" action needs done atomically.
     public addNode(targetType: ShtmlTemplateTargetType, targetId: string, node: ShtmlTemplateNode): void {
         this.state.set(state => {
             switch (node.type) {
@@ -133,9 +131,6 @@ export class ShtmlDocument {
         });
     }
 
-    // Strips `node`'s reference out of `targetType`/`targetId`'s own template array and deletes its entity --
-    // doesn't walk into `node`'s own descendants, so any entities they reference are left behind unreferenced
-    // (inert, same as an orphaned variable/service elsewhere in this app).
     public removeNode(targetType: ShtmlTemplateTargetType, targetId: string, node: ShtmlTemplateItem): void {
         this.state.set(state => {
             switch (targetType) {
@@ -158,11 +153,37 @@ export class ShtmlDocument {
         });
     }
 
-    // Nothing in ShtmlDocumentState stores a back-reference, so finding `id`'s owner means searching every
-    // place a reference to it could live: the app's own pageIds/componentIds, every page/component's template,
-    // and every element/if/for's template, plus every component's nested componentIds. Returns undefined for
-    // ids with no owner in any of those (root app, or a kind -- Route, Param, etc -- that never appears as a
-    // reference in the first place).
+    public moveNode(node: ShtmlTemplateItem, from: { type: ShtmlTemplateTargetType; id: string }, to: { type: ShtmlTemplateTargetType; id: string }, index: number): void {
+        this.state.set(state => {
+            const getContainer = (type: ShtmlTemplateTargetType, id: string) => {
+                switch (type) {
+                    case NodeType.Page: return state.pages[id];
+                    case NodeType.Component: return state.components[id];
+                    case NodeType.Element: return state.elements[id];
+                    case NodeType.If: return state.ifs[id];
+                    case NodeType.For: return state.fors[id];
+                }
+            };
+            const setTemplate = (state: ShtmlDocumentState, type: ShtmlTemplateTargetType, id: string, template: ShtmlTemplateItem[]): ShtmlDocumentState => {
+                switch (type) {
+                    case NodeType.Page: return { ...state, pages: EntityAdaptor.updateById(state.pages, id, () => ({ template })) };
+                    case NodeType.Component: return { ...state, components: EntityAdaptor.updateById(state.components, id, () => ({ template })) };
+                    case NodeType.Element: return { ...state, elements: EntityAdaptor.updateById(state.elements, id, () => ({ template })) };
+                    case NodeType.If: return { ...state, ifs: EntityAdaptor.updateById(state.ifs, id, () => ({ template })) };
+                    case NodeType.For: return { ...state, fors: EntityAdaptor.updateById(state.fors, id, () => ({ template })) };
+                }
+            };
+            if (from.type === to.type && from.id === to.id) {
+                const template = getContainer(from.type, from.id).template;
+                const sourceIndex = template.findIndex(item => item.id === node.id);
+                const destinationIndex = sourceIndex < index ? index - 1 : index;
+                return setTemplate(state, from.type, from.id, $Array.moveAt(template, sourceIndex, destinationIndex));
+            }
+            state = setTemplate(state, from.type, from.id, $Array.removeWhere(getContainer(from.type, from.id).template, item => item.id === node.id, true));
+            return setTemplate(state, to.type, to.id, $Array.insert(getContainer(to.type, to.id).template, index, node));
+        });
+    }
+
     public getNodeParent(id: string): { type: NodeType; id: string } | undefined {
         const state = this.state.value;
         if (state.app.pageIds.includes(id) || state.app.componentIds.includes(id)) return { type: NodeType.App, id: state.app.id };
@@ -177,8 +198,6 @@ export class ShtmlDocument {
         return undefined;
     }
 
-    // Walks up from `id` through successive getNodeParent() calls until it finds an ancestor of `type` (e.g.
-    // the nearest enclosing <x-for>) -- undefined if none exists before reaching the app root.
     public getNodeParentOfType(id: string, type: NodeType): { type: NodeType; id: string } | undefined {
         let current = this.getNodeParent(id);
         while (current) {

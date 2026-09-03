@@ -1,5 +1,5 @@
 import { $Array } from '@vorplex/core';
-import { ExpressionDisplay, NodeType, ShtmlTemplateItem } from '@vorplex/shtml';
+import { ExpressionDisplay, NodeType, ShtmlDocumentState, ShtmlTemplateItem, ShtmlTemplateTargetType } from '@vorplex/shtml';
 import { createStyle, useCachedSignal, useInjector, useStore } from '@vorplex/solid';
 import { classNames } from '@vorplex/web';
 import { createMemo, Show, useContext, type JSX } from 'solid-js';
@@ -8,6 +8,7 @@ import { PanelComponent } from '../../../../components/panel.component';
 import { VirtualList, type VirtualListItem } from '../../../../components/virtual-list.component';
 import { Theme } from '../../../../consts/theme';
 import { ContextMenuItem } from '../../../../directives/context-menu.directive';
+import { type DropzoneAcceptArea } from '../../../../directives/draggable.directive';
 import { PlatformService } from '../../../../services/platform.service';
 import { TemplateContainerEditorContext, TemplateContainerTarget } from './template-container-editor-context';
 import {
@@ -39,6 +40,16 @@ const classes = createStyle(() => ({
         '&.selected': {
             background: Theme().info.color,
             color: Theme().info.text,
+        },
+        '&[data-dropzone-accepted-area="top"]': {
+            boxShadow: `inset 0 2px 0 ${Theme().accent.color}`,
+        },
+        '&[data-dropzone-accepted-area="middle"]': {
+            outline: `2px solid ${Theme().accent.color}`,
+            outlineOffset: '-2px',
+        },
+        '&[data-dropzone-accepted-area="bottom"]': {
+            boxShadow: `inset 0 -2px 0 ${Theme().accent.color}`,
         },
     },
     chevron: {
@@ -113,7 +124,6 @@ export function TemplateContainerEditorTreeComponent(props: { target: TemplateCo
         traverse(template);
         return items;
     });
-
     const TreeItem = (props: { id: string; type: NodeType; depth: number; path: string[]; expandable?: boolean; expanded?: boolean; onToggle?: () => void; label: JSX.Element; contextMenu?: ContextMenuItem[] }) => {
         const descendant = createMemo(() => {
             const selectedId = editor.selectedTreeItem.id();
@@ -134,6 +144,48 @@ export function TemplateContainerEditorTreeComponent(props: { target: TemplateCo
                 onMouseEnter={() => editor.hoveredTreeItem({ type: props.type, id: props.id })}
                 onMouseLeave={() => { if (editor.hoveredTreeItem.id() === props.id) editor.hoveredTreeItem(null); }}
                 use:ContextMenuDirective={{ items: props.contextMenu ?? [] }}
+                use:DraggableDirective={{ type: 'template-node', data: { id: props.id, type: props.type }, ghost: <span>{props.label}</span> }}
+                use:DropzoneDirective={{
+                    accepts: {
+                        'template-node': {
+                            condition: ({ data, area }: { data: { id: string; type: NodeType }; area: DropzoneAcceptArea }) => {
+                                if (data.id === props.id || props.path.includes(data.id)) return false;
+                                if (area === 'middle' && ![NodeType.Element, NodeType.If, NodeType.For].includes(props.type)) return false;
+                                return true;
+                            },
+                            accepting: ({ area }: { area: DropzoneAcceptArea }) => {
+                                if (area !== 'middle' || !collapsedItems().includes(props.id)) return;
+                                setCollapsedItems(items => $Array.toggle(items, props.id));
+                                return () => setCollapsedItems(items => $Array.toggle(items, props.id));
+                            },
+                            dropped: ({ data, area }: { data: { id: string; type: NodeType }; area: DropzoneAcceptArea }) => {
+                                const getTemplate = (type: NodeType, id: string, state: ShtmlDocumentState): ShtmlTemplateItem[] => {
+                                    switch (type) {
+                                        case NodeType.Page: return state.pages[id].template;
+                                        case NodeType.Component: return state.components[id].template;
+                                        case NodeType.Element: return state.elements[id].template;
+                                        case NodeType.If: return state.ifs[id].template;
+                                        case NodeType.For: return state.fors[id].template;
+                                        default: return [];
+                                    }
+                                };
+                                const from = service.platform.shtml.getNodeParent(data.id) as { type: ShtmlTemplateTargetType; id: string } | undefined;
+                                if (!from) return;
+                                const state = service.platform.shtml.state.value;
+                                if (area === 'middle') {
+                                    const to = { type: props.type as ShtmlTemplateTargetType, id: props.id };
+                                    service.platform.shtml.moveNode(data, from, to, getTemplate(props.type, props.id, state).length);
+                                } else {
+                                    const to = service.platform.shtml.getNodeParent(props.id) as { type: ShtmlTemplateTargetType; id: string } | undefined;
+                                    if (!to) return;
+                                    const toTemplate = getTemplate(to.type, to.id, state);
+                                    const index = toTemplate.findIndex(item => item.id === props.id) + (area === 'top' ? 0 : 1);
+                                    service.platform.shtml.moveNode(data, from, to, index);
+                                }
+                            }
+                        }
+                    }
+                }}
             >
                 <Show when={props.expandable}>
                     <Icon
