@@ -1,25 +1,14 @@
-import { $PathSelector, $Value, Signal, SignalProxy, State } from '@vorplex/core';
-import { createRoot, onCleanup } from 'solid-js';
-import { useSignal } from './use-signal';
+import { $Value, Signal, SignalProxy, State } from '@vorplex/core';
+import { onCleanup } from 'solid-js';
+import { createStore, reconcile } from 'solid-js/store';
 
-export function useStore<TState>(state: State<TState>): SignalProxy<TState> {
-    const cache = new Map<string, Signal>();
-    const disposes: (() => void)[] = [];
-    onCleanup(() => disposes.forEach(dispose => dispose()));
-    return Signal.proxy(path => {
-        const key = $PathSelector.toString(path);
-        if (!cache.has(key)) {
-            const signal = $Value.get(state.signal.proxy, path) as Signal;
-            const getter = createRoot(dispose => {
-                disposes.push(dispose);
-                return useSignal(signal);
-            });
-            const accessor = ((...args: any[]) => {
-                if (args.length === 0) return getter();
-                return (signal as any)(...args);
-            }) as Signal;
-            cache.set(key, accessor);
-        }
-        return cache.get(key)!;
-    });
+export function useStore<TState extends object>(state: State<TState>): SignalProxy<TState> {
+    const [store, setStore] = createStore(state.value);
+    const subscription = state.subscribe(({ value }) => setStore(reconcile(value)));
+    onCleanup(() => subscription.unsubscribe());
+    return Signal.proxy(path => (((...args: any[]) => {
+        if (args.length === 0) return $Value.get(store, path);
+        state.set(path as any, args[0]);
+        return args[0];
+    }) as Signal));
 }
