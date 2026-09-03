@@ -12,7 +12,7 @@ import { DropdownFormInputComponent } from './forms/inputs/dropdown.component';
 import { NumberFormInputComponent } from './forms/inputs/number.component';
 import { TextFormInputComponent } from './forms/inputs/text.component';
 import { RadioButtonComponent } from './radio-button.component';
-import { MonacoComponent } from './script-editor/script-editor.component';
+import { MonacoComponent } from './script-editor/monaco.component';
 
 
 function updateDefinitionAtPath(definition: TsonDefinition, paths: string[], update: TsonDefinition) {

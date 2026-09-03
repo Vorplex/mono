@@ -1,6 +1,6 @@
 import { defineRemountingComponent, useInjector, useStore } from '@vorplex/solid';
 import { parse, stringify } from 'yaml';
-import { MonacoComponent } from '../../../../components/script-editor/script-editor.component';
+import { MonacoComponent } from '../../../../components/script-editor/monaco.component';
 import { PlatformService } from '../../../../services/platform.service';
 
 export const PackagesEditorComponent = defineRemountingComponent((props: { scopeId: string }) => {

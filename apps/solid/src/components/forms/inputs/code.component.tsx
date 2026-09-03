@@ -3,7 +3,7 @@ import { createSignal } from 'solid-js';
 import { YAMLParseError } from 'yaml';
 import { ModalService } from '../../../services/modal.service';
 import { ButtonComponent } from '../../button.component';
-import { MonacoComponent } from '../../script-editor/script-editor.component';
+import { MonacoComponent } from '../../script-editor/monaco.component';
 import { ModalFormInputComponent } from './modal.component';
 
 export interface CodeFormInput {

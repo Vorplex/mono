@@ -2,7 +2,7 @@ import { ShtmlAssetSource } from '@vorplex/shtml';
 import { createStyle, defineRemountingComponent, useInjector, useStore } from '@vorplex/solid';
 import { Match, Show, Switch } from 'solid-js';
 import { FormInputComponent } from '../../../../components/forms/form-input.component';
-import { MonacoComponent } from '../../../../components/script-editor/script-editor.component';
+import { MonacoComponent } from '../../../../components/script-editor/monaco.component';
 import { PlatformService } from '../../../../services/platform.service';
 
 const classes = createStyle(() => ({

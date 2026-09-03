@@ -1,6 +1,6 @@
 import { NodeType } from '@vorplex/shtml';
 import { defineRemountingComponent, useInjector, useStore } from '@vorplex/solid';
-import { MonacoComponent } from '../../../../components/script-editor/script-editor.component';
+import { MonacoComponent } from '../../../../components/script-editor/monaco.component';
 import { PlatformService } from '../../../../services/platform.service';
 import { ContainerTarget } from '../../explorer.service';
 

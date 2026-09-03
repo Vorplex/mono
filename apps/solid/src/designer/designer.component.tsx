@@ -1,7 +1,7 @@
 import { createStyle, useInjector, useStore } from '@vorplex/solid';
 import { createMemo, Match, Show, Switch } from 'solid-js';
 import { RadioButtonComponent } from '../components/radio-button.component';
-import { MonacoComponent } from '../components/script-editor/script-editor.component';
+import { MonacoComponent } from '../components/script-editor/monaco.component';
 import { Theme } from '../consts/theme';
 import { PlatformService } from '../services/platform.service';
 import { ExplorerComponent } from './explorer/explorer.component';

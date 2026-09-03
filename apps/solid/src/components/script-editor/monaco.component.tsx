@@ -51,7 +51,7 @@ export function MonacoComponent(props: { readonly?: boolean; simple?: boolean; v
                     'border-radius': '5px'
                 }}
                 ref={(element) => {
-                    model = monaco.editor.createModel(props.value, props.language ?? 'typescript', props.uri ? monaco.Uri.parse(props.uri) : null);
+                    model = monaco.editor.createModel(props.value ?? '', props.language ?? 'typescript', props.uri ? monaco.Uri.parse(props.uri) : null);
                     let changes: boolean;
                     model.onDidChangeContent((event) => {
                         changes = true;

@@ -3,7 +3,7 @@ import { ExpressionParser } from '@vorplex/shtml';
 import { createStyle, useInjector } from '@vorplex/solid';
 import { createMemo, createSignal, For, Match, Switch } from 'solid-js';
 import { ButtonComponent } from '../../../../../components/button.component';
-import { MonacoComponent } from '../../../../../components/script-editor/script-editor.component';
+import { MonacoComponent } from '../../../../../components/script-editor/monaco.component';
 import { Theme } from '../../../../../consts/theme';
 import { ModalService } from '../../../../../services/modal.service';
 import { VariablePathSelectorComponent } from './variable-path-selector.component';
