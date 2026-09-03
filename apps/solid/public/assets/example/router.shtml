@@ -9,5 +9,6 @@
              page="post-editor"></x-route>
     <x-route route="/settings"
              page="settings"></x-route>
-    <x-route route="/404" />
+    <x-route route="/404"
+             page="not-found"></x-route>
 </x-router>
