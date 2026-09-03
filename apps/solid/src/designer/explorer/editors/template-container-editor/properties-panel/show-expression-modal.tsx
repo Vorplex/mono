@@ -72,7 +72,7 @@ export function showExpressionModal(options: { value: string; locals: Record<str
             const insertLocal = (name: string) => setExpression(current => `${current}{{${name}()}}`);
 
             return {
-                header: 'Insert Binding',
+                header: 'Expression',
                 backdropDismissal: true,
                 onDismiss: () => modal.resolve(undefined),
                 body: () => (
