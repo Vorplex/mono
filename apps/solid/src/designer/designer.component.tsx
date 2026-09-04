@@ -1,8 +1,10 @@
+import { ShtmlDocument } from '@vorplex/shtml';
 import { createStyle, useInjector, useStore } from '@vorplex/solid';
-import { createMemo, Match, Show, Switch } from 'solid-js';
+import { createSignal, Match, Show, Switch } from 'solid-js';
 import { RadioButtonComponent } from '../components/radio-button.component';
 import { MonacoComponent } from '../components/script-editor/monaco.component';
 import { Theme } from '../consts/theme';
+import { ModalService } from '../services/modal.service';
 import { PlatformService } from '../services/platform.service';
 import { ExplorerComponent } from './explorer/explorer.component';
 import { ExplorerService } from './explorer/explorer.service';
@@ -38,15 +40,13 @@ export function DesignerComponent() {
 
     const service = useInjector({
         platform: PlatformService,
-        explorer: ExplorerService
+        explorer: ExplorerService,
+        modal: ModalService
     });
 
     const shtml = useStore(service.platform.shtml.state);
     const explorerStore = useStore(service.explorer.state);
-    const raw = createMemo(() => {
-        shtml();
-        return service.platform.shtml.toShtml();
-    });
+    const [raw, setRaw] = createSignal(service.platform.shtml.toFormattedString());
 
     return (
         <Show when={shtml()}>
@@ -71,7 +71,17 @@ export function DesignerComponent() {
                             }
                         ] as const}
                         value={explorerStore.mode()}
-                        onChange={value => explorerStore.mode(value)}
+                        onChange={async value => {
+                            if (explorerStore.mode() === 'shtml') {
+                                try {
+                                    service.platform.shtml.state.set(ShtmlDocument.parse(raw()).state.value);
+                                } catch (error) {
+                                    await service.modal.showError(error);
+                                    throw error;
+                                }
+                            }
+                            explorerStore.mode(value);
+                        }}
                     />
                 </div>
                 <Switch>
@@ -80,6 +90,7 @@ export function DesignerComponent() {
                             <MonacoComponent
                                 language='html'
                                 value={raw()}
+                                onChange={value => setRaw(value)}
                             />
                         </div>
                     </Match>

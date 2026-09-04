@@ -70,10 +70,14 @@ export class ShtmlDocument {
 
     public static async load(shtml: string, options: { import: (path: string) => Awaitable<string> }): Promise<ShtmlDocument> {
         const dom = await ImportResolver.resolve(shtml, options.import);
-        return ShtmlDocument.parse(dom);
+        return ShtmlDocument.from(dom);
     }
 
-    public static parse(dom: Document): ShtmlDocument {
+    public static parse(shtml: string): ShtmlDocument {
+        return ShtmlDocument.from(new DOMParser().parseFromString(shtml, 'text/html'));
+    }
+
+    public static from(dom: Document): ShtmlDocument {
         const state: ShtmlDocumentState = {
             app: null,
             pages: {},
@@ -104,7 +108,7 @@ export class ShtmlDocument {
         });
     }
 
-    public toShtml(): string {
+    public toString(): string {
         const state = this.state.value;
         return ShtmlApp.to(state.app, state).outerHTML;
     }
@@ -300,6 +304,96 @@ export class ShtmlDocument {
         };
 
         return findInComponents(app.componentIds()) ?? {};
+    }
+
+    public toFormattedString(): string {
+        function formatNode(node: Node, depth: number): string[] {
+            const indent = '    ';
+            const escapeText = (value: string) => value
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+            const prefix = indent.repeat(depth);
+            if (node.nodeType === Node.COMMENT_NODE) return [`${prefix}<!--${node.textContent}-->`];
+            if (node.nodeType === Node.TEXT_NODE) {
+                const text = (node.textContent ?? '').trim();
+                if (!text) return [];
+                try {
+                    return JSON
+                        .stringify(JSON.parse(text), null, indent)
+                        .split('\n')
+                        .map(line => `${prefix}${escapeText(line)}`);
+                } catch {
+                    return [`${prefix}${escapeText(text)}`];
+                }
+            }
+            const element = node as Element;
+            const tag = element.tagName.toLowerCase();
+            const attributes = Array
+                .from(element.attributes)
+                .map(attribute => ` ${attribute.name}="${attribute.value.replace(/&/g, '&amp;').replace(/"/g, '&quot;')}"`)
+                .join('');
+            if (['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'param', 'source', 'track', 'wbr'].includes(tag)) return [`${prefix}<${tag}${attributes}>`];
+            if (tag === 'script' || tag === 'style') {
+                const contentLines = (element.textContent ?? '').split('\n').map(line => line.trim());
+                while (contentLines.length && contentLines[0] === '') contentLines.shift();
+                while (contentLines.length && contentLines[contentLines.length - 1] === '') contentLines.pop();
+
+                const stack: { char: string; absorbed: boolean }[] = [];
+                let quote: string | undefined;
+                let blockComment = false;
+                const formatted: string[] = [];
+                const getDepth = () => stack.reduce((total, opener) => total + (opener.absorbed ? 0 : 1), 0);
+
+                for (const line of contentLines) {
+                    if (line === '') { formatted.push(''); continue; }
+                    let lineIndent: number | undefined;
+
+                    for (let i = 0; i < line.length; i++) {
+                        if (blockComment) {
+                            if (line[i] === '*' && line[i + 1] === '/') { blockComment = false; i++; }
+                            continue;
+                        }
+                        if (quote) {
+                            if (line[i] === '\\') i++;
+                            else if (line[i] === quote) quote = undefined;
+                            continue;
+                        }
+                        if (line[i] === '/' && line[i + 1] === '/') break;
+                        if (line[i] === '/' && line[i + 1] === '*') { blockComment = true; i++; continue; }
+                        if (line[i] === '"' || line[i] === '\'' || line[i] === '`') { quote = line[i]; continue; }
+
+                        if (lineIndent === undefined && !['}', ')', ']'].includes(line[i])) lineIndent = getDepth();
+
+                        if (line[i] === '{' || line[i] === '(' || line[i] === '[') {
+                            const parent = stack[stack.length - 1];
+                            if (line[i] !== '(' && parent && parent.char === '(' && !parent.absorbed) parent.absorbed = true;
+                            stack.push({ char: line[i], absorbed: false });
+                        } else if (['}', ')', ']'].includes(line[i])) {
+                            stack.pop();
+                        }
+                    }
+                    if (lineIndent === undefined) lineIndent = getDepth();
+                    formatted.push(indent.repeat(Math.max(lineIndent, 0)) + line);
+                }
+                const content = formatted.join('\n');
+                if (!content) return [`${prefix}<${tag}${attributes}></${tag}>`];
+                const inner = content.split('\n').map(line => line ? indent.repeat(depth + 1) + line : '');
+                return [`${prefix}<${tag}${attributes}>`, ...inner, `${prefix}</${tag}>`];
+            }
+            const children: string[] = [];
+            for (const child of element.childNodes) {
+                children.push(...formatNode(child, depth + 1));
+            }
+            if (children.length === 0) return [`${prefix}<${tag}${attributes}></${tag}>`];
+            return [`${prefix}<${tag}${attributes}>`, ...children, `${prefix}</${tag}>`];
+        }
+        const dom = new DOMParser().parseFromString(this.toString(), 'text/html');
+        const lines: string[] = [];
+        for (const node of dom.body.childNodes) {
+            lines.push(...formatNode(node, 0));
+        }
+        return lines.join('\n');
     }
 
 }
