@@ -118,7 +118,7 @@ export class MonacoService {
         });
     }
 
-    public registerCompilerPath(module: string, path: string) {
+    public registerCompilerPath(module: string, path: string): IDisposable {
         const currentOptions = monaco.typescript.typescriptDefaults.getCompilerOptions();
         monaco.typescript.typescriptDefaults.setCompilerOptions({
             ...currentOptions,
@@ -127,6 +127,16 @@ export class MonacoService {
                 [module]: [...(currentOptions.paths?.[module] ?? []), path],
             },
         });
+        return {
+            dispose: () => {
+                const options = monaco.typescript.typescriptDefaults.getCompilerOptions();
+                const paths = { ...options.paths };
+                const remaining = (paths[module] ?? []).filter(existing => existing !== path);
+                if (remaining.length) paths[module] = remaining;
+                else delete paths[module];
+                monaco.typescript.typescriptDefaults.setCompilerOptions({ ...options, paths });
+            }
+        };
     }
 
     public getLibraries() {
@@ -138,17 +148,16 @@ export class MonacoService {
         monaco.typescript.typescriptDefaults.setExtraLibs([]);
     }
 
-    private updateLibrary(uri: string, content: string | null): void {
+    private registerLibrary(uri: string, content: string | null): IDisposable {
         const libs = this.getLibraries().filter(definition => definition.filePath !== uri)
         if (content !== null) libs.push({ filePath: uri, content });
         monaco.typescript.typescriptDefaults.setExtraLibs(libs);
+        return { dispose: () => this.registerLibrary(uri, null) };
     }
 
     public async setGlobalLibrary(definition: string): Promise<IDisposable> {
         await this.init();
-        const uri = 'file:///global.d.ts';
-        this.updateLibrary(uri, definition);
-        return { dispose: () => this.updateLibrary(uri, null) };
+        return this.registerLibrary('file:///global.d.ts', definition);
     }
 
     public async createVirtualModel(uri: string, content: string): Promise<IDisposable> {
@@ -160,10 +169,10 @@ export class MonacoService {
         return { dispose: () => model.dispose() };
     }
 
-    public async loadPackageLibraries(name: string, semanticVersion: string) {
+    public async loadPackageLibraries(name: string, semanticVersion: string): Promise<IDisposable> {
         const version = await JsDelivr.resolveVersion(name, semanticVersion);
         const packageJson = await JsDelivr.getFile(name, version, 'package.json');
-        this.updateLibrary(`file:///node_modules/${name}/package.json`, packageJson.content);
+        const disposables: IDisposable[] = [this.registerLibrary(`file:///node_modules/${name}/package.json`, packageJson.content)];
         const pack: PackageJson = JSON.parse(packageJson.content);
         if (pack.exports) {
             const exports = pack.exports;
@@ -176,10 +185,9 @@ export class MonacoService {
                         paths.map(async (path) => {
                             const file = await JsDelivr.getFile(name, version, path);
                             const uri = `file:///node_modules/${name}/${path}`;
-                            this.updateLibrary(uri, file.content);
+                            disposables.push(this.registerLibrary(uri, file.content));
                             const definitionPath = $Path.join('node_modules', name, path.replace('.d.ts', ''));
-                            this.registerCompilerPath($Path.join(name, exportPath), definitionPath);
-                            console.log('Registering', 'Module', $Path.join(name, exportPath), 'Path', definitionPath, uri);
+                            disposables.push(this.registerCompilerPath($Path.join(name, exportPath), definitionPath));
                         }),
                     );
                 }
@@ -188,20 +196,21 @@ export class MonacoService {
             const types = pack.types ?? pack.typings ?? pack.typescript;
             if (types) {
                 const definitionPath = $Path.join('node_modules', name, types.replace('.d.ts', ''));
-                this.registerCompilerPath(name.replace('@types/', ''), definitionPath);
+                disposables.push(this.registerCompilerPath(name.replace('@types/', ''), definitionPath));
                 const paths = await JsDelivr.getFilePaths(name, version, /^package\.json$|\.d\.ts$/);
                 await Promise.all(
                     paths.map(async (path) => {
                         const file = await JsDelivr.getFile(name, version, path);
-                        this.updateLibrary(`file:///node_modules/${name}/${path}`, file.content);
+                        disposables.push(this.registerLibrary(`file:///node_modules/${name}/${path}`, file.content));
                     }),
                 );
             } else {
                 try {
-                    await this.loadPackageLibraries(`@types/${name}`, semanticVersion);
+                    disposables.push(await this.loadPackageLibraries(`@types/${name}`, semanticVersion));
                 } catch { }
             }
         }
+        return { dispose: () => disposables.forEach(disposable => disposable.dispose()) };
     }
 
     public registerSnippet(label: string, insertText: string, documentation?: string): void {
