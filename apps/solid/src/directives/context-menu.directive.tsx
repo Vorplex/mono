@@ -23,6 +23,8 @@ const classes = createStyle(() => ({
         border: `1px solid ${Theme().outline.primary}`,
         borderRadius: '5px',
         minWidth: '150px',
+        overflow: 'auto',
+        minHeight: 0
     },
 }));
 

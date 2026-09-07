@@ -40,7 +40,10 @@ export const AssetEditorComponent = defineRemountingComponent((props: { assetId:
                 <FormInputComponent
                     type={'dropdown'}
                     label={'Source'}
-                    options={{ internal: 'Inline', external: 'External' }}
+                    options={[
+                        { key: 'internal', value: 'Inline' },
+                        { key: 'external', value: 'External' }
+                    ]}
                     value={asset.source().type}
                     onChange={value => {
                         const source = asset.source();

@@ -1,4 +1,6 @@
 // **/*.ts
+export * from './drx-dom';
+export * from './drx';
 export * from './expression-display';
 export * from './expression-parser';
 export * from './icon-sheet';
@@ -7,11 +9,10 @@ export * from './modal-manager';
 export * from './preview-context';
 export * from './render-context';
 export * from './script-compiler';
-export * from './drx-dom';
-export * from './drx';
 export * from './style-sheet';
 export * from './node/app';
 export * from './node/asset';
+export * from './node/dependency-tree';
 export * from './node/element';
 export * from './node/for';
 export * from './node/icon';

@@ -1,12 +1,14 @@
 import { useInjector, useStore } from '@vorplex/solid';
 import { createResource, createSignal, onCleanup, onMount } from 'solid-js';
-import { PlatformService } from '../../services/platform.service';
 import { Theme } from '../../consts/theme';
+import { ModalService } from '../../services/modal.service';
+import { PlatformService } from '../../services/platform.service';
 
 export function PreviewComponent() {
 
     const service = useInjector({
         platform: PlatformService,
+        modal: ModalService
     });
 
     const drx = useStore(service.platform.drx.state);
@@ -30,8 +32,12 @@ export function PreviewComponent() {
         async () => {
             dispose?.();
             dispose = undefined;
-            const preview = await service.platform.drx.mount(frame.contentDocument.body);
-            dispose = () => preview.dispose();
+            try {
+                const preview = await service.platform.drx.mount(frame.contentDocument.body);
+                dispose = () => preview.dispose();
+            } catch (error) {
+                await service.modal.showError(error);
+            }
         }
     );
 

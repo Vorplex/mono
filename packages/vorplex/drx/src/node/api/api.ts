@@ -1,14 +1,15 @@
 import { $Id, $Tson } from '@vorplex/core';
-import { DrxDocumentState } from '../../drx';
+import { DrxDocumentState, DrxScope } from '../../drx';
 import { DrxDom } from '../../drx-dom';
-import { DrxType } from '../type';
 import { NodeType } from '../node-type';
+import { DrxType } from '../type';
 import { DrxApiEndpoint } from './endpoint';
 
 export interface DrxApi {
     id: string;
     name: string;
     url: string;
+    typeIds: string[];
     endpointIds: string[];
 }
 
@@ -29,12 +30,16 @@ export const DrxApi = {
         return elements.map(element => DrxApi.parse(element, state));
     },
     parse(element: Element, state: DrxDocumentState): DrxApi {
-        const endpoints = DrxApiEndpoint.from(element, state);
         const api: DrxApi = {
             id: DrxDom.getAttribute(element, 'id') ?? $Id.guid(),
             name: DrxDom.getRequiredAttribute(element, 'name'),
             url: DrxDom.getRequiredAttribute(element, 'url'),
-            endpointIds: endpoints.map(endpoint => endpoint.id)
+            typeIds: DrxType
+                .from(element, state)
+                .map(type => type.id),
+            endpointIds: DrxApiEndpoint
+                .from(element, state)
+                .map(endpoint => endpoint.id)
         };
         state.apis[api.id] = api;
         return api;
@@ -44,11 +49,11 @@ export const DrxApi = {
         element.setAttribute('id', api.id);
         element.setAttribute('name', api.name);
         element.setAttribute('url', api.url);
+        for (const id of api.typeIds) element.appendChild(DrxType.to(state.types[id]));
         for (const id of api.endpointIds) element.appendChild(DrxApiEndpoint.to(state.apiEndpoints[id], state));
         return element;
     },
-    // Turns declaration-only <x-api>/<x-endpoint> schema into the drx.apis.<api>.<endpoint>.request(...) surface.
-    createApi(apiIds: string[], state: DrxDocumentState, types: DrxType[]): Record<string, Record<string, { request(options?: ApiRequestOptions): Promise<ApiRequestResult> }>> {
+    createApi(apiIds: string[], state: DrxDocumentState, scope: DrxScope): Record<string, Record<string, { request(options?: ApiRequestOptions): Promise<ApiRequestResult> }>> {
         const api: Record<string, Record<string, { request(options?: ApiRequestOptions): Promise<ApiRequestResult> }>> = {};
         for (const apiId of apiIds) {
             const definition = state.apis[apiId];
@@ -56,57 +61,56 @@ export const DrxApi = {
             for (const endpointId of definition.endpointIds) {
                 const endpoint = state.apiEndpoints[endpointId];
                 endpoints[endpoint.name] = {
-                    request: (options: ApiRequestOptions = {}) => DrxApi.request(definition, endpoint, state, types, options)
+                    request: async (options: ApiRequestOptions = {}): Promise<ApiRequestResult> => {
+                        const parameters = options.parameters ?? {};
+                        const headers: Record<string, string> = { ...options.headers };
+                        for (const id of endpoint.parameterIds) {
+                            const parameter = state.apiParameters[id];
+                            if (parameter.required && !(parameter.name in parameters)) throw new Error(`Missing required parameter "${parameter.name}" for endpoint "${endpoint.name}"`);
+                        }
+                        for (const id of endpoint.headerIds) {
+                            const header = state.apiHeaders[id];
+                            if (header.required && !(header.name in headers)) throw new Error(`Missing required header "${header.name}" for endpoint "${endpoint.name}"`);
+                        }
+                        const usedParameters = new Set<string>();
+                        const path = endpoint.path.replace(/\{(\w+)\}/g, (match, name) => {
+                            if (!(name in parameters)) throw new Error(`Missing path parameter "${name}" for endpoint "${endpoint.name}"`);
+                            usedParameters.add(name);
+                            return encodeURIComponent(parameters[name]);
+                        });
+                        const url = new URL(definition.url + path);
+                        const body = endpoint.bodyId ? state.apiBodies[endpoint.bodyId] : undefined;
+                        if (!body) {
+                            for (const [name, value] of Object.entries(parameters)) {
+                                if (!usedParameters.has(name)) url.searchParams.set(name, value);
+                            }
+                        }
+                        if (body && options.body !== undefined) headers['Content-Type'] ??= 'application/json';
+                        const raw = await fetch(url.toString(), {
+                            method: endpoint.method,
+                            headers,
+                            body: body && options.body !== undefined ? JSON.stringify(options.body) : undefined
+                        });
+                        let value: any;
+                        let resolved = false;
+                        return {
+                            raw,
+                            async value() {
+                                if (!resolved) {
+                                    const response = endpoint.responseId ? state.apiResponses[endpoint.responseId] : undefined;
+                                    const json = await raw.json();
+                                    const [parsed] = $Tson.parse(DrxType.resolve(scope, response?.type ?? 'any', state)).parse(json);
+                                    value = parsed;
+                                    resolved = true;
+                                }
+                                return value;
+                            }
+                        };
+                    }
                 };
             }
             api[definition.name] = endpoints;
         }
         return api;
-    },
-    async request(api: DrxApi, endpoint: DrxApiEndpoint, state: DrxDocumentState, types: DrxType[], options: ApiRequestOptions = {}): Promise<ApiRequestResult> {
-        const parameters = options.parameters ?? {};
-        const headers: Record<string, string> = { ...options.headers };
-        for (const id of endpoint.parameterIds) {
-            const parameter = state.apiParameters[id];
-            if (parameter.required && !(parameter.name in parameters)) throw new Error(`Missing required parameter "${parameter.name}" for endpoint "${endpoint.name}"`);
-        }
-        for (const id of endpoint.headerIds) {
-            const header = state.apiHeaders[id];
-            if (header.required && !(header.name in headers)) throw new Error(`Missing required header "${header.name}" for endpoint "${endpoint.name}"`);
-        }
-        const usedParameters = new Set<string>();
-        const path = endpoint.path.replace(/\{(\w+)\}/g, (match, name) => {
-            if (!(name in parameters)) throw new Error(`Missing path parameter "${name}" for endpoint "${endpoint.name}"`);
-            usedParameters.add(name);
-            return encodeURIComponent(parameters[name]);
-        });
-        const url = new URL(api.url + path);
-        const body = endpoint.bodyId ? state.apiBodies[endpoint.bodyId] : undefined;
-        if (!body) {
-            for (const [name, value] of Object.entries(parameters)) {
-                if (!usedParameters.has(name)) url.searchParams.set(name, value);
-            }
-        }
-        if (body && options.body !== undefined) headers['Content-Type'] ??= 'application/json';
-        const raw = await fetch(url.toString(), {
-            method: endpoint.method,
-            headers,
-            body: body && options.body !== undefined ? JSON.stringify(options.body) : undefined
-        });
-        let value: any;
-        let resolved = false;
-        return {
-            raw,
-            async value() {
-                if (!resolved) {
-                    const response = endpoint.responseId ? state.apiResponses[endpoint.responseId] : undefined;
-                    const json = await raw.json();
-                    const [parsed] = $Tson.parse(DrxType.resolve(response?.type ?? 'any', types)).parse(json);
-                    value = parsed;
-                    resolved = true;
-                }
-                return value;
-            }
-        };
     }
 };

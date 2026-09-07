@@ -79,6 +79,8 @@ export function DesignerComponent() {
                                     await service.modal.showError(error);
                                     throw error;
                                 }
+                            } else if (value === 'drx') {
+                                setRaw(service.platform.drx.toFormattedString());
                             }
                             explorerStore.mode(value);
                         }}

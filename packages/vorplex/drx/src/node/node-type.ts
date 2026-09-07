@@ -2,6 +2,7 @@ export enum NodeType {
     App = 'X-APP',
     Page = 'X-PAGE',
     Packages = 'X-PACKAGES',
+    DependencyTree = 'X-DEPENDENCY-TREE',
     Variable = 'X-VARIABLE',
     Router = 'X-ROUTER',
     Type = 'X-TYPE',

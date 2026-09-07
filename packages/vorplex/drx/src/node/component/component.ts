@@ -1,3 +1,4 @@
+import { DependencyTree } from '@vorplex/compiler';
 import { $Id, Scope, Signal } from '@vorplex/core';
 import { PreviewContext } from '../../preview-context';
 import { DrxDocumentState } from '../../drx';
@@ -5,6 +6,7 @@ import { DrxDom } from '../../drx-dom';
 import { StyleSheet } from '../../style-sheet';
 import { DrxApi } from '../api/api';
 import { DrxAsset } from '../asset';
+import { DrxDependencyTree } from '../dependency-tree';
 import { NodeType } from '../node-type';
 import { DrxPackages } from '../packages';
 import { DrxService } from '../service';
@@ -20,6 +22,7 @@ export interface DrxComponent {
     script?: string;
     style?: string;
     packages?: Record<string, string>;
+    dependencyTree?: DependencyTree;
     variableIds: string[];
     serviceIds: string[];
     assetIds: string[];
@@ -51,6 +54,7 @@ export const DrxComponent = {
             script: DrxDom.getScript(element),
             style: DrxDom.getStyle(element),
             packages: DrxPackages.from(element),
+            dependencyTree: DrxDependencyTree.from(element),
             variableIds: variables.map(variable => variable.id),
             serviceIds: services.map(service => service.id),
             assetIds: assets.map(asset => asset.id),
@@ -68,9 +72,10 @@ export const DrxComponent = {
         const element = document.createElement(NodeType.Component);
         element.setAttribute('id', component.id);
         element.setAttribute('name', component.name);
+        if (component.packages) element.appendChild(DrxPackages.to(component.packages));
+        if (component.dependencyTree) element.appendChild(DrxDependencyTree.to(component.dependencyTree));
         DrxDom.createScript(element, component.script);
         DrxDom.createStyle(element, component.style);
-        if (component.packages) element.appendChild(DrxPackages.to(component.packages));
         for (const id of component.typeIds) element.appendChild(DrxType.to(state.types[id]));
         for (const id of component.propertyIds) element.appendChild(DrxComponentProperty.to(state.componentProperties[id]));
         for (const id of component.eventIds) element.appendChild(DrxComponentEvent.to(state.componentEvents[id]));

@@ -1,8 +1,10 @@
-import { $Id } from '@vorplex/core';
-import { NodeType, DrxComponentInstance, DrxElement, DrxFor, DrxIcon, DrxIf, DrxPageContainer, DrxTemplateItem, DrxTemplateTargetType, DrxText } from '@vorplex/drx';
+import { $Id, EmptyReducer, StateReducer } from '@vorplex/core';
+import { DrxComponent, DrxComponentInstance, DrxDocumentState, DrxElement, DrxFor, DrxIcon, DrxIf, DrxPage, DrxPageContainer, DrxTemplateItem, DrxTemplateTargetType, DrxText, NodeType } from '@vorplex/drx';
 import { useInjector } from '@vorplex/solid';
 import { useContext } from 'solid-js';
+import { TextFormGroup } from '../../../../components/forms/form-input.component';
 import { ContextMenuItem } from '../../../../directives/context-menu.directive';
+import { ModalService } from '../../../../services/modal.service';
 import { PlatformService } from '../../../../services/platform.service';
 import { TemplateContainerEditorContext } from './template-container-editor-context';
 
@@ -92,6 +94,105 @@ const DeleteContextMenuItem = (node: DrxTemplateItem): ContextMenuItem => ({
     }
 });
 
+function replaceTemplateItem(parent: { type: NodeType; id: string }, itemId: string, replacement: DrxTemplateItem) {
+    return (reducer: StateReducer<DrxDocumentState, EmptyReducer>) => {
+        switch (parent.type) {
+            case NodeType.Page: return reducer.pages.entity.updateById(parent.id, (page: DrxPage) => ({ template: page.template.map(item => item.id === itemId ? replacement : item) }));
+            case NodeType.Component: return reducer.components.entity.updateById(parent.id, (component: DrxComponent) => ({ template: component.template.map(item => item.id === itemId ? replacement : item) }));
+            case NodeType.Element: return reducer.elements.entity.updateById(parent.id, (element: DrxElement) => ({ template: element.template.map(item => item.id === itemId ? replacement : item) }));
+            case NodeType.If: return reducer.ifs.entity.updateById(parent.id, (item: DrxIf) => ({ template: item.template.map(entry => entry.id === itemId ? replacement : entry) }));
+            case NodeType.For: return reducer.fors.entity.updateById(parent.id, (item: DrxFor) => ({ template: item.template.map(entry => entry.id === itemId ? replacement : entry) }));
+            default: return {};
+        }
+    };
+}
+
+const ConvertToComponentContextMenuItem = (elementId: string): ContextMenuItem => ({
+    icon: 'component',
+    text: 'Convert to Component',
+    onClick: async () => {
+        const service = useInjector({ platform: PlatformService, modal: ModalService });
+        const parent = service.platform.drx.getNodeParent(elementId);
+        if (!parent || parent.type === NodeType.Component) return;
+        const result = await service.modal.showForm<{ name: TextFormGroup }>({
+            title: 'Convert to Component',
+            form: {
+                name: {
+                    type: 'text',
+                    label: 'Name',
+                    autoFocus: true,
+                    validate: value => ({ error: value ? undefined : 'Required' })
+                }
+            }
+        });
+        if (!result) return;
+        const component: DrxComponent = {
+            id: $Id.guid(),
+            name: result.name,
+            variableIds: [],
+            serviceIds: [],
+            assetIds: [],
+            typeIds: [],
+            componentIds: [],
+            propertyIds: [],
+            eventIds: [],
+            apiIds: [],
+            template: [{ id: elementId, type: NodeType.Element }]
+        };
+        const instance: DrxComponentInstance = {
+            id: $Id.guid(),
+            type: NodeType.ComponentInstance,
+            component: component.name,
+            attributes: {}
+        };
+        service.platform.drx.state.reduce(reducer => [
+            reducer.components.entity.create(component),
+            reducer.app.value.update(app => ({ componentIds: [...app.componentIds, component.id] })),
+            reducer.componentInstances.entity.create(instance),
+            replaceTemplateItem(parent, elementId, { id: instance.id, type: NodeType.ComponentInstance })(reducer)
+        ]);
+    }
+});
+
+const ConvertToPageContextMenuItem = (elementId: string): ContextMenuItem => ({
+    icon: 'monitor',
+    text: 'Convert to Page',
+    onClick: async () => {
+        const service = useInjector({ platform: PlatformService, modal: ModalService });
+        const parent = service.platform.drx.getNodeParent(elementId);
+        if (!parent || parent.type === NodeType.Component) return;
+        const result = await service.modal.showForm<{ name: TextFormGroup }>({
+            title: 'Convert to Page',
+            form: {
+                name: {
+                    type: 'text',
+                    label: 'Name',
+                    autoFocus: true,
+                    validate: value => ({ error: value ? undefined : 'Required' })
+                }
+            }
+        });
+        if (!result) return;
+        const page: DrxPage = {
+            id: $Id.guid(),
+            name: result.name,
+            variableIds: [],
+            template: [{ id: elementId, type: NodeType.Element }]
+        };
+        const pageContainer: DrxPageContainer = {
+            id: $Id.guid(),
+            type: NodeType.PageContainer,
+            page: page.name
+        };
+        service.platform.drx.state.reduce(reducer => [
+            reducer.pages.entity.create(page),
+            reducer.app.value.update(app => ({ pageIds: [...app.pageIds, page.id] })),
+            reducer.pageContainers.entity.create(pageContainer),
+            replaceTemplateItem(parent, elementId, { id: pageContainer.id, type: NodeType.PageContainer })(reducer)
+        ]);
+    }
+});
+
 export const TemplateContainerTreeContextMenu = (targetType: DrxTemplateTargetType, targetId: string): ContextMenuItem[] => [
     AddElementContextMenuItem(targetType, targetId),
     AddTextContextMenuItem(targetType, targetId),
@@ -114,6 +215,8 @@ export const ElementTreeItemContextMenu = (id: string): ContextMenuItem[] => [
     AddComponentInstanceContextMenuItem(NodeType.Element, id),
     AddPageContainerContextMenuItem(NodeType.Element, id),
     AddIconContextMenuItem(NodeType.Element, id),
+    ConvertToComponentContextMenuItem(id),
+    ConvertToPageContextMenuItem(id),
     DeleteContextMenuItem({ id, type: NodeType.Element })
 ];
 

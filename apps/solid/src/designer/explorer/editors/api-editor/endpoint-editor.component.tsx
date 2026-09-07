@@ -5,7 +5,7 @@ import { ButtonComponent } from '../../../../components/button.component';
 import { createTableClasses } from '../../../../components/create-table-classes.function';
 import { FormInputComponent } from '../../../../components/forms/form-input.component';
 import { CheckboxFormInputComponent } from '../../../../components/forms/inputs/checkbox.component';
-import { DropdownFormInputComponent } from '../../../../components/forms/inputs/dropdown.component';
+import { DropdownFormInputComponent, DropdownOption } from '../../../../components/forms/inputs/dropdown.component';
 import { TextFormInputComponent } from '../../../../components/forms/inputs/text.component';
 import { RadioButtonComponent } from '../../../../components/radio-button.component';
 import { PlatformService } from '../../../../services/platform.service';
@@ -29,7 +29,7 @@ const tableClasses = createTableClasses(() => ({
     columns: 'auto auto max-content max-content'
 }));
 
-export const EndpointEditorComponent = defineRemountingComponent((props: { endpointId: string }) => {
+export const EndpointEditorComponent = defineRemountingComponent((props: { endpointId: string; apiId: string }) => {
 
     const service = useInjector({
         platform: PlatformService
@@ -37,6 +37,7 @@ export const EndpointEditorComponent = defineRemountingComponent((props: { endpo
 
     const drx = useStore(service.platform.drx.state);
     const endpoint = drx.apiEndpoints[props.endpointId];
+    const api = drx.apis[props.apiId];
     const tabs = [
         { value: 'parameters' as const, label: 'Parameters' },
         { value: 'headers' as const, label: 'Headers' },
@@ -46,10 +47,14 @@ export const EndpointEditorComponent = defineRemountingComponent((props: { endpo
     const [tab, setTab] = createSignal<typeof tabs[number]['value']>('parameters');
 
     const typeOptions = createMemo(() => {
-        const options: Record<string, string> = Object.fromEntries($Tson.definitions.map(type => [type, type]));
+        const options: DropdownOption[] = $Tson.definitions.map(type => ({ key: type, value: type }));
         for (const typeId of drx.app.typeIds()) {
             const type = drx.types[typeId];
-            options[type.name()] = type.name();
+            options.push({ key: type.name(), value: type.name(), group: 'App' });
+        }
+        for (const typeId of api.typeIds()) {
+            const type = drx.types[typeId];
+            options.push({ key: type.name(), value: type.name(), group: api.name() });
         }
         return options;
     });
@@ -59,13 +64,13 @@ export const EndpointEditorComponent = defineRemountingComponent((props: { endpo
             <div class={classes().address}>
                 <DropdownFormInputComponent
                     value={endpoint.method()}
-                    options={{
-                        GET: 'GET',
-                        POST: 'POST',
-                        PUT: 'PUT',
-                        PATCH: 'PATCH',
-                        DELETE: 'DELETE'
-                    }}
+                    options={[
+                        { key: 'GET', value: 'GET' },
+                        { key: 'POST', value: 'POST' },
+                        { key: 'PUT', value: 'PUT' },
+                        { key: 'PATCH', value: 'PATCH' },
+                        { key: 'DELETE', value: 'DELETE' }
+                    ]}
                     onChange={value => endpoint.method(value ?? 'GET')}
                 />
                 <TextFormInputComponent

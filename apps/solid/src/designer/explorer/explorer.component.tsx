@@ -53,7 +53,10 @@ export function ExplorerComponent() {
                     <ApiEditorComponent apiId={explorerStore.selectedItem.id()} />
                 </Match>
                 <Match when={explorerStore.selectedItem.type() === ExplorerNode.ApiEndpoint}>
-                    <EndpointEditorComponent endpointId={explorerStore.selectedItem.id()} />
+                    <EndpointEditorComponent
+                        endpointId={explorerStore.selectedItem.id()}
+                        apiId={getSelectedItem<ExplorerNode.ApiEndpoint>().apiId()}
+                    />
                 </Match>
                 <Match when={explorerStore.selectedItem.type() === ExplorerNode.Type}>
                     <TypeEditorComponent typeId={explorerStore.selectedItem.id()} />

@@ -34,7 +34,7 @@ export type ExplorerSelectedItem =
     | { type: ExplorerNode.Script; id: string; container: ContainerTarget }
     | { type: ExplorerNode.Style; id: string; container: ContainerTarget }
     | { type: ExplorerNode.Api; id: string }
-    | { type: ExplorerNode.ApiEndpoint; id: string }
+    | { type: ExplorerNode.ApiEndpoint; id: string; apiId: string }
     | { type: ExplorerNode.Variable; id: string; scope: VariableScope }
     | { type: ExplorerNode.ComponentProperty; id: string; componentId: string }
     | { type: ExplorerNode.ComponentEvent; id: string; componentId: string }

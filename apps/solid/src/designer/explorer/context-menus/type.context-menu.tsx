@@ -9,7 +9,8 @@ import { ExplorerNode, ExplorerService } from '../explorer.service';
 
 export type TypeScope =
     | { type: 'app' }
-    | { type: 'component'; componentId: string };
+    | { type: 'component'; componentId: string }
+    | { type: 'api'; apiId: string };
 
 export function createTypeContextMenu(scope: TypeScope): ContextMenuItem[] {
     return [
@@ -45,6 +46,9 @@ export function createTypeContextMenu(scope: TypeScope): ContextMenuItem[] {
                             break;
                         case 'component':
                             operations.push(reducer.components.entity.updateById(scope.componentId, component => ({ typeIds: [...component.typeIds, type.id] })));
+                            break;
+                        case 'api':
+                            operations.push(reducer.apis.entity.updateById(scope.apiId, api => ({ typeIds: [...api.typeIds, type.id] })));
                             break;
                     }
                     return operations;
@@ -100,6 +104,9 @@ export function createTypeItemContextMenu(scope: TypeScope, typeId: string, type
                             break;
                         case 'component':
                             operations.push(reducer.components.entity.updateById(scope.componentId, component => ({ typeIds: component.typeIds.filter(id => id !== typeId) })));
+                            break;
+                        case 'api':
+                            operations.push(reducer.apis.entity.updateById(scope.apiId, api => ({ typeIds: api.typeIds.filter(id => id !== typeId) })));
                             break;
                     }
                     return operations;

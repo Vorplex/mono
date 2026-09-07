@@ -1,8 +1,9 @@
-import { $Id, $String } from '@vorplex/core';
+import { $Id, $String, State } from '@vorplex/core';
 import { DrxApi, DrxApiEndpoint } from '@vorplex/drx';
 import { useInjector } from '@vorplex/solid';
-import { TextFormGroup } from '../../../components/forms/form-input.component';
+import { CodeFormGroup, DropdownFormGroup, TextFormGroup } from '../../../components/forms/form-input.component';
 import { ContextMenuItem } from '../../../directives/context-menu.directive';
+import { convertOpenAPIToDrx, OpenAPISpec } from '../../../openapi-to-drx.function';
 import { ModalService } from '../../../services/modal.service';
 import { PlatformService } from '../../../services/platform.service';
 import { ExplorerNode, ExplorerService } from '../explorer.service';
@@ -37,6 +38,7 @@ export const ApiContextMenu: ContextMenuItem[] = [
                 id: $Id.guid(),
                 name: result.name,
                 url: result.url,
+                typeIds: [],
                 endpointIds: []
             };
             service.platform.drx.state.reduce(reducer => [
@@ -44,6 +46,83 @@ export const ApiContextMenu: ContextMenuItem[] = [
                 reducer.app.value.update(app => ({ apiIds: [...app.apiIds, api.id] }))
             ]);
             service.explorer.selectItem({ type: ExplorerNode.Api, id: api.id });
+        }
+    },
+    {
+        icon: 'import',
+        text: 'Import',
+        onClick: async () => {
+            const service = useInjector({
+                platform: PlatformService,
+                explorer: ExplorerService,
+                modal: ModalService
+            });
+            const form = new State<{ type: DropdownFormGroup; url: TextFormGroup; code: CodeFormGroup }>({
+                type: {
+                    type: 'dropdown',
+                    label: 'Import From',
+                    description: 'The OpenAPI JSON to import',
+                    options: [
+                        { key: 'url', value: 'URL' },
+                        { key: 'json', value: 'JSON' }
+                    ],
+                    value: 'url',
+                    autoFocus: true,
+                    onChange: value => {
+                        form.update(form => ({
+                            ...form,
+                            code: { ...form.code, hidden: value !== 'json' },
+                            url: { ...form.url, hidden: value !== 'url' }
+                        }));
+                    },
+                    validate: value => ({ error: $String.isNullOrEmpty(value) ? 'Required' : null })
+                },
+                url: {
+                    type: 'text',
+                    label: 'URL',
+                    description: 'The URL of the OpenAPI/Swagger document',
+                    placeholder: 'https://domain:9000/path/swagger/v1/swagger.json',
+                    validate: value => ({ error: $String.isNullOrEmpty(value) ? 'Required' : null })
+                },
+                code: {
+                    type: 'code',
+                    label: 'JSON',
+                    description: 'The OpenAPI JSON of the API',
+                    language: 'json',
+                    hidden: true,
+                    validate: value => ({ error: $String.isNullOrEmpty(value) ? 'Required' : null })
+                }
+            });
+            const result = await service.modal.showForm({
+                title: 'Import API',
+                form
+            });
+            if (!result) return;
+            let spec: OpenAPISpec;
+            try {
+                if (result.type === 'url') {
+                    const response = await fetch(result.url);
+                    if (!response.ok) throw new Error(`Failed to fetch OpenAPI document (${response.status} ${response.statusText})`);
+                    spec = await response.json();
+                } else {
+                    spec = JSON.parse(result.code);
+                }
+            } catch (error) {
+                service.modal.showError(error instanceof Error ? error : String(error));
+                return;
+            }
+            const converted = convertOpenAPIToDrx(spec);
+            service.platform.drx.state.reduce(reducer => [
+                reducer.types.entity.create(...converted.types),
+                reducer.apiParameters.entity.create(...converted.parameters),
+                reducer.apiHeaders.entity.create(...converted.headers),
+                reducer.apiBodies.entity.create(...converted.bodies),
+                reducer.apiResponses.entity.create(...converted.responses),
+                reducer.apiEndpoints.entity.create(...converted.endpoints),
+                reducer.apis.entity.create(converted.api),
+                reducer.app.value.update(app => ({ apiIds: [...app.apiIds, converted.api.id] }))
+            ]);
+            service.explorer.selectItem({ type: ExplorerNode.Api, id: converted.api.id });
         }
     }
 ];
@@ -81,7 +160,7 @@ export function createApiItemContextMenu(apiId: string, apiName: string): Contex
                     reducer.apiEndpoints.entity.create(endpoint),
                     reducer.apis.entity.updateById(apiId, api => ({ endpointIds: [...api.endpointIds, endpoint.id] }))
                 ]);
-                service.explorer.selectItem({ type: ExplorerNode.ApiEndpoint, id: endpoint.id });
+                service.explorer.selectItem({ type: ExplorerNode.ApiEndpoint, id: endpoint.id, apiId });
             }
         },
         {
@@ -119,8 +198,10 @@ export function createApiItemContextMenu(apiId: string, apiName: string): Contex
                 });
                 const confirmed = await service.modal.showConfirm('Delete', `Are you sure you want to delete "${apiName}"?`);
                 if (!confirmed) return;
+                const api = service.platform.drx.state.value.apis[apiId];
                 service.platform.drx.state.reduce(reducer => [
                     reducer.apis.entity.delete(apiId),
+                    reducer.types.entity.delete(...api.typeIds),
                     reducer.app.value.update(app => ({ apiIds: app.apiIds.filter(id => id !== apiId) }))
                 ]);
                 const selected = service.explorer.state.value.selectedItem;

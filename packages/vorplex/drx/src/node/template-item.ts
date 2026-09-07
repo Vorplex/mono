@@ -36,6 +36,7 @@ export const DrxTemplate = {
                 NodeType.App,
                 NodeType.Page,
                 NodeType.Packages,
+                NodeType.DependencyTree,
                 NodeType.Variable,
                 NodeType.Router,
                 NodeType.Type,

@@ -1,10 +1,10 @@
 import { $Id, Scope, Signal } from '@vorplex/core';
+import { DrxDocumentState } from '../drx';
+import { DrxDom } from '../drx-dom';
 import { modalApi, ModalManager } from '../modal-manager';
 import { PreviewContext } from '../preview-context';
 import { AppRenderContext, PageRenderContext, RenderContext, RenderContextType } from '../render-context';
 import { ScriptCompiler } from '../script-compiler';
-import { DrxDocumentState } from '../drx';
-import { DrxDom } from '../drx-dom';
 import { StyleSheet } from '../style-sheet';
 import { DrxApi } from './api/api';
 import { NodeType } from './node-type';
@@ -72,14 +72,13 @@ export const DrxPage = {
             };
             pageContext.nearest = { ...context.nearest, page: pageContext };
             const appVariables = appContext.app.variableIds.map(id => state.variables[id]);
-            const types = appContext.app.typeIds.map(id => state.types[id]);
             const pageDrx = {
                 app: {
-                    variables: DrxVariable.createApi(appVariables, appContext.variableStates, types),
+                    variables: DrxVariable.createApi(appVariables, appContext.variableStates, { type: 'app' }, state),
                     get instance() { return appContext.instance; }
                 },
-                page: { variables: DrxVariable.createApi(variables, variableStates, types) },
-                apis: DrxApi.createApi(appContext.app.apiIds, state, types),
+                page: { variables: DrxVariable.createApi(variables, variableStates, { type: 'app' }, state) },
+                apis: DrxApi.createApi(appContext.app.apiIds, state, { type: 'app' }),
                 services: ScriptCompiler.instantiateServices(appContext.app.serviceIds, state, context.compiled, appContext.serviceInstances),
                 router: DrxRouter.createApi(container.ownerDocument.defaultView, appContext.routerState),
                 pages: DrxPage.createApi(appContext.app.pageIds, appContext),

@@ -3,7 +3,7 @@ import { ExpressionParser } from '../../expression-parser';
 import { PreviewContext } from '../../preview-context';
 import { ComponentRenderContext, RenderContext, RenderContextType } from '../../render-context';
 import { ScriptCompiler } from '../../script-compiler';
-import { DrxDocumentState } from '../../drx';
+import { DrxDocumentState, DrxScope } from '../../drx';
 import { DrxDom } from '../../drx-dom';
 import { StyleSheet } from '../../style-sheet';
 import { DrxApi } from '../api/api';
@@ -107,16 +107,16 @@ export const DrxComponentInstance = {
                 };
                 componentContext.nearest = { component: componentContext };
 
-                const types = definition.typeIds.map(id => state.types[id]);
+                const scope: DrxScope = { type: 'component', componentId: definition.id };
                 // A component script never gets its own variables/props as bare identifiers -- only via
                 // drx.component.variables.<name> / drx.component.props.<name>().
                 const componentDrx = {
                     component: {
-                        variables: DrxVariable.createApi(variables, variableStates, types),
+                        variables: DrxVariable.createApi(variables, variableStates, scope, state),
                         props: Array.from(props).reduce((api, [name, propState]) => Object.assign(api, { [name]: () => propState.value }), {} as Record<string, () => any>),
                         events: eventsApi
                     },
-                    apis: DrxApi.createApi(definition.apiIds, state, types),
+                    apis: DrxApi.createApi(definition.apiIds, state, scope),
                     services: ScriptCompiler.instantiateServices(definition.serviceIds, state, context.compiled, componentContext.serviceInstances)
                 };
                 const ComponentClass = ScriptCompiler.instantiate(context.compiled, definition.id, componentDrx);

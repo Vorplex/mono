@@ -1,3 +1,4 @@
+import { DependencyTree } from '@vorplex/compiler';
 import { $Id, Scope, Signal, State } from '@vorplex/core';
 import { modalApi } from '../modal-manager';
 import { AppRenderContext, RenderContextType, RouterState } from '../render-context';
@@ -8,6 +9,7 @@ import { DrxApi } from './api/api';
 import { DrxAsset } from './asset';
 import { DrxComponent } from './component/component';
 import { DrxType } from './type';
+import { DrxDependencyTree } from './dependency-tree';
 import { NodeType } from './node-type';
 import { DrxPackages } from './packages';
 import { DrxPage } from './page';
@@ -21,6 +23,7 @@ export interface DrxApp {
     script?: string;
     style?: string;
     packages?: Record<string, string>;
+    dependencyTree?: DependencyTree;
     pageIds: string[];
     variableIds: string[];
     serviceIds: string[];
@@ -52,6 +55,7 @@ export const DrxApp = {
             script: DrxDom.getScript(element),
             style: DrxDom.getStyle(element),
             packages: DrxPackages.from(element),
+            dependencyTree: DrxDependencyTree.from(element),
             pageIds: pages.map(page => page.id),
             variableIds: variables.map(variable => variable.id),
             serviceIds: services.map(service => service.id),
@@ -66,9 +70,10 @@ export const DrxApp = {
         const element = document.createElement(NodeType.App);
         element.setAttribute('id', app.id);
         if (app.name) element.setAttribute('name', app.name);
+        if (app.packages) element.appendChild(DrxPackages.to(app.packages));
+        if (app.dependencyTree) element.appendChild(DrxDependencyTree.to(app.dependencyTree));
         DrxDom.createScript(element, app.script);
         DrxDom.createStyle(element, app.style);
-        if (app.packages) element.appendChild(DrxPackages.to(app.packages));
         if (app.router) element.appendChild(DrxRouter.to(app.router));
         for (const id of app.typeIds) element.appendChild(DrxType.to(state.types[id]));
         for (const id of app.variableIds) element.appendChild(DrxVariable.to(state.variables[id]));
@@ -103,13 +108,12 @@ export const DrxApp = {
             };
             appContext.nearest = { app: appContext };
 
-            const types = app.typeIds.map(id => state.types[id]);
             const appDrx = {
                 app: {
-                    variables: DrxVariable.createApi(variables, variableStates, types),
+                    variables: DrxVariable.createApi(variables, variableStates, { type: 'app' }, state),
                     get instance() { return appContext.instance; }
                 },
-                apis: DrxApi.createApi(app.apiIds, state, types),
+                apis: DrxApi.createApi(app.apiIds, state, { type: 'app' }),
                 services: ScriptCompiler.instantiateServices(app.serviceIds, state, compiled, appContext.serviceInstances),
                 router: DrxRouter.createApi(container.ownerDocument.defaultView, routerState),
                 pages: DrxPage.createApi(app.pageIds, appContext),

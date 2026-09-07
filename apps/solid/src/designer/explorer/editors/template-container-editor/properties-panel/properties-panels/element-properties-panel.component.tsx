@@ -1,5 +1,5 @@
 import { $Tson, MapAdaptor } from '@vorplex/core';
-import { NodeType, DrxElement } from '@vorplex/drx';
+import { DrxElement, NodeType } from '@vorplex/drx';
 import { createStyle, defineRemountingComponent, ForIn, useInjector, useStore } from '@vorplex/solid';
 import { $Element } from '@vorplex/web';
 import { createMemo, JSX, Show } from 'solid-js';
@@ -118,13 +118,14 @@ export const ElementPropertiesPanelComponent = defineRemountingComponent((props:
         'u', 'ul',
         'var', 'video',
         'wbr'
-    ];
+    ].map(tag => ({ key: tag, value: tag }));
 
     return (
         <PanelComponent icon='sliders-horizontal' title='Element Properties'>
             <div class={classes().properties}>
                 <FormInputComponent
-                    type={'text-option'}
+                    type={'dropdown'}
+                    acceptText={true}
                     label={'Type'}
                     options={tags}
                     value={element.tag()}

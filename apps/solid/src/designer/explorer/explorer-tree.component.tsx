@@ -209,7 +209,7 @@ export function ExplorerTreeComponent() {
         return (
             <Show when={endpoint.id()}>
                 <Row
-                    icon='plug' selected={isSelected({ type: ExplorerNode.ApiEndpoint, id: props.id })} select={() => select({ type: ExplorerNode.ApiEndpoint, id: props.id })}
+                    icon='plug' selected={isSelected({ type: ExplorerNode.ApiEndpoint, id: props.id, apiId: props.apiId })} select={() => select({ type: ExplorerNode.ApiEndpoint, id: props.id, apiId: props.apiId })}
                     contextMenu={createEndpointItemContextMenu(props.apiId, props.id, endpoint.name())}
                     label={<>
                         <span style={{ color: Theme().accent.color }}>{endpoint.method()}</span>
@@ -238,6 +238,9 @@ export function ExplorerTreeComponent() {
                 />
                 <Show when={isExpanded()}>
                     <TreeViewContext.Provider value={{ indent: context.indent + 1 }}>
+                        <Section id={`${props.id}:types`} icon='shapes' label='Types' contextMenu={createTypeContextMenu({ type: 'api', apiId: props.id })}>
+                            <For each={api.typeIds()}>{id => <TypeItem id={id} scope={{ type: 'api', apiId: props.id }} />}</For>
+                        </Section>
                         <For each={api.endpointIds()}>{id => <EndpointItem apiId={props.id} id={id} />}</For>
                     </TreeViewContext.Provider>
                 </Show>

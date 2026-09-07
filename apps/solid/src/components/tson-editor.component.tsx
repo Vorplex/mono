@@ -8,7 +8,7 @@ import { ButtonComponent } from './button.component';
 import { createTableClasses } from './create-table-classes.function';
 import { FieldComponent, FormInputComponent } from './forms/form-input.component';
 import { CheckboxFormInputComponent } from './forms/inputs/checkbox.component';
-import { DropdownFormInputComponent } from './forms/inputs/dropdown.component';
+import { DropdownFormInputComponent, DropdownOption } from './forms/inputs/dropdown.component';
 import { NumberFormInputComponent } from './forms/inputs/number.component';
 import { TextFormInputComponent } from './forms/inputs/text.component';
 import { RadioButtonComponent } from './radio-button.component';
@@ -46,7 +46,7 @@ function getDefinitionAtPath(definition: TsonDefinition, paths: string[]): TsonD
     return definition ?? { type: 'any' };
 }
 
-const TSON_TYPE_OPTIONS = MapAdaptor.fromArray($Tson.definitions, item => [item, item]) as Record<TsonDefinition['type'], string>;
+const TSON_TYPE_OPTIONS: DropdownOption<TsonDefinition['type']>[] = $Tson.definitions.map(item => ({ key: item, value: item }));
 
 const TsonEditorBreadcrumbComponentClasses = createStyle(() => ({
     container: {
@@ -321,7 +321,7 @@ export function TsonEnumEditorComponent(props: { definition: TsonEnumDefinition,
                     description={'The default value to assign if undefined'}
                     clearable={true}
                     value={props.definition.default == null ? undefined : String(props.definition.default.value)}
-                    options={Object.fromEntries((props.definition.flags ?? []).map(flag => [String(flag), String(flag)]))}
+                    options={(props.definition.flags ?? []).map(flag => ({ key: String(flag), value: String(flag) }))}
                     onChange={value => props.onChange({ ...props.definition, default: { value } })}
                 />
             </Show>

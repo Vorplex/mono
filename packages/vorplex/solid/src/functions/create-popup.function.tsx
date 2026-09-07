@@ -29,6 +29,7 @@ interface AnchorPopupOptions extends PopupOptionsBase {
         position: PopupPosition;
         size?: PopupSize;
     };
+    maxSize?: { width?: number; height?: number };
 }
 
 interface LocationPopupOptions extends PopupOptionsBase {
@@ -67,7 +68,7 @@ function AnchoredPopup(props: { options: AnchorPopupOptions; portal: Portal }) {
         return { point, transform: `translate(${left ? '0%' : right ? '-100%' : '-50%'}, ${top ? '-100%' : '0%'})` };
     };
 
-    const resolveFitted = (anchorRect: Rect, position: PopupPosition, size: Size, viewport: Size, minSize: Size): { point: Point; maxSize: Size } => {
+    const resolveFitted = (anchorRect: Rect, position: PopupPosition, size: Size, viewport: Size, minSize: Size, preferredMaxSize: Size): { point: Point; maxSize: Size } => {
         let top = (position & PopupPosition.Top) !== 0;
         let left = (position & PopupPosition.Left) !== 0;
         let right = (position & PopupPosition.Right) !== 0 && !left;
@@ -90,8 +91,8 @@ function AnchoredPopup(props: { options: AnchorPopupOptions; portal: Portal }) {
                 : 2 * Math.min(centerX, viewport.width - centerX));
         const availableHeight = Math.max(0, top ? anchorRect.y : viewport.height - (anchorRect.y + anchorRect.height));
 
-        const maxWidth = Math.max(availableWidth, minSize.width);
-        const maxHeight = Math.max(availableHeight, minSize.height);
+        const maxWidth = Math.max(Math.min(availableWidth, preferredMaxSize.width), minSize.width);
+        const maxHeight = Math.max(Math.min(availableHeight, preferredMaxSize.height), minSize.height);
 
         const clampedWidth = Math.min(size.width, maxWidth);
         const clampedHeight = Math.min(size.height, maxHeight);
@@ -108,7 +109,8 @@ function AnchoredPopup(props: { options: AnchorPopupOptions; portal: Portal }) {
         };
     };
 
-    const { anchor, autoPosition } = props.options;
+    const { anchor, autoPosition, maxSize } = props.options;
+    const preferredMaxSize: Size = { width: maxSize?.width ?? Infinity, height: maxSize?.height ?? Infinity };
     const anchorRect = anchor.element.getBoundingClientRect();
     const initial = resolveStatic(anchorRect, anchor.position);
     const [point, setPoint] = createSignal<Point>(initial.point);
@@ -131,7 +133,7 @@ function AnchoredPopup(props: { options: AnchorPopupOptions; portal: Portal }) {
             height: contentStyle ? parseFloat(contentStyle.minHeight) || 0 : 0,
         };
         const viewport = { width: window.innerWidth, height: window.innerHeight };
-        const fitted = resolveFitted(anchorRect, anchor.position, size, viewport, minSize);
+        const fitted = resolveFitted(anchorRect, anchor.position, size, viewport, minSize, preferredMaxSize);
         setPoint(fitted.point);
         setMaxWidth(`${fitted.maxSize.width}px`);
         setMaxHeight(`${fitted.maxSize.height}px`);
@@ -149,11 +151,12 @@ function AnchoredPopup(props: { options: AnchorPopupOptions; portal: Portal }) {
                 transform: transform(),
                 visibility: ready() ? 'visible' : 'hidden',
                 'pointer-events': props.options.interactive ? 'auto' : undefined,
+                display: 'flex',
+                'flex-direction': 'column',
                 width,
                 height,
                 'max-width': maxWidth(),
                 'max-height': maxHeight(),
-                overflow: 'auto',
             }}
         >
             {props.options.render(props.portal)}

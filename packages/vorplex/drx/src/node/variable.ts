@@ -1,5 +1,5 @@
 import { $Id, $Tson, State, type TsonResult } from '@vorplex/core';
-import { DrxDocumentState } from '../drx';
+import { DrxDocumentState, DrxScope } from '../drx';
 import { DrxDom } from '../drx-dom';
 import { DrxType } from './type';
 import { NodeType } from './node-type';
@@ -46,7 +46,7 @@ export const DrxVariable = {
         const locals = variables.reduce((locals, variable) => Object.assign(locals, { [variable.name]: states.get(variable.id).signal.proxy }), {} as Record<string, any>);
         return { locals, states };
     },
-    createApi(variables: DrxVariable[], states: Map<string, State<any>>, types: DrxType[]): Record<string, VariableApi> {
+    createApi(variables: DrxVariable[], states: Map<string, State<any>>, scope: DrxScope, documentState: DrxDocumentState): Record<string, VariableApi> {
         return variables.reduce((api, variable) => {
             const state = states.get(variable.id)!;
             return Object.assign(api, {
@@ -54,7 +54,7 @@ export const DrxVariable = {
                     get: () => state.value,
                     set: (update: any) => state.set(update),
                     reset: () => state.set(variable.value),
-                    validate: () => $Tson.parse(DrxType.resolve(variable.type, types)).parse(state.value)
+                    validate: () => $Tson.parse(DrxType.resolve(scope, variable.type, documentState)).parse(state.value)
                 } satisfies VariableApi
             });
         }, {} as Record<string, VariableApi>);

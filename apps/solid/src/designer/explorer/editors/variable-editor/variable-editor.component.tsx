@@ -3,6 +3,7 @@ import { createStyle, defineRemountingComponent, useInjector, useStore } from '@
 import { createMemo } from 'solid-js';
 import { parse, stringify } from 'yaml';
 import { FormInputComponent } from '../../../../components/forms/form-input.component';
+import { DropdownOption } from '../../../../components/forms/inputs/dropdown.component';
 import { PanelComponent } from '../../../../components/panel.component';
 import { PlatformService } from '../../../../services/platform.service';
 import { VariableScope } from '../../explorer.service';
@@ -34,11 +35,38 @@ export const VariableEditorComponent = defineRemountingComponent((props: { varia
         }
     });
 
+    const scopedApiIds = createMemo(() => {
+        switch (props.scope.type) {
+            case 'app':
+            case 'page':
+                return drx.app.apiIds();
+            case 'component':
+                return drx.components[props.scope.componentId].apiIds();
+        }
+    });
+
+    const scopeLabel = createMemo(() => {
+        switch (props.scope.type) {
+            case 'app':
+            case 'page':
+                return 'App';
+            case 'component':
+                return drx.components[props.scope.componentId].name();
+        }
+    });
+
     const typeOptions = createMemo(() => {
-        const options: Record<string, string> = Object.fromEntries($Tson.definitions.map(type => [type, type]));
+        const options: DropdownOption[] = $Tson.definitions.map(type => ({ key: type, value: type }));
         for (const typeId of scopedTypeIds()) {
             const type = drx.types[typeId];
-            options[type.name()] = type.name();
+            options.push({ key: type.name(), value: type.name(), group: scopeLabel() });
+        }
+        for (const apiId of scopedApiIds()) {
+            const api = drx.apis[apiId];
+            for (const typeId of api.typeIds()) {
+                const type = drx.types[typeId];
+                options.push({ key: type.name(), value: type.name(), group: api.name() });
+            }
         }
         return options;
     });

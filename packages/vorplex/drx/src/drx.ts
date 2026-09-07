@@ -29,6 +29,10 @@ import { PreviewContext } from './preview-context';
 import { ScriptCompiler } from './script-compiler';
 import { StyleSheet } from './style-sheet';
 
+export type DrxScope =
+    | { type: 'app' }
+    | { type: 'component'; componentId: string };
+
 export interface DrxDocumentState {
     app: DrxApp;
     pages: EntityMap<DrxPage>;
@@ -238,6 +242,7 @@ export class DrxDocument {
 
     public getLocals(targetId: string): Record<string, TsonDefinition> {
         const proxy = this.state.signal.proxy;
+        const state = this.state.value;
         const app = proxy.app;
 
         const walkTemplate = (template: DrxTemplateItem[], forLocals: [string, TsonDefinition][]): [string, TsonDefinition][] | undefined => {
@@ -261,22 +266,19 @@ export class DrxDocument {
             return undefined;
         };
 
-        const resolveTypes = (typeIds: string[]): DrxType[] =>
-            typeIds.map(id => ({ id: proxy.types[id].id(), name: proxy.types[id].name(), type: proxy.types[id].type() }));
-
-        const resolveVariables = (variableIds: string[], types: DrxType[]): [string, TsonDefinition][] =>
-            variableIds.map(id => [proxy.variables[id].name(), DrxType.resolve(proxy.variables[id].type(), types)]);
+        const resolveVariables = (variableIds: string[], scope: DrxScope): [string, TsonDefinition][] =>
+            variableIds.map(id => [proxy.variables[id].name(), DrxType.resolve(scope, proxy.variables[id].type(), state)]);
 
         for (const pageId of app.pageIds()) {
             const page = proxy.pages[pageId];
             const forLocals = walkTemplate(page.template(), []);
             if (!forLocals) continue;
-            const types = resolveTypes(app.typeIds());
+            const scope: DrxScope = { type: 'app' };
             const reserved: [string, TsonDefinition][] = [['asset', { type: 'any' }], ['modal', { type: 'any' }]];
             if (app.router()) reserved.push(['router', { type: 'any' }]);
             return Object.fromEntries([
-                ...resolveVariables(app.variableIds(), types),
-                ...resolveVariables(page.variableIds(), types),
+                ...resolveVariables(app.variableIds(), scope),
+                ...resolveVariables(page.variableIds(), scope),
                 ...forLocals,
                 ...reserved
             ]);
@@ -287,11 +289,11 @@ export class DrxDocument {
                 const component = proxy.components[componentId];
                 const forLocals = walkTemplate(component.template(), []);
                 if (forLocals) {
-                    const types = resolveTypes(component.typeIds());
+                    const scope: DrxScope = { type: 'component', componentId };
                     const propertyLocals: [string, TsonDefinition][] = component.propertyIds()
-                        .map(id => [proxy.componentProperties[id].name(), DrxType.resolve(proxy.componentProperties[id].type(), types)]);
+                        .map(id => [proxy.componentProperties[id].name(), DrxType.resolve(scope, proxy.componentProperties[id].type(), state)]);
                     return Object.fromEntries([
-                        ...resolveVariables(component.variableIds(), types),
+                        ...resolveVariables(component.variableIds(), scope),
                         ...propertyLocals,
                         ...forLocals,
                         ['asset', { type: 'any' }]

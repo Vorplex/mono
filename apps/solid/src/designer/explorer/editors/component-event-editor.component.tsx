@@ -2,6 +2,7 @@ import { $Tson } from '@vorplex/core';
 import { createStyle, defineRemountingComponent, useInjector, useStore } from '@vorplex/solid';
 import { createMemo } from 'solid-js';
 import { FormInputComponent } from '../../../components/forms/form-input.component';
+import { DropdownOption } from '../../../components/forms/inputs/dropdown.component';
 import { PanelComponent } from '../../../components/panel.component';
 import { PlatformService } from '../../../services/platform.service';
 
@@ -24,10 +25,10 @@ export const ComponentEventEditorComponent = defineRemountingComponent((props: {
     const component = drx.components[props.componentId];
 
     const typeOptions = createMemo(() => {
-        const options: Record<string, string> = Object.fromEntries($Tson.definitions.map(type => [type, type]));
+        const options: DropdownOption[] = $Tson.definitions.map(type => ({ key: type, value: type }));
         for (const typeId of component.typeIds()) {
             const type = drx.types[typeId];
-            options[type.name()] = type.name();
+            options.push({ key: type.name(), value: type.name(), group: component.name() });
         }
         return options;
     });

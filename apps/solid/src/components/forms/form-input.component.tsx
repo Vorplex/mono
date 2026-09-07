@@ -14,11 +14,10 @@ import { type FileFormInput, FileFormInputComponent } from './inputs/file.compon
 import { type ModalFormInput, ModalFormInputComponent } from './inputs/modal.component';
 import { type NumberFormInput, NumberFormInputComponent } from './inputs/number.component';
 import { type TagsFormInput, TagsFormInputComponent } from './inputs/tags.component';
-import { type TextOptionFormInput, TextOptionFormInputComponent } from './inputs/text-option.component';
 import { type TextFormInput, TextFormInputComponent } from './inputs/text.component';
 import { type TextAreaFormInput, TextAreaFormInputComponent } from './inputs/textarea.component';
 
-export type FormInputType = 'text' | 'text-option' | 'number' | 'checkbox' | 'color' | 'date' | 'dropdown' | 'textarea' | 'code' | 'modal' | 'tags' | 'file';
+export type FormInputType = 'text' | 'number' | 'checkbox' | 'color' | 'date' | 'dropdown' | 'textarea' | 'code' | 'modal' | 'tags' | 'file';
 
 type FormLayoutFields = {
     label: string;
@@ -39,7 +38,6 @@ type FormLayoutProps<TType extends FormInputType = FormInputType, TValue = any> 
 };
 
 export type TextFormGroup = TextFormInput & FormLayoutProps<'text', string>;
-export type TextOptionFormGroup = TextOptionFormInput & FormLayoutProps<'text-option', string>;
 export type CheckboxFormGroup = CheckboxFormInput & FormLayoutProps<'checkbox', boolean>;
 export type ColorFormGroup = ColorFormInput & FormLayoutProps<'color', string>;
 export type DateFormGroup = DateFormInput & FormLayoutProps<'date', Date>;
@@ -53,7 +51,6 @@ export type ModalFormGroup = ModalFormInput & FormLayoutProps<'modal', any>;
 
 export type FormInputs =
     | TextFormGroup
-    | TextOptionFormGroup
     | CheckboxFormGroup
     | ColorFormGroup
     | DateFormGroup
@@ -226,7 +223,6 @@ export function FieldComponent(props: FieldProps) {
 
 const FormFields: Record<FormInputType, (props: any) => JSXElement> = {
     text: TextFormInputComponent,
-    'text-option': TextOptionFormInputComponent,
     tags: TagsFormInputComponent,
     textarea: TextAreaFormInputComponent,
     number: NumberFormInputComponent,
@@ -279,16 +275,16 @@ export function FormInputComponentPlayground() {
         autoFocus: false,
         nullable: false,
         value: undefined,
-        options: {
-            a: 'ABSA',
-            b: 'SARS',
-            c: 'FNB',
-            d: 'Nedbank',
-            e: 'Standard Bank',
-            f: 'Capitec',
-            g: 'Capitec',
-            h: 'Sybrin',
-        }
+        options: [
+            { key: 'a', value: 'ABSA' },
+            { key: 'b', value: 'SARS' },
+            { key: 'c', value: 'FNB' },
+            { key: 'd', value: 'Nedbank' },
+            { key: 'e', value: 'Standard Bank' },
+            { key: 'f', value: 'Capitec' },
+            { key: 'g', value: 'Capitec' },
+            { key: 'h', value: 'Sybrin' },
+        ]
     });
 
     return (
@@ -296,19 +292,19 @@ export function FormInputComponentPlayground() {
             <FormInputComponent
                 type={'dropdown'}
                 label={'Type'}
-                options={{
-                    text: 'Text',
-                    checkbox: 'Checkbox',
-                    dropdown: 'Dropdown',
-                    number: 'Number',
-                    date: 'Date',
-                    color: 'Color',
-                    textarea: 'Textarea',
-                    modal: 'Modal',
-                    yaml: 'YAML',
-                    tags: 'Tags',
-                    file: 'File'
-                }}
+                options={[
+                    { key: 'text', value: 'Text' },
+                    { key: 'checkbox', value: 'Checkbox' },
+                    { key: 'dropdown', value: 'Dropdown' },
+                    { key: 'number', value: 'Number' },
+                    { key: 'date', value: 'Date' },
+                    { key: 'color', value: 'Color' },
+                    { key: 'textarea', value: 'Textarea' },
+                    { key: 'modal', value: 'Modal' },
+                    { key: 'yaml', value: 'YAML' },
+                    { key: 'tags', value: 'Tags' },
+                    { key: 'file', value: 'File' }
+                ]}
                 value={settings().type}
                 onChange={value => setSettings(settings => ({ ...settings, type: value as FormInputType }))}
             />
