@@ -1,0 +1,3694 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+    <head>
+        <meta charset="utf-8" />
+        <meta content="width=device-width, initial-scale=1"
+              name="viewport" />
+        <meta content="DRX (Declarative Reactive X) documentation with editable examples and a complete tag reference."
+              name="description" />
+        <meta content="light"
+              name="color-scheme" />
+        <title>DRX documentation</title>
+        <style>
+            :root {
+                color-scheme: light;
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+                color: #25272b;
+                background: #fff;
+                font-size: 15px;
+                line-height: 1.7;
+                --border: #e5e7eb;
+                --muted: #68707d;
+                --accent: #2563ad;
+                --mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+            }
+
+            * {
+                box-sizing: border-box;
+            }
+
+            body {
+                margin: 0;
+            }
+
+            [hidden] {
+                display: none !important;
+            }
+
+            a {
+                color: var(--accent);
+                text-underline-offset: 3px;
+            }
+
+            .reset,
+            #menu-toggle,
+            .code-file>textarea {
+                font: inherit;
+                color: inherit;
+            }
+
+            button {
+                cursor: pointer;
+            }
+
+            a:focus-visible,
+            button:focus-visible,
+            summary:focus-visible,
+            .code-file>textarea:focus-visible {
+                outline: 2px solid var(--accent);
+                outline-offset: 3px;
+            }
+
+            .reset,
+            #menu-toggle {
+                background: #fff;
+                border: 1px solid #d5d9df;
+                border-radius: 4px;
+                padding: 4px 13px;
+                font-size: 13px;
+                line-height: 1.6;
+            }
+
+            .reset:hover,
+            #menu-toggle:hover {
+                background: #f4f5f7;
+            }
+
+            .reset {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                flex-shrink: 0;
+                width: 34px;
+                height: 32px;
+                padding: 0;
+            }
+
+            @media (pointer: coarse) {
+                .reset {
+                    width: 44px;
+                    height: 44px;
+                }
+            }
+
+            .skip-link {
+                position: fixed;
+                top: -70px;
+                left: 16px;
+                padding: 8px 15px;
+                z-index: 60;
+                background: white;
+                border: 1px solid var(--border);
+            }
+
+            .skip-link:focus {
+                top: 12px;
+            }
+
+            .mobile-header,
+            #nav-backdrop {
+                display: none;
+            }
+
+            /* The navigation stays beside the document, with its own scroll area. */
+            #sidebar {
+                position: fixed;
+                inset: 0 auto 0 0;
+                width: 256px;
+                padding: 31px 22px 40px;
+                overflow-y: auto;
+                scrollbar-width: thin;
+                border-right: 1px solid var(--border);
+                background: white;
+            }
+
+            .brand {
+                display: block;
+                margin: 0 10px 29px;
+                color: inherit;
+                font-size: 22px;
+                font-weight: 700;
+                letter-spacing: -.6px;
+                text-decoration: none;
+                line-height: 1.35;
+            }
+
+            .brand span {
+                display: block;
+                margin-top: 4px;
+                color: var(--muted);
+                font-size: 12px;
+                font-weight: 400;
+                letter-spacing: 0;
+            }
+
+            nav {
+                font-size: 13.5px;
+                line-height: 1.45;
+            }
+
+            nav a,
+            nav summary {
+                position: relative;
+                display: block;
+                padding: 8px 9px;
+                color: #4c535f;
+                text-decoration: none;
+            }
+
+            nav a:hover,
+            nav summary:hover {
+                color: #17191d;
+            }
+
+            nav summary {
+                list-style: none;
+                cursor: pointer;
+                font-weight: 600;
+                color: #30353d;
+                padding-right: 25px;
+            }
+
+            nav summary::-webkit-details-marker {
+                display: none;
+            }
+
+            nav summary::after {
+                content: "";
+                position: absolute;
+                top: 13px;
+                right: 9px;
+                width: 6px;
+                height: 6px;
+                border-right: 1px solid #7a818c;
+                border-bottom: 1px solid #7a818c;
+                transform: rotate(-45deg);
+            }
+
+            nav details[open]>summary::after {
+                transform: rotate(45deg);
+                top: 11px;
+            }
+
+            nav>details {
+                margin-top: 8px;
+            }
+
+            .nav-branch {
+                border-left: 1px solid var(--border);
+                margin: 3px 0 7px 11px;
+                padding-left: 11px;
+            }
+
+            nav a[aria-current="page"] {
+                color: var(--accent);
+                font-weight: 600;
+            }
+
+            .nav-branch a[aria-current="page"]::before {
+                content: "";
+                position: absolute;
+                top: 15px;
+                left: -15px;
+                width: 6px;
+                height: 6px;
+                border-radius: 50%;
+                background: var(--accent);
+            }
+
+            main {
+                margin-left: 256px;
+                padding: 56px 54px 90px;
+            }
+
+            article {
+                max-width: 1056px;
+                margin: 0 auto;
+            }
+
+            h1,
+            h2,
+            h3 {
+                color: #202328;
+                line-height: 1.3;
+            }
+
+            h1 {
+                font-size: 36px;
+                font-weight: 650;
+                letter-spacing: -1px;
+                margin: 0 0 12px;
+            }
+
+            h2 {
+                font-size: 20px;
+                font-weight: 600;
+                letter-spacing: -.3px;
+                margin: 34px 0 13px;
+                scroll-margin-top: 28px;
+            }
+
+            h1:focus,
+            h2:focus,
+            h3:focus,
+            main:focus {
+                outline: none;
+            }
+
+            h3 {
+                font-size: 16px;
+                font-weight: 600;
+                margin: 23px 0 11px;
+            }
+
+            h2 code,
+            h3 code {
+                font-size: .94em;
+                font-weight: 500;
+            }
+
+            p {
+                margin: 13px 0;
+            }
+
+            .intro {
+                color: var(--muted);
+                font-size: 18px;
+                line-height: 1.6;
+                margin-bottom: 25px;
+            }
+
+            code {
+                font-family: var(--mono);
+                font-size: .88em;
+            }
+
+            p code {
+                background: #f3f4f6;
+                border-radius: 3px;
+                padding: 2px 4px;
+                overflow-wrap: anywhere;
+            }
+
+            tfoot .notation {
+                padding: 10px 13px;
+                background: #fafbfc;
+                font-size: 12px;
+                font-weight: 400;
+                color: var(--muted);
+                line-height: 1.9;
+            }
+
+            tfoot .notation code {
+                font-size: inherit;
+                color: #29384d;
+                background: #eef1f5;
+                border: 1px solid #dde2e9;
+                border-radius: 3px;
+                padding: 1px 4px;
+                white-space: nowrap;
+            }
+
+            table[data-tag] code strong {
+                font-weight: 800;
+            }
+
+            tfoot td {
+                border-bottom: 1px solid var(--border);
+            }
+
+            .example-note {
+                font-size: 12px;
+                color: var(--muted);
+                margin: 10px 0 22px;
+            }
+
+            .note {
+                font-size: 13px;
+                border-left: 2px solid #cad2dc;
+                padding: 5px 0 5px 15px;
+                margin: 24px 0;
+            }
+
+            /* Attribute reference: retain the source's ? and * notation. */
+            .table-wrap {
+                margin: 15px 0 25px;
+                overflow-x: auto;
+            }
+
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                font-size: 13px;
+                text-align: left;
+            }
+
+            th,
+            td {
+                padding: 11px 13px;
+                border-bottom: 1px solid var(--border);
+                vertical-align: top;
+            }
+
+            th {
+                font-weight: 600;
+                background: #f8f9fa;
+                color: #4c535f;
+            }
+
+            tbody td:first-child {
+                width: 25%;
+            }
+
+            td code {
+                font-size: 12px;
+                overflow-wrap: anywhere;
+            }
+
+            .type-table td:first-child {
+                width: 13%;
+            }
+
+            .type-table td:nth-child(2) {
+                width: 25%;
+            }
+
+            .type-table td:nth-child(3) code {
+                white-space: normal;
+            }
+
+            /* Source and preview are always present; narrow screens stack the panes. */
+            .example {
+                margin: 23px 0 0;
+                border: 1px solid var(--border);
+                border-radius: 5px;
+                overflow: hidden;
+            }
+
+            .example-heading {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 16px;
+                padding: 10px 15px;
+                border-bottom: 1px solid var(--border);
+                font-size: 13px;
+                font-weight: 500;
+            }
+
+            .example-grid {
+                display: grid;
+                grid-template-columns: minmax(0, 1.12fr) minmax(0, 1fr);
+            }
+
+            .source-pane {
+                min-width: 0;
+                border-right: 1px solid var(--border);
+                background: #fafbfc;
+            }
+
+            .code-file+.code-file {
+                border-top: 1px solid var(--border);
+            }
+
+            .code-file>label,
+            .pane-label {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 8px 15px;
+                border-bottom: 1px solid #eef0f2;
+                font-size: 11px;
+                color: var(--muted);
+                line-height: 1.7;
+            }
+
+            .code-file>label {
+                font-family: var(--mono);
+            }
+
+            .code-file>label span {
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+                font-size: 10px;
+            }
+
+            .code-file>textarea {
+                display: block;
+                width: 100%;
+                min-height: 125px;
+                padding: 15px;
+                margin: 0;
+                resize: vertical;
+                border: 0;
+                border-radius: 0;
+                background: transparent;
+                color: #374151;
+                font-family: var(--mono);
+                font-size: 12px;
+                line-height: 1.75;
+                tab-size: 2;
+            }
+
+            .code-file>textarea:focus-visible {
+                outline-offset: -2px;
+            }
+
+            .monaco-host {
+                width: 100%;
+                min-width: 0;
+                overflow: hidden;
+            }
+
+            .preview-pane {
+                min-width: 0;
+                display: flex;
+                flex-direction: column;
+                background: white;
+            }
+
+            .preview-output {
+                position: relative;
+                flex: 1;
+                min-height: 210px;
+            }
+
+            .preview-frame {
+                position: absolute;
+                inset: 0;
+            }
+
+            .preview-frame iframe {
+                display: block;
+                width: 100%;
+                height: 100%;
+                border: 0;
+                background: white;
+            }
+
+            .preview-status {
+                position: absolute;
+                inset: 0;
+                z-index: 1;
+                margin: 0;
+                padding: 20px;
+                background: white;
+                font-size: 12px;
+                color: var(--muted);
+                overflow: auto;
+                overflow-wrap: anywhere;
+            }
+
+            .preview-status.error {
+                color: #a43c35;
+            }
+
+            @media (min-width: 1700px) {
+                main {
+                    padding-left: 80px;
+                    padding-right: 80px;
+                }
+            }
+
+            @media (max-width: 1100px) {
+                main {
+                    padding: 42px 30px 70px;
+                }
+
+                .example-grid {
+                    grid-template-columns: 1fr;
+                }
+
+                .source-pane {
+                    border-right: 0;
+                    border-bottom: 1px solid var(--border);
+                }
+
+                .preview-output {
+                    min-height: 230px;
+                }
+            }
+
+            @media (max-width: 760px) {
+                .mobile-header {
+                    display: flex;
+                    position: sticky;
+                    top: 0;
+                    align-items: center;
+                    justify-content: space-between;
+                    z-index: 40;
+                    height: 58px;
+                    padding: 0 20px;
+                    background: white;
+                    border-bottom: 1px solid var(--border);
+                }
+
+                .mobile-header a {
+                    color: inherit;
+                    font-weight: 700;
+                    font-size: 18px;
+                    text-decoration: none;
+                }
+
+                #sidebar {
+                    display: none;
+                    top: 58px;
+                    width: min(290px, 85vw);
+                    z-index: 35;
+                    padding-top: 24px;
+                }
+
+                #sidebar.open {
+                    display: block;
+                }
+
+                #sidebar .brand {
+                    display: none;
+                }
+
+                #nav-backdrop:not([hidden]) {
+                    display: block;
+                    position: fixed;
+                    inset: 58px 0 0;
+                    background: #0003;
+                    border: 0;
+                    border-radius: 0;
+                    z-index: 30;
+                }
+
+                body.menu-open {
+                    overflow: hidden;
+                }
+
+                main {
+                    margin-left: 0;
+                    padding: 31px 20px 60px;
+                }
+
+                h1 {
+                    font-size: 30px;
+                }
+
+                h2 {
+                    scroll-margin-top: 80px;
+                }
+
+                .intro {
+                    font-size: 16px;
+                }
+
+                th,
+                td {
+                    padding: 10px;
+                }
+
+                tbody td:first-child {
+                    width: 30%;
+                }
+
+                .type-table {
+                    min-width: 570px;
+                }
+            }
+        </style>
+    </head>
+
+    <body>
+        <a class="skip-link"
+           href="#main">Skip to content</a>
+        <header class="mobile-header"><a href="#overview">DRX</a><button aria-controls="sidebar"
+                    aria-expanded="false"
+                    id="menu-toggle"
+                    type="button">Menu</button></header>
+        <button aria-label="Close navigation"
+                hidden=""
+                id="nav-backdrop"></button>
+        <aside id="sidebar">
+            <a class="brand"
+               href="#overview">DRX<span>Documentation</span></a>
+            <nav aria-label="Documentation"><a href="#overview">Overview</a>
+                <details open="">
+                    <summary>Concepts</summary>
+                    <div class="nav-branch">
+                        <details open="">
+                            <summary>App Structure</summary>
+                            <div class="nav-branch">
+                                <a href="#app">App</a>
+                                <a href="#page">Pages</a>
+                                <a href="#router">Routing</a>
+                                <a href="#import">Imports</a>
+                            </div>
+                        </details>
+                        <details open="">
+                            <summary>Reactivity</summary>
+                            <div class="nav-branch">
+                                <a href="#variable">Variables</a>
+                                <a href="#expressions">Expressions</a>
+                                <a href="#type">Types</a>
+                            </div>
+                        </details>
+                        <details open="">
+                            <summary>Components</summary>
+                            <div class="nav-branch">
+                                <a href="#component">Basics</a>
+                                <a href="#property">Properties</a>
+                                <a href="#event">Events</a>
+                                <a href="#component-instance">Instances</a>
+                            </div>
+                        </details>
+                        <details open="">
+                            <summary>Control Flow</summary>
+                            <div class="nav-branch">
+                                <a href="#if">If</a>
+                                <a href="#for">For</a>
+                            </div>
+                        </details>
+                        <details open="">
+                            <summary>API</summary>
+                            <div class="nav-branch">
+                                <a href="#api">Overview</a>
+                                <a href="#api/x-endpoint">Endpoints</a>
+                                <a href="#api/x-parameter">Parameters</a>
+                                <a href="#api/x-header">Headers</a>
+                                <a href="#api/x-body">Request Body</a>
+                                <a href="#api/x-response">Response</a>
+                            </div>
+                        </details>
+                        <a href="#service">Services</a>
+                        <a href="#packages">Packages</a>
+                        <a href="#asset">Assets</a>
+                        <a href="#icon">Icons</a>
+                        <a href="#modals">Modals</a>
+                    </div>
+                </details>
+                <details open="">
+                    <summary>Reference</summary>
+                    <div class="nav-branch">
+                        <a href="#tson">TSON</a>
+                    </div>
+                </details>
+            </nav>
+        </aside>
+        <main id="main"
+              tabindex="-1">
+            <noscript>This documentation uses JavaScript for navigation and interactive previews. Enable JavaScript to continue.</noscript>
+            <article data-page="overview"
+                     hidden=""
+                     id="page-overview">
+                <h1 tabindex="-1">DRX</h1>
+                <p class="intro">Reactive web apps, written in markup.</p>
+                <p>DRX (Declarative Reactive X) is a declarative markup language powered by Vorplex. Compose your app with <code>&lt;x-*&gt;</code> tags, then use ordinary HTML for its interface.</p>
+                <h2>Quick Start</h2>
+                <p>Save this example as an HTML file and open it in a browser. The script loads DRX, <code>&lt;x-app&gt;</code> wraps the application, and <code>&lt;x-page&gt;</code> defines its first
+                    view. No build configuration is needed.</p>
+                <div class="example"
+                     data-example="">
+                    <div class="example-heading">
+                        <span>A Complete App</span><button class="reset"
+                                type="button"
+                                title="Reset example"
+                                aria-label="Reset example"><svg aria-hidden="true"
+                                 focusable="false"
+                                 width="16"
+                                 height="16"
+                                 viewBox="0 0 24 24"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 stroke-width="1.8"
+                                 stroke-linecap="round"
+                                 stroke-linejoin="round">
+                                <path d="M3 10a9 9 0 1 1 2.6 8.4" />
+                                <path d="M3 4v6h6" />
+                            </svg></button>
+                    </div>
+                    <div class="example-grid">
+                        <div class="source-pane">
+                            <div class="code-file">
+                                <label for="example-2-0">index.html<span>editable</span></label><textarea aria-label="A complete app: index.html"
+                                          autocapitalize="off"
+                                          autocomplete="off"
+                                          data-file="index.html"
+                                          id="example-2-0"
+                                          rows="11"
+                                          spellcheck="false"
+                                          wrap="off">&lt;script src="https://cdn.jsdelivr.net/gh/Vorplex/mono@shtml/packages/vorplex/drx/bootstrap/drx.js"&gt;&lt;/script&gt;
+
+&lt;x-app&gt;
+  &lt;x-page name="home"&gt;
+    &lt;x-variable name="count"&gt;0&lt;/x-variable&gt;
+    &lt;button onclick="count(count() + 1)"&gt;
+      Clicked {{count()}} times
+    &lt;/button&gt;
+  &lt;/x-page&gt;
+&lt;/x-app&gt;</textarea>
+                            </div>
+                        </div>
+                        <div class="preview-pane">
+                            <div class="pane-label">Preview</div>
+                            <div class="preview-output">
+                                <p class="preview-status"
+                                   role="status">Loading DRX...</p>
+                                <div class="preview-frame"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <p><code>&lt;x-variable&gt;</code> holds the initial count. Read it with <code>count()</code> and write it with <code>count(count() + 1)</code>. The <code>{{count()}}</code> expression
+                    updates the button text whenever the value changes.</p>
+                <p class="example-note">Examples run automatically as you edit. Use the reset icon to restore the original code. Previews need an internet connection. Other examples omit the bootstrap
+                    line; the preview adds it automatically.</p>
+            </article>
+            <article data-page="app"
+                     hidden=""
+                     id="page-app">
+                <h1 tabindex="-1">App</h1>
+                <p class="intro">The composition root for your application.</p>
+                <p>Use exactly one <code>&lt;x-app&gt;</code>. It contains your pages and app-level declarations, such as shared variables, types, services, and components. Pages can access App
+                    variables; components cannot.</p>
+                <h2><code>&lt;x-app&gt;</code></h2>
+                <div class="example"
+                     data-example="">
+                    <div class="example-heading">
+                        <span>Shared App State</span><button class="reset"
+                                type="button"
+                                title="Reset example"
+                                aria-label="Reset example"><svg aria-hidden="true"
+                                 focusable="false"
+                                 width="16"
+                                 height="16"
+                                 viewBox="0 0 24 24"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 stroke-width="1.8"
+                                 stroke-linecap="round"
+                                 stroke-linejoin="round">
+                                <path d="M3 10a9 9 0 1 1 2.6 8.4" />
+                                <path d="M3 4v6h6" />
+                            </svg></button>
+                    </div>
+                    <div class="example-grid">
+                        <div class="source-pane">
+                            <div class="code-file">
+                                <label for="example-3-0">index.html<span>editable</span></label><textarea aria-label="Shared app state: index.html"
+                                          autocapitalize="off"
+                                          autocomplete="off"
+                                          data-file="index.html"
+                                          id="example-3-0"
+                                          rows="8"
+                                          spellcheck="false"
+                                          wrap="off">&lt;x-app&gt;
+  &lt;x-variable name="workspace"&gt;"Studio"&lt;/x-variable&gt;
+  &lt;x-page name="home"&gt;
+    &lt;p&gt;{{workspace()}}&lt;/p&gt;
+    &lt;button onclick="workspace('Workshop')"&gt;Rename&lt;/button&gt;
+  &lt;/x-page&gt;
+&lt;/x-app&gt;</textarea>
+                            </div>
+                        </div>
+                        <div class="preview-pane">
+                            <div class="pane-label">Preview</div>
+                            <div class="preview-output">
+                                <p class="preview-status"
+                                   role="status">Loading DRX...</p>
+                                <div class="preview-frame"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <h2 id="app-scripting"
+                    tabindex="-1">Scripting</h2>
+                <p>Place an inline TypeScript script inside <code>&lt;x-app&gt;</code> and export <code>DRX.defineApp(drx =&gt; class { ... })</code>. The callback receives <code>drx</code> and
+                    returns a class. An imported <code>.ts</code> file uses the same export without the script tag.</p>
+                <h3><code>&lt;script&gt;</code></h3>
+                <div class="table-wrap">
+                    <table data-tag="script">
+                        <thead>
+                            <tr>
+                                <th scope="col">Attribute</th>
+                                <th scope="col">Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>type</code></td>
+                                <td>Use <code>application/typescript</code> for an inline DRX script.</td>
+                            </tr>
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td class="notation"
+                                    colspan="2"><code>property<strong>?</strong></code> is optional. <code><strong>*</strong>property</code> supports <code>{{ }}</code> expressions;</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                <p>App variables expose <code>get()</code>, <code>set(value)</code>, <code>reset()</code>, and <code>validate()</code> through <code>drx.app.variables.&lt;name&gt;</code>. A page calls
+                    App methods through <code>drx.app.instance.&lt;method&gt;(...)</code>.</p>
+                <div class="example"
+                     data-example="">
+                    <div class="example-heading">
+                        <span>Call App Behavior from a Page</span><button class="reset"
+                                type="button"
+                                title="Reset example"
+                                aria-label="Reset example"><svg aria-hidden="true"
+                                 focusable="false"
+                                 width="16"
+                                 height="16"
+                                 viewBox="0 0 24 24"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 stroke-width="1.8"
+                                 stroke-linecap="round"
+                                 stroke-linejoin="round">
+                                <path d="M3 10a9 9 0 1 1 2.6 8.4" />
+                                <path d="M3 4v6h6" />
+                            </svg></button>
+                    </div>
+                    <div class="example-grid">
+                        <div class="source-pane">
+                            <div class="code-file">
+                                <label for="example-19-0">index.html<span>editable</span></label><textarea aria-label="Call App Behavior from a Page: index.html"
+                                          autocapitalize="off"
+                                          autocomplete="off"
+                                          data-file="index.html"
+                                          id="example-19-0"
+                                          rows="17"
+                                          spellcheck="false"
+                                          wrap="off">&lt;x-app&gt;
+  &lt;x-variable name="message"&gt;"Ready"&lt;/x-variable&gt;
+  &lt;script type="application/typescript"&gt;
+    export default DRX.defineApp(drx =&gt; class {
+      greet() { drx.app.variables.message.set('Hello'); }
+    });
+  &lt;/script&gt;
+  &lt;x-page name="home"&gt;
+    &lt;script type="application/typescript"&gt;
+      export default DRX.definePage(drx =&gt; class {
+        greet() { drx.app.instance.greet(); }
+      });
+    &lt;/script&gt;
+    &lt;p&gt;{{message()}}&lt;/p&gt;
+    &lt;button onclick="greet()"&gt;Greet&lt;/button&gt;
+  &lt;/x-page&gt;
+&lt;/x-app&gt;</textarea>
+                            </div>
+                        </div>
+                        <div class="preview-pane">
+                            <div class="pane-label">Preview</div>
+                            <div class="preview-output">
+                                <p class="preview-status"
+                                   role="status">Loading DRX...</p>
+                                <div class="preview-frame"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </article>
+            <article data-page="page"
+                     hidden=""
+                     id="page-page">
+                <h1 tabindex="-1">Pages</h1>
+                <p class="intro">Define a named view, then choose how it is displayed.</p>
+                <p>Reference a page from <code>&lt;x-route&gt;</code>, embed it with <code>&lt;x-page-container&gt;</code>, or access it through <code>drx.pages.&lt;name&gt;</code>. Without a router,
+                    <code>.show()</code> switches the displayed page.
+                </p>
+                <p>A page can access its own variables and App variables. Declare page variables as direct children of <code>&lt;x-page&gt;</code>.</p>
+                <h2><code>&lt;x-page&gt;</code></h2>
+                <div class="table-wrap">
+                    <table data-tag="x-page">
+                        <thead>
+                            <tr>
+                                <th scope="col">Attribute</th>
+                                <th scope="col">Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>name</code></td>
+                                <td>The page's identifier.</td>
+                            </tr>
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td class="notation"
+                                    colspan="2"><code>property<strong>?</strong></code> is optional. <code><strong>*</strong>property</code> supports <code>{{ }}</code> expressions;</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                <div class="example"
+                     data-example="">
+                    <div class="example-heading">
+                        <span>Switch Pages</span><button class="reset"
+                                type="button"
+                                title="Reset example"
+                                aria-label="Reset example"><svg aria-hidden="true"
+                                 focusable="false"
+                                 width="16"
+                                 height="16"
+                                 viewBox="0 0 24 24"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 stroke-width="1.8"
+                                 stroke-linecap="round"
+                                 stroke-linejoin="round">
+                                <path d="M3 10a9 9 0 1 1 2.6 8.4" />
+                                <path d="M3 4v6h6" />
+                            </svg></button>
+                    </div>
+                    <div class="example-grid">
+                        <div class="source-pane">
+                            <div class="code-file">
+                                <label for="example-4-0">index.html<span>editable</span></label><textarea aria-label="Switch pages: index.html"
+                                          autocapitalize="off"
+                                          autocomplete="off"
+                                          data-file="index.html"
+                                          id="example-4-0"
+                                          rows="20"
+                                          spellcheck="false"
+                                          wrap="off">&lt;x-app&gt;
+  &lt;x-page name="home"&gt;
+    &lt;script type="application/typescript"&gt;
+      export default DRX.definePage(drx =&gt; class {
+        about() { drx.pages.about.show(); }
+      });
+    &lt;/script&gt;
+    &lt;p&gt;Home page&lt;/p&gt;
+    &lt;button onclick="about()"&gt;About&lt;/button&gt;
+  &lt;/x-page&gt;
+  &lt;x-page name="about"&gt;
+    &lt;script type="application/typescript"&gt;
+      export default DRX.definePage(drx =&gt; class {
+        home() { drx.pages.home.show(); }
+      });
+    &lt;/script&gt;
+    &lt;p&gt;About page&lt;/p&gt;
+    &lt;button onclick="home()"&gt;Home&lt;/button&gt;
+  &lt;/x-page&gt;
+&lt;/x-app&gt;</textarea>
+                            </div>
+                        </div>
+                        <div class="preview-pane">
+                            <div class="pane-label">Preview</div>
+                            <div class="preview-output">
+                                <p class="preview-status"
+                                   role="status">Loading DRX...</p>
+                                <div class="preview-frame"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <h2 id="page-scripting"
+                    tabindex="-1">Scripting</h2>
+                <p>Place an inline <code>&lt;script type="application/typescript"&gt;</code> inside <code>&lt;x-page&gt;</code> and export <code>DRX.definePage(drx =&gt; class { ... })</code>. An
+                    imported <code>.ts</code> file uses the same export without the script tag.</p>
+                <p>Access the page's own variables through <code>drx.page.variables.&lt;name&gt;</code> and App variables through <code>drx.app.variables.&lt;name&gt;</code>. Both expose
+                    <code>get()</code>, <code>set(value)</code>, <code>reset()</code>, and <code>validate()</code>. To call shared App methods, use <code>drx.app.instance.&lt;method&gt;(...)</code>,
+                    as shown in <a href="#app/scripting">App Scripting</a>.
+                </p>
+                <div class="example"
+                     data-example="">
+                    <div class="example-heading">
+                        <span>Read App and Page Variables</span><button class="reset"
+                                type="button"
+                                title="Reset example"
+                                aria-label="Reset example"><svg aria-hidden="true"
+                                 focusable="false"
+                                 width="16"
+                                 height="16"
+                                 viewBox="0 0 24 24"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 stroke-width="1.8"
+                                 stroke-linecap="round"
+                                 stroke-linejoin="round">
+                                <path d="M3 10a9 9 0 1 1 2.6 8.4" />
+                                <path d="M3 4v6h6" />
+                            </svg></button>
+                    </div>
+                    <div class="example-grid">
+                        <div class="source-pane">
+                            <div class="code-file">
+                                <label for="example-18-0">index.html<span>editable</span></label><textarea aria-label="Read App and Page Variables: index.html"
+                                          autocapitalize="off"
+                                          autocomplete="off"
+                                          data-file="index.html"
+                                          id="example-18-0"
+                                          rows="18"
+                                          spellcheck="false"
+                                          wrap="off">&lt;x-app&gt;
+  &lt;x-variable name="step" type="number"&gt;2&lt;/x-variable&gt;
+  &lt;x-page name="counter"&gt;
+    &lt;x-variable name="count" type="number"&gt;3&lt;/x-variable&gt;
+    &lt;script type="application/typescript"&gt;
+      export default DRX.definePage(drx =&gt; class {
+        increment() {
+          const count = drx.page.variables.count;
+          count.set(count.get() + drx.app.variables.step.get());
+        }
+        reset() { drx.page.variables.count.reset(); }
+      });
+    &lt;/script&gt;
+    &lt;p&gt;Count: {{count()}}&lt;/p&gt;
+    &lt;button onclick="increment()"&gt;Add {{step()}}&lt;/button&gt;
+    &lt;button onclick="reset()"&gt;Reset&lt;/button&gt;
+  &lt;/x-page&gt;
+&lt;/x-app&gt;</textarea>
+                            </div>
+                        </div>
+                        <div class="preview-pane">
+                            <div class="pane-label">Preview</div>
+                            <div class="preview-output">
+                                <p class="preview-status"
+                                   role="status">Loading DRX...</p>
+                                <div class="preview-frame"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <h2 id="page-page-containers"
+                    tabindex="-1">Page Containers</h2>
+                <p>Embed a page as a layout slot.</p>
+                <p>The <code>page</code> attribute can be a literal name or an expression. Embedded pages share the app context; unlike components, they are not isolated.</p>
+                <h3><code>&lt;x-page-container&gt;</code></h3>
+                <div class="table-wrap">
+                    <table data-tag="x-page-container">
+                        <thead>
+                            <tr>
+                                <th scope="col">Attribute</th>
+                                <th scope="col">Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code><strong>*</strong>page</code></td>
+                                <td>The name of the <code>&lt;x-page&gt;</code> to embed.</td>
+                            </tr>
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td class="notation"
+                                    colspan="2"><code>property<strong>?</strong></code> is optional. <code><strong>*</strong>property</code> supports <code>{{ }}</code> expressions;</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                <div class="example"
+                     data-example="">
+                    <div class="example-heading">
+                        <span>A Changing Layout Slot</span><button class="reset"
+                                type="button"
+                                title="Reset example"
+                                aria-label="Reset example"><svg aria-hidden="true"
+                                 focusable="false"
+                                 width="16"
+                                 height="16"
+                                 viewBox="0 0 24 24"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 stroke-width="1.8"
+                                 stroke-linecap="round"
+                                 stroke-linejoin="round">
+                                <path d="M3 10a9 9 0 1 1 2.6 8.4" />
+                                <path d="M3 4v6h6" />
+                            </svg></button>
+                    </div>
+                    <div class="example-grid">
+                        <div class="source-pane">
+                            <div class="code-file">
+                                <label for="example-5-0">index.html<span>editable</span></label><textarea aria-label="A changing layout slot: index.html"
+                                          autocapitalize="off"
+                                          autocomplete="off"
+                                          data-file="index.html"
+                                          id="example-5-0"
+                                          rows="11"
+                                          spellcheck="false"
+                                          wrap="off">&lt;x-app&gt;
+  &lt;x-page name="shell"&gt;
+    &lt;x-variable name="tab"&gt;"profile"&lt;/x-variable&gt;
+    &lt;button onclick="tab('profile')"&gt;Profile&lt;/button&gt;
+    &lt;button onclick="tab('activity')"&gt;Activity&lt;/button&gt;
+    &lt;x-page-container page="{{tab()}}"&gt;&lt;/x-page-container&gt;
+  &lt;/x-page&gt;
+  &lt;x-page name="profile"&gt;&lt;p&gt;Profile details&lt;/p&gt;&lt;/x-page&gt;
+  &lt;x-page name="activity"&gt;&lt;p&gt;Recent activity&lt;/p&gt;&lt;/x-page&gt;
+&lt;/x-app&gt;</textarea>
+                            </div>
+                        </div>
+                        <div class="preview-pane">
+                            <div class="pane-label">Preview</div>
+                            <div class="preview-output">
+                                <p class="preview-status"
+                                   role="status">Loading DRX...</p>
+                                <div class="preview-frame"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </article>
+            <article data-page="router"
+                     hidden=""
+                     id="page-router">
+                <h1 tabindex="-1">Routing</h1>
+                <p class="intro">Map paths to pages and read the current match.</p>
+                <p>Templates read <code>router.route()</code> and <code>router.params.&lt;name&gt;()</code> reactively. Scripts read <code>drx.router.route</code> and <code>drx.router.params</code> as
+                    plain values, and navigate with <code>drx.router.navigate(path)</code>.</p>
+                <h2><code>&lt;x-router&gt;</code></h2>
+                <p>Holds the route declarations. Once mounted, the current match is available to rendered pages.</p>
+                <h2><code>&lt;x-route&gt;</code></h2>
+                <div class="table-wrap">
+                    <table data-tag="x-route">
+                        <thead>
+                            <tr>
+                                <th scope="col">Attribute</th>
+                                <th scope="col">Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>route</code></td>
+                                <td>The path to match, such as <code>/posts/{id}</code>.</td>
+                            </tr>
+                            <tr>
+                                <td><code>page</code></td>
+                                <td>The name of the page to render.</td>
+                            </tr>
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td class="notation"
+                                    colspan="2"><code>property<strong>?</strong></code> is optional. <code><strong>*</strong>property</code> supports <code>{{ }}</code> expressions;</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                <div class="example"
+                     data-example="">
+                    <div class="example-heading">
+                        <span>Paths and Parameters</span><button class="reset"
+                                type="button"
+                                title="Reset example"
+                                aria-label="Reset example"><svg aria-hidden="true"
+                                 focusable="false"
+                                 width="16"
+                                 height="16"
+                                 viewBox="0 0 24 24"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 stroke-width="1.8"
+                                 stroke-linecap="round"
+                                 stroke-linejoin="round">
+                                <path d="M3 10a9 9 0 1 1 2.6 8.4" />
+                                <path d="M3 4v6h6" />
+                            </svg></button>
+                    </div>
+                    <div class="example-grid">
+                        <div class="source-pane">
+                            <div class="code-file">
+                                <label for="example-6-0">index.html<span>editable</span></label><textarea aria-label="Paths and parameters: index.html"
+                                          autocapitalize="off"
+                                          autocomplete="off"
+                                          data-file="index.html"
+                                          id="example-6-0"
+                                          rows="16"
+                                          spellcheck="false"
+                                          wrap="off">&lt;x-app&gt;
+  &lt;x-router&gt;
+    &lt;x-route route="/" page="home"&gt;&lt;/x-route&gt;
+    &lt;x-route route="/posts/{id}" page="post"&gt;&lt;/x-route&gt;
+    &lt;x-route route="/404" page="not-found"&gt;&lt;/x-route&gt;
+  &lt;/x-router&gt;
+  &lt;x-page name="home"&gt;
+    &lt;a href="#/posts/42"&gt;Read post 42&lt;/a&gt;
+  &lt;/x-page&gt;
+  &lt;x-page name="post"&gt;
+    &lt;p&gt;Post {{router.params.id()}}&lt;/p&gt;
+    &lt;a href="#/"&gt;Home&lt;/a&gt;
+  &lt;/x-page&gt;
+  &lt;x-page name="not-found"&gt;&lt;p&gt;Page not found.&lt;/p&gt;&lt;/x-page&gt;
+&lt;/x-app&gt;</textarea>
+                            </div>
+                        </div>
+                        <div class="preview-pane">
+                            <div class="pane-label">Preview</div>
+                            <div class="preview-output">
+                                <p class="preview-status"
+                                   role="status">Loading DRX...</p>
+                                <div class="preview-frame"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <p class="example-note">Navigation stays inside this preview.</p>
+            </article>
+            <article data-page="import"
+                     hidden=""
+                     id="page-import">
+                <h1 tabindex="-1">Imports</h1>
+                <p class="intro">Compose files before compilation.</p>
+                <p><code>&lt;x-import&gt;</code> inserts another file at its position, like a literal paste. Omit the <code>.drx</code> extension when convenient. Keep <code>.ts</code> and
+                    <code>.css</code> explicit: they become inline TypeScript and styles.
+                </p>
+                <h2><code>&lt;x-import&gt;</code></h2>
+                <div class="table-wrap">
+                    <table data-tag="x-import">
+                        <thead>
+                            <tr>
+                                <th scope="col">Attribute</th>
+                                <th scope="col">Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>src</code></td>
+                                <td>Path to the file to insert.</td>
+                            </tr>
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td class="notation"
+                                    colspan="2"><code>property<strong>?</strong></code> is optional. <code><strong>*</strong>property</code> supports <code>{{ }}</code> expressions;</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                <div class="example"
+                     data-example="">
+                    <div class="example-heading">
+                        <span>A Page Composed from Files</span><button class="reset"
+                                type="button"
+                                title="Reset example"
+                                aria-label="Reset example"><svg aria-hidden="true"
+                                 focusable="false"
+                                 width="16"
+                                 height="16"
+                                 viewBox="0 0 24 24"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 stroke-width="1.8"
+                                 stroke-linecap="round"
+                                 stroke-linejoin="round">
+                                <path d="M3 10a9 9 0 1 1 2.6 8.4" />
+                                <path d="M3 4v6h6" />
+                            </svg></button>
+                    </div>
+                    <div class="example-grid">
+                        <div class="source-pane">
+                            <div class="code-file">
+                                <label for="example-7-0">index.html<span>editable</span></label><textarea aria-label="A page composed from files: index.html"
+                                          autocapitalize="off"
+                                          autocomplete="off"
+                                          data-file="index.html"
+                                          id="example-7-0"
+                                          rows="10"
+                                          spellcheck="false"
+                                          wrap="off">&lt;x-app&gt;
+  &lt;x-page name="home"&gt;
+    &lt;x-variable name="count"&gt;0&lt;/x-variable&gt;
+    &lt;x-import src="./header"&gt;&lt;/x-import&gt;
+    &lt;x-import src="./actions.ts"&gt;&lt;/x-import&gt;
+    &lt;x-import src="./style.css"&gt;&lt;/x-import&gt;
+    &lt;button onclick="increment()"&gt;Count: {{count()}}&lt;/button&gt;
+  &lt;/x-page&gt;
+&lt;/x-app&gt;</textarea>
+                            </div>
+                            <div class="code-file">
+                                <label for="example-7-1">header.drx<span>editable</span></label><textarea aria-label="A page composed from files: header.drx"
+                                          autocapitalize="off"
+                                          autocomplete="off"
+                                          data-file="header.drx"
+                                          id="example-7-1"
+                                          rows="5"
+                                          spellcheck="false"
+                                          wrap="off">&lt;h2&gt;Imported heading&lt;/h2&gt;</textarea>
+                            </div>
+                            <div class="code-file">
+                                <label for="example-7-2">actions.ts<span>editable</span></label><textarea aria-label="A page composed from files: actions.ts"
+                                          autocapitalize="off"
+                                          autocomplete="off"
+                                          data-file="actions.ts"
+                                          id="example-7-2"
+                                          rows="7"
+                                          spellcheck="false"
+                                          wrap="off">export default DRX.definePage(drx =&gt; class {
+  increment() {
+    const count = drx.page.variables.count;
+    count.set(count.get() + 1);
+  }
+});</textarea>
+                            </div>
+                            <div class="code-file">
+                                <label for="example-7-3">style.css<span>editable</span></label><textarea aria-label="A page composed from files: style.css"
+                                          autocapitalize="off"
+                                          autocomplete="off"
+                                          data-file="style.css"
+                                          id="example-7-3"
+                                          rows="5"
+                                          spellcheck="false"
+                                          wrap="off">h2 { text-decoration: underline; }</textarea>
+                            </div>
+                        </div>
+                        <div class="preview-pane">
+                            <div class="pane-label">Preview</div>
+                            <div class="preview-output">
+                                <p class="preview-status"
+                                   role="status">Loading DRX...</p>
+                                <div class="preview-frame"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <p class="example-note">These files are editable. The preview serves them from memory; a real project keeps them as separate files.</p>
+            </article>
+            <article data-page="variable"
+                     hidden=""
+                     id="page-variable">
+                <h1 tabindex="-1">Variables</h1>
+                <p class="intro">Read and write state through callable signals.</p>
+                <p>Use no arguments to read a signal, and one argument to write it. The variable body holds the initial data, not a schema.</p>
+                <h2><code>&lt;x-variable&gt;</code></h2>
+                <div class="table-wrap">
+                    <table data-tag="x-variable">
+                        <thead>
+                            <tr>
+                                <th scope="col">Attribute</th>
+                                <th scope="col">Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>name</code></td>
+                                <td>The variable's identifier.</td>
+                            </tr>
+                            <tr>
+                                <td><code>type<strong>?</strong></code></td>
+                                <td>TSON type; defaults to <code>any</code>.</td>
+                            </tr>
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td class="notation"
+                                    colspan="2"><code>property<strong>?</strong></code> is optional. <code><strong>*</strong>property</code> supports <code>{{ }}</code> expressions;</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+
+                <h2 id="variable-scope"
+                    tabindex="-1">Placement and Scope</h2>
+                <p><code>&lt;x-variable&gt;</code> can only be a direct child of <code>&lt;x-app&gt;</code>, <code>&lt;x-page&gt;</code>, or <code>&lt;x-component&gt;</code>. Do not put it inside an
+                    HTML element, a control-flow tag, or a service.</p>
+                <p>Pages can access their own variables and App variables. Components can access only their own variables, not those of the App, a page, or an enclosing component.</p>
+                <div class="example"
+                     data-example="">
+                    <div class="example-heading">
+                        <span>App, Page, and Component Variables</span><button class="reset"
+                                type="button"
+                                title="Reset example"
+                                aria-label="Reset example"><svg aria-hidden="true"
+                                 focusable="false"
+                                 width="16"
+                                 height="16"
+                                 viewBox="0 0 24 24"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 stroke-width="1.8"
+                                 stroke-linecap="round"
+                                 stroke-linejoin="round">
+                                <path d="M3 10a9 9 0 1 1 2.6 8.4" />
+                                <path d="M3 4v6h6" />
+                            </svg></button>
+                    </div>
+                    <div class="example-grid">
+                        <div class="source-pane">
+                            <div class="code-file">
+                                <label for="example-8-0">index.html<span>editable</span></label><textarea aria-label="App, Page, and Component Variables: index.html"
+                                          autocapitalize="off"
+                                          autocomplete="off"
+                                          data-file="index.html"
+                                          id="example-8-0"
+                                          rows="17"
+                                          spellcheck="false"
+                                          wrap="off">&lt;x-app&gt;
+  &lt;x-variable name="workspace"&gt;"Studio"&lt;/x-variable&gt;
+  &lt;x-component name="counter"&gt;
+    &lt;x-variable name="count" type="number"&gt;0&lt;/x-variable&gt;
+    &lt;button onclick="count(count() + 1)"&gt;
+      Component count: {{count()}}
+    &lt;/button&gt;
+  &lt;/x-component&gt;
+  &lt;x-page name="home"&gt;
+    &lt;x-variable name="count" type="number"&gt;0&lt;/x-variable&gt;
+    &lt;p&gt;{{workspace()}} / Page count: {{count()}}&lt;/p&gt;
+    &lt;button onclick="workspace('Workshop')"&gt;Rename workspace&lt;/button&gt;
+    &lt;button onclick="count(count() + 1)"&gt;Increment page&lt;/button&gt;
+    &lt;x-component-instance component="counter"&gt;&lt;/x-component-instance&gt;
+    &lt;x-component-instance component="counter"&gt;&lt;/x-component-instance&gt;
+  &lt;/x-page&gt;
+&lt;/x-app&gt;</textarea>
+                            </div>
+                        </div>
+                        <div class="preview-pane">
+                            <div class="pane-label">Preview</div>
+                            <div class="preview-output">
+                                <p class="preview-status"
+                                   role="status">Loading DRX...</p>
+                                <div class="preview-frame"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <p>The page reads the App variable <code>workspace</code> and its own <code>count</code>. Each component instance has an independent <code>count</code>; changing one counter does not
+                    change the others.</p>
+                <h2>Subscribe to a Property</h2>
+                <p><code>profile.name()</code> subscribes only to that path. <code>profile().name</code> subscribes to the whole object and reruns on any change to it. Path traversal is null-safe: an
+                    unset intermediate value reads as <code>undefined</code>.</p>
+                <div class="example"
+                     data-example="">
+                    <div class="example-heading">
+                        <span>A Property-Level Signal</span><button class="reset"
+                                type="button"
+                                title="Reset example"
+                                aria-label="Reset example"><svg aria-hidden="true"
+                                 focusable="false"
+                                 width="16"
+                                 height="16"
+                                 viewBox="0 0 24 24"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 stroke-width="1.8"
+                                 stroke-linecap="round"
+                                 stroke-linejoin="round">
+                                <path d="M3 10a9 9 0 1 1 2.6 8.4" />
+                                <path d="M3 4v6h6" />
+                            </svg></button>
+                    </div>
+                    <div class="example-grid">
+                        <div class="source-pane">
+                            <div class="code-file">
+                                <label for="example-9-0">index.html<span>editable</span></label><textarea aria-label="A property-level signal: index.html"
+                                          autocapitalize="off"
+                                          autocomplete="off"
+                                          data-file="index.html"
+                                          id="example-9-0"
+                                          rows="10"
+                                          spellcheck="false"
+                                          wrap="off">&lt;x-app&gt;
+  &lt;x-page name="profile"&gt;
+    &lt;x-variable name="profile" type="object"&gt;
+      { "name": "Ada", "role": "admin" }
+    &lt;/x-variable&gt;
+    &lt;p&gt;{{profile.name()}} / {{profile.role()}}&lt;/p&gt;
+    &lt;button onclick="profile.name('Grace')"&gt;Rename&lt;/button&gt;
+  &lt;/x-page&gt;
+&lt;/x-app&gt;</textarea>
+                            </div>
+                        </div>
+                        <div class="preview-pane">
+                            <div class="pane-label">Preview</div>
+                            <div class="preview-output">
+                                <p class="preview-status"
+                                   role="status">Loading DRX...</p>
+                                <div class="preview-frame"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </article>
+            <article data-page="expressions"
+                     hidden=""
+                     id="page-expressions">
+                <h1 tabindex="-1">Expressions</h1>
+                <p class="intro">Bind the parts of ordinary HTML that change.</p>
+                <p><code>{{ }}</code> expressions work in text and element attributes, including <code>&lt;x-icon&gt;</code> attributes. Event handlers are plain calls, not expressions wrapped in
+                    braces.</p>
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th scope="col">Syntax</th>
+                                <th scope="col">Behavior</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>{{value()}}</code></td>
+                                <td>Interpolate a value into text or an attribute.</td>
+                            </tr>
+                            <tr>
+                                <td><code>class.&lt;name&gt;</code></td>
+                                <td>Toggle a class according to truthiness.</td>
+                            </tr>
+                            <tr>
+                                <td><code>style.&lt;property&gt;</code></td>
+                                <td>Set one inline style property.</td>
+                            </tr>
+                            <tr>
+                                <td><code>onclick="method()"</code></td>
+                                <td>Call a script method or a signal once per event; not reactively tracked.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="example"
+                     data-example="">
+                    <div class="example-heading">
+                        <span>Text, Classes, Styles, and Events</span><button class="reset"
+                                type="button"
+                                title="Reset example"
+                                aria-label="Reset example"><svg aria-hidden="true"
+                                 focusable="false"
+                                 width="16"
+                                 height="16"
+                                 viewBox="0 0 24 24"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 stroke-width="1.8"
+                                 stroke-linecap="round"
+                                 stroke-linejoin="round">
+                                <path d="M3 10a9 9 0 1 1 2.6 8.4" />
+                                <path d="M3 4v6h6" />
+                            </svg></button>
+                    </div>
+                    <div class="example-grid">
+                        <div class="source-pane">
+                            <div class="code-file">
+                                <label for="example-10-0">index.html<span>editable</span></label><textarea aria-label="Text, classes, styles, and events: index.html"
+                                          autocapitalize="off"
+                                          autocomplete="off"
+                                          data-file="index.html"
+                                          id="example-10-0"
+                                          rows="15"
+                                          spellcheck="false"
+                                          wrap="off">&lt;x-app&gt;
+  &lt;x-page name="panel"&gt;
+    &lt;x-variable name="expanded"&gt;false&lt;/x-variable&gt;
+    &lt;style&gt;.open { text-decoration: underline; }&lt;/style&gt;
+    &lt;button
+      onclick="expanded(!expanded())"
+      class.open="{{expanded()}}"
+      style.font-weight="{{expanded() ? 'bold' : 'normal'}}"
+      title="Panel is {{expanded() ? 'open' : 'closed'}}"
+    &gt;
+      {{expanded() ? 'Close' : 'Open'}} panel
+    &lt;/button&gt;
+  &lt;/x-page&gt;
+&lt;/x-app&gt;</textarea>
+                            </div>
+                        </div>
+                        <div class="preview-pane">
+                            <div class="pane-label">Preview</div>
+                            <div class="preview-output">
+                                <p class="preview-status"
+                                   role="status">Loading DRX...</p>
+                                <div class="preview-frame"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </article>
+            <article data-page="type"
+                     hidden=""
+                     id="page-type">
+                <h1 tabindex="-1">Types</h1>
+                <p class="intro">Declare a reusable TSON schema.</p>
+                <p>Give a schema a name with <code>&lt;x-type&gt;</code>, then reference it from a <code>type</code> attribute. The type body is a schema; a variable body is data matching that schema.
+                </p>
+                <h2><code>&lt;x-type&gt;</code></h2>
+                <div class="table-wrap">
+                    <table data-tag="x-type">
+                        <thead>
+                            <tr>
+                                <th scope="col">Attribute</th>
+                                <th scope="col">Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>name</code></td>
+                                <td>The type's identifier.</td>
+                            </tr>
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td class="notation"
+                                    colspan="2"><code>property<strong>?</strong></code> is optional. <code><strong>*</strong>property</code> supports <code>{{ }}</code> expressions;</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                <div class="example"
+                     data-example="">
+                    <div class="example-heading">
+                        <span>Reuse a Schema</span><button class="reset"
+                                type="button"
+                                title="Reset example"
+                                aria-label="Reset example"><svg aria-hidden="true"
+                                 focusable="false"
+                                 width="16"
+                                 height="16"
+                                 viewBox="0 0 24 24"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 stroke-width="1.8"
+                                 stroke-linecap="round"
+                                 stroke-linejoin="round">
+                                <path d="M3 10a9 9 0 1 1 2.6 8.4" />
+                                <path d="M3 4v6h6" />
+                            </svg></button>
+                    </div>
+                    <div class="example-grid">
+                        <div class="source-pane">
+                            <div class="code-file">
+                                <label for="example-28-0">index.html<span>editable</span></label><textarea aria-label="Reuse a schema: index.html"
+                                          autocapitalize="off"
+                                          autocomplete="off"
+                                          data-file="index.html"
+                                          id="example-28-0"
+                                          rows="12"
+                                          spellcheck="false"
+                                          wrap="off">&lt;x-app&gt;
+  &lt;x-type name="priority"&gt;
+    { "type": "enum", "flags": ["low", "medium", "high"] }
+  &lt;/x-type&gt;
+  &lt;x-page name="task"&gt;
+    &lt;x-variable name="taskPriority" type="priority"&gt;"medium"&lt;/x-variable&gt;
+    &lt;p&gt;{{taskPriority()}}&lt;/p&gt;
+    &lt;button onclick="taskPriority('low')"&gt;Low&lt;/button&gt;
+    &lt;button onclick="taskPriority('high')"&gt;High&lt;/button&gt;
+  &lt;/x-page&gt;
+&lt;/x-app&gt;</textarea>
+                            </div>
+                        </div>
+                        <div class="preview-pane">
+                            <div class="pane-label">Preview</div>
+                            <div class="preview-output">
+                                <p class="preview-status"
+                                   role="status">Loading DRX...</p>
+                                <div class="preview-frame"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <p>See <a href="#tson">TSON</a> for the schema vocabulary.</p>
+            </article>
+            <article data-page="component"
+                     hidden=""
+                     id="page-component">
+                <h1 tabindex="-1">Components</h1>
+                <p class="intro">A fully isolated piece of your interface.</p>
+                <p>A component can access only its own variables, declared directly inside <code>&lt;x-component&gt;</code>. It cannot access variables from the App, a page, or an enclosing component.
+                    Declare its other dependencies locally too, including assets, APIs, and nested components. Properties bring data in; events send data out.</p>
+                <h2><code>&lt;x-component&gt;</code></h2>
+                <div class="table-wrap">
+                    <table data-tag="x-component">
+                        <thead>
+                            <tr>
+                                <th scope="col">Attribute</th>
+                                <th scope="col">Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>name</code></td>
+                                <td>The component's identifier.</td>
+                            </tr>
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td class="notation"
+                                    colspan="2"><code>property<strong>?</strong></code> is optional. <code><strong>*</strong>property</code> supports <code>{{ }}</code> expressions;</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                <div class="example"
+                     data-example="">
+                    <div class="example-heading">
+                        <span>Declare and Render a Component</span><button class="reset"
+                                type="button"
+                                title="Reset example"
+                                aria-label="Reset example"><svg aria-hidden="true"
+                                 focusable="false"
+                                 width="16"
+                                 height="16"
+                                 viewBox="0 0 24 24"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 stroke-width="1.8"
+                                 stroke-linecap="round"
+                                 stroke-linejoin="round">
+                                <path d="M3 10a9 9 0 1 1 2.6 8.4" />
+                                <path d="M3 4v6h6" />
+                            </svg></button>
+                    </div>
+                    <div class="example-grid">
+                        <div class="source-pane">
+                            <div class="code-file">
+                                <label for="example-14-0">index.html<span>editable</span></label><textarea aria-label="Declare and render a component: index.html"
+                                          autocapitalize="off"
+                                          autocomplete="off"
+                                          data-file="index.html"
+                                          id="example-14-0"
+                                          rows="9"
+                                          spellcheck="false"
+                                          wrap="off">&lt;x-app&gt;
+  &lt;x-component name="notice"&gt;
+    &lt;p&gt;Changes have been saved.&lt;/p&gt;
+  &lt;/x-component&gt;
+  &lt;x-page name="home"&gt;
+    &lt;x-component-instance component="notice"&gt;&lt;/x-component-instance&gt;
+  &lt;/x-page&gt;
+&lt;/x-app&gt;</textarea>
+                            </div>
+                        </div>
+                        <div class="preview-pane">
+                            <div class="pane-label">Preview</div>
+                            <div class="preview-output">
+                                <p class="preview-status"
+                                   role="status">Loading DRX...</p>
+                                <div class="preview-frame"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <h2 id="component-scripting"
+                    tabindex="-1">Scripting</h2>
+                <p>Place an inline <code>&lt;script type="application/typescript"&gt;</code> inside <code>&lt;x-component&gt;</code> and export
+                    <code>DRX.defineComponent(drx =&gt; class { ... })</code>. The script has the same isolation as the component. An imported <code>.ts</code> file uses the same export without the
+                    script tag.
+                </p>
+                <p>Read declared properties with <code>drx.component.props.&lt;name&gt;()</code>; they are read-only from the script. Emit declared events with
+                    <code>drx.component.events.&lt;name&gt;.emit(value)</code>.
+                </p>
+                <div class="example"
+                     data-example="">
+                    <div class="example-heading">
+                        <span>Read a Property and Emit an Event</span><button class="reset"
+                                type="button"
+                                title="Reset example"
+                                aria-label="Reset example"><svg aria-hidden="true"
+                                 focusable="false"
+                                 width="16"
+                                 height="16"
+                                 viewBox="0 0 24 24"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 stroke-width="1.8"
+                                 stroke-linecap="round"
+                                 stroke-linejoin="round">
+                                <path d="M3 10a9 9 0 1 1 2.6 8.4" />
+                                <path d="M3 4v6h6" />
+                            </svg></button>
+                    </div>
+                    <div class="example-grid">
+                        <div class="source-pane">
+                            <div class="code-file">
+                                <label for="example-component-script-0">index.html<span>editable</span></label><textarea aria-label="Read a Property and Emit an Event: index.html"
+                                          autocapitalize="off"
+                                          autocomplete="off"
+                                          data-file="index.html"
+                                          id="example-component-script-0"
+                                          rows="20"
+                                          spellcheck="false"
+                                          wrap="off">&lt;x-app&gt;
+  &lt;x-component name="choice"&gt;
+    &lt;x-property name="label" type="string"&gt;&lt;/x-property&gt;
+    &lt;x-event name="selected" type="string"&gt;&lt;/x-event&gt;
+    &lt;script type="application/typescript"&gt;
+      export default DRX.defineComponent(drx =&gt; class {
+        select() {
+          drx.component.events.selected.emit(
+            drx.component.props.label()
+          );
+        }
+      });
+    &lt;/script&gt;
+    &lt;button onclick="select()"&gt;Choose {{label()}}&lt;/button&gt;
+  &lt;/x-component&gt;
+  &lt;x-page name="home"&gt;
+    &lt;x-variable name="selection"&gt;"Nothing selected"&lt;/x-variable&gt;
+    &lt;x-component-instance component="choice" label="Coffee"
+      selected="selection(event)"&gt;&lt;/x-component-instance&gt;
+    &lt;p&gt;{{selection()}}&lt;/p&gt;
+  &lt;/x-page&gt;
+&lt;/x-app&gt;</textarea>
+                            </div>
+                        </div>
+                        <div class="preview-pane">
+                            <div class="pane-label">Preview</div>
+                            <div class="preview-output">
+                                <p class="preview-status"
+                                   role="status">Loading DRX...</p>
+                                <div class="preview-frame"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <p>The component reads its declared property and emits a value. The page handles the event to update its own variable; the component does not access that variable directly.</p>
+            </article>
+            <article data-page="property"
+                     hidden=""
+                     id="page-property">
+                <h1 tabindex="-1">Properties</h1>
+                <p class="intro">Declare the inputs a component accepts.</p>
+                <p>A property is a callable signal in the template, such as <code>text()</code>. A component script reads it with <code>drx.component.props.text()</code>; it is read-only from that
+                    script. Supply one literal attribute per property on the instance.</p>
+                <h2><code>&lt;x-property&gt;</code></h2>
+                <div class="table-wrap">
+                    <table data-tag="x-property">
+                        <thead>
+                            <tr>
+                                <th scope="col">Attribute</th>
+                                <th scope="col">Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>name</code></td>
+                                <td>The property's identifier.</td>
+                            </tr>
+                            <tr>
+                                <td><code>type<strong>?</strong></code></td>
+                                <td>TSON type; defaults to <code>any</code>.</td>
+                            </tr>
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td class="notation"
+                                    colspan="2"><code>property<strong>?</strong></code> is optional. <code><strong>*</strong>property</code> supports <code>{{ }}</code> expressions;</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                <div class="example"
+                     data-example="">
+                    <div class="example-heading">
+                        <span>Pass a Property</span><button class="reset"
+                                type="button"
+                                title="Reset example"
+                                aria-label="Reset example"><svg aria-hidden="true"
+                                 focusable="false"
+                                 width="16"
+                                 height="16"
+                                 viewBox="0 0 24 24"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 stroke-width="1.8"
+                                 stroke-linecap="round"
+                                 stroke-linejoin="round">
+                                <path d="M3 10a9 9 0 1 1 2.6 8.4" />
+                                <path d="M3 4v6h6" />
+                            </svg></button>
+                    </div>
+                    <div class="example-grid">
+                        <div class="source-pane">
+                            <div class="code-file">
+                                <label for="example-15-0">index.html<span>editable</span></label><textarea aria-label="Pass a property: index.html"
+                                          autocapitalize="off"
+                                          autocomplete="off"
+                                          data-file="index.html"
+                                          id="example-15-0"
+                                          rows="13"
+                                          spellcheck="false"
+                                          wrap="off">&lt;x-app&gt;
+  &lt;x-component name="greeting"&gt;
+    &lt;x-property name="person" type="string"&gt;&lt;/x-property&gt;
+    &lt;p&gt;Hello, {{person()}}.&lt;/p&gt;
+  &lt;/x-component&gt;
+  &lt;x-page name="home"&gt;
+    &lt;x-component-instance component="greeting" person="Ada"&gt;
+    &lt;/x-component-instance&gt;
+    &lt;x-component-instance component="greeting" person="Grace"&gt;
+    &lt;/x-component-instance&gt;
+  &lt;/x-page&gt;
+&lt;/x-app&gt;</textarea>
+                            </div>
+                        </div>
+                        <div class="preview-pane">
+                            <div class="pane-label">Preview</div>
+                            <div class="preview-output">
+                                <p class="preview-status"
+                                   role="status">Loading DRX...</p>
+                                <div class="preview-frame"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </article>
+            <article data-page="event"
+                     hidden=""
+                     id="page-event">
+                <h1 tabindex="-1">Events</h1>
+                <p class="intro">Let a component return a value to its caller.</p>
+                <p>Call <code>drx.component.events.&lt;name&gt;.emit(value)</code> in the component script. The instance handler uses the exact declared event name, without an <code>on</code> prefix,
+                    and receives the emitted value as <code>event</code>.</p>
+                <h2><code>&lt;x-event&gt;</code></h2>
+                <div class="table-wrap">
+                    <table data-tag="x-event">
+                        <thead>
+                            <tr>
+                                <th scope="col">Attribute</th>
+                                <th scope="col">Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>name</code></td>
+                                <td>The event's identifier.</td>
+                            </tr>
+                            <tr>
+                                <td><code>type<strong>?</strong></code></td>
+                                <td>TSON type; defaults to <code>any</code>.</td>
+                            </tr>
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td class="notation"
+                                    colspan="2"><code>property<strong>?</strong></code> is optional. <code><strong>*</strong>property</code> supports <code>{{ }}</code> expressions;</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                <div class="example"
+                     data-example="">
+                    <div class="example-heading">
+                        <span>Emit and Handle an Event</span><button class="reset"
+                                type="button"
+                                title="Reset example"
+                                aria-label="Reset example"><svg aria-hidden="true"
+                                 focusable="false"
+                                 width="16"
+                                 height="16"
+                                 viewBox="0 0 24 24"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 stroke-width="1.8"
+                                 stroke-linecap="round"
+                                 stroke-linejoin="round">
+                                <path d="M3 10a9 9 0 1 1 2.6 8.4" />
+                                <path d="M3 4v6h6" />
+                            </svg></button>
+                    </div>
+                    <div class="example-grid">
+                        <div class="source-pane">
+                            <div class="code-file">
+                                <label for="example-16-0">index.html<span>editable</span></label><textarea aria-label="Emit and handle an event: index.html"
+                                          autocapitalize="off"
+                                          autocomplete="off"
+                                          data-file="index.html"
+                                          id="example-16-0"
+                                          rows="20"
+                                          spellcheck="false"
+                                          wrap="off">&lt;x-app&gt;
+  &lt;x-component name="notice"&gt;
+    &lt;x-event name="dismissed" type="string"&gt;&lt;/x-event&gt;
+    &lt;script type="application/typescript"&gt;
+      export default DRX.defineComponent(drx =&gt; class {
+        dismiss() {
+          drx.component.events.dismissed.emit('Dismissed');
+        }
+      });
+    &lt;/script&gt;
+    &lt;button onclick="dismiss()"&gt;Dismiss notice&lt;/button&gt;
+  &lt;/x-component&gt;
+  &lt;x-page name="home"&gt;
+    &lt;x-variable name="message"&gt;"Waiting"&lt;/x-variable&gt;
+    &lt;x-component-instance component="notice" dismissed="message(event)"&gt;
+    &lt;/x-component-instance&gt;
+    &lt;p&gt;{{message()}}&lt;/p&gt;
+  &lt;/x-page&gt;
+&lt;/x-app&gt;</textarea>
+                            </div>
+                        </div>
+                        <div class="preview-pane">
+                            <div class="pane-label">Preview</div>
+                            <div class="preview-output">
+                                <p class="preview-status"
+                                   role="status">Loading DRX...</p>
+                                <div class="preview-frame"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </article>
+            <article data-page="component-instance"
+                     hidden=""
+                     id="page-component-instance">
+                <h1 tabindex="-1">Component Instances</h1>
+                <p class="intro">Render a component by name.</p>
+                <p>The component name supports expressions. Supply literal attributes for its declared properties and handler attributes matching its declared events.</p>
+                <h2><code>&lt;x-component-instance&gt;</code></h2>
+                <div class="table-wrap">
+                    <table data-tag="x-component-instance">
+                        <thead>
+                            <tr>
+                                <th scope="col">Attribute</th>
+                                <th scope="col">Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code><strong>*</strong>component</code></td>
+                                <td>The name of the <code>&lt;x-component&gt;</code> to instantiate.</td>
+                            </tr>
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td class="notation"
+                                    colspan="2"><code>property<strong>?</strong></code> is optional. <code><strong>*</strong>property</code> supports <code>{{ }}</code> expressions;</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                <div class="example"
+                     data-example="">
+                    <div class="example-heading">
+                        <span>Choose a Component</span><button class="reset"
+                                type="button"
+                                title="Reset example"
+                                aria-label="Reset example"><svg aria-hidden="true"
+                                 focusable="false"
+                                 width="16"
+                                 height="16"
+                                 viewBox="0 0 24 24"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 stroke-width="1.8"
+                                 stroke-linecap="round"
+                                 stroke-linejoin="round">
+                                <path d="M3 10a9 9 0 1 1 2.6 8.4" />
+                                <path d="M3 4v6h6" />
+                            </svg></button>
+                    </div>
+                    <div class="example-grid">
+                        <div class="source-pane">
+                            <div class="code-file">
+                                <label for="example-17-0">index.html<span>editable</span></label><textarea aria-label="Choose a component: index.html"
+                                          autocapitalize="off"
+                                          autocomplete="off"
+                                          data-file="index.html"
+                                          id="example-17-0"
+                                          rows="11"
+                                          spellcheck="false"
+                                          wrap="off">&lt;x-app&gt;
+  &lt;x-component name="summary"&gt;&lt;p&gt;Summary view&lt;/p&gt;&lt;/x-component&gt;
+  &lt;x-component name="details"&gt;&lt;p&gt;Detailed view&lt;/p&gt;&lt;/x-component&gt;
+  &lt;x-page name="home"&gt;
+    &lt;x-variable name="view"&gt;"summary"&lt;/x-variable&gt;
+    &lt;button onclick="view('summary')"&gt;Summary&lt;/button&gt;
+    &lt;button onclick="view('details')"&gt;Details&lt;/button&gt;
+    &lt;x-component-instance component="{{view()}}"&gt;&lt;/x-component-instance&gt;
+  &lt;/x-page&gt;
+&lt;/x-app&gt;</textarea>
+                            </div>
+                        </div>
+                        <div class="preview-pane">
+                            <div class="pane-label">Preview</div>
+                            <div class="preview-output">
+                                <p class="preview-status"
+                                   role="status">Loading DRX...</p>
+                                <div class="preview-frame"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </article>
+            <article data-page="if"
+                     hidden=""
+                     id="page-if">
+                <h1 tabindex="-1">If</h1>
+                <p class="intro">Render children only when a condition is truthy.</p>
+                <h2><code>&lt;x-if&gt;</code></h2>
+                <div class="table-wrap">
+                    <table data-tag="x-if">
+                        <thead>
+                            <tr>
+                                <th scope="col">Attribute</th>
+                                <th scope="col">Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code><strong>*</strong>condition</code></td>
+                                <td>The truthy value that controls rendering.</td>
+                            </tr>
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td class="notation"
+                                    colspan="2"><code>property<strong>?</strong></code> is optional. <code><strong>*</strong>property</code> supports <code>{{ }}</code> expressions;</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                <div class="example"
+                     data-example="">
+                    <div class="example-heading">
+                        <span>A Conditional Branch</span><button class="reset"
+                                type="button"
+                                title="Reset example"
+                                aria-label="Reset example"><svg aria-hidden="true"
+                                 focusable="false"
+                                 width="16"
+                                 height="16"
+                                 viewBox="0 0 24 24"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 stroke-width="1.8"
+                                 stroke-linecap="round"
+                                 stroke-linejoin="round">
+                                <path d="M3 10a9 9 0 1 1 2.6 8.4" />
+                                <path d="M3 4v6h6" />
+                            </svg></button>
+                    </div>
+                    <div class="example-grid">
+                        <div class="source-pane">
+                            <div class="code-file">
+                                <label for="example-11-0">index.html<span>editable</span></label><textarea aria-label="A conditional branch: index.html"
+                                          autocapitalize="off"
+                                          autocomplete="off"
+                                          data-file="index.html"
+                                          id="example-11-0"
+                                          rows="10"
+                                          spellcheck="false"
+                                          wrap="off">&lt;x-app&gt;
+  &lt;x-page name="details"&gt;
+    &lt;x-variable name="visible"&gt;false&lt;/x-variable&gt;
+    &lt;button onclick="visible(!visible())"&gt;Toggle details&lt;/button&gt;
+    &lt;x-if condition="{{visible()}}"&gt;
+      &lt;p&gt;These details appear when visible is true.&lt;/p&gt;
+    &lt;/x-if&gt;
+  &lt;/x-page&gt;
+&lt;/x-app&gt;</textarea>
+                            </div>
+                        </div>
+                        <div class="preview-pane">
+                            <div class="pane-label">Preview</div>
+                            <div class="preview-output">
+                                <p class="preview-status"
+                                   role="status">Loading DRX...</p>
+                                <div class="preview-frame"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </article>
+            <article data-page="for"
+                     hidden=""
+                     id="page-for">
+                <h1 tabindex="-1">For</h1>
+                <p class="intro">Repeat a template for an array or an object.</p>
+                <p><code>as</code> names the entry binding. Read an entry property with <code>item.label()</code> to subscribe to that property. <code>track</code> supplies identity across rerenders;
+                    otherwise identity falls back to the array position or object key.</p>
+                <h2><code>&lt;x-for&gt;</code></h2>
+                <div class="table-wrap">
+                    <table data-tag="x-for">
+                        <thead>
+                            <tr>
+                                <th scope="col">Attribute</th>
+                                <th scope="col">Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code><strong>*</strong>each</code></td>
+                                <td>The array or object to iterate.</td>
+                            </tr>
+                            <tr>
+                                <td><code>as</code></td>
+                                <td>Name of the per-entry binding.</td>
+                            </tr>
+                            <tr>
+                                <td><code>index<strong>?</strong></code></td>
+                                <td>Name of the numeric index binding.</td>
+                            </tr>
+                            <tr>
+                                <td><code>key<strong>?</strong></code></td>
+                                <td>Name of the key binding for object iteration.</td>
+                            </tr>
+                            <tr>
+                                <td><code>track<strong>?</strong></code></td>
+                                <td>Reconciliation identity per entry.</td>
+                            </tr>
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td class="notation"
+                                    colspan="2"><code>property<strong>?</strong></code> is optional. <code><strong>*</strong>property</code> supports <code>{{ }}</code> expressions;</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                <p class="example-note">The reference table marks <code>as</code> as required; its prose also describes an <code>item</code> default. These examples specify <code>as</code> explicitly.
+                </p>
+                <div class="example"
+                     data-example="">
+                    <div class="example-heading">
+                        <span>Iterate an Array</span><button class="reset"
+                                type="button"
+                                title="Reset example"
+                                aria-label="Reset example"><svg aria-hidden="true"
+                                 focusable="false"
+                                 width="16"
+                                 height="16"
+                                 viewBox="0 0 24 24"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 stroke-width="1.8"
+                                 stroke-linecap="round"
+                                 stroke-linejoin="round">
+                                <path d="M3 10a9 9 0 1 1 2.6 8.4" />
+                                <path d="M3 4v6h6" />
+                            </svg></button>
+                    </div>
+                    <div class="example-grid">
+                        <div class="source-pane">
+                            <div class="code-file">
+                                <label for="example-12-0">index.html<span>editable</span></label><textarea aria-label="Iterate an array: index.html"
+                                          autocapitalize="off"
+                                          autocomplete="off"
+                                          data-file="index.html"
+                                          id="example-12-0"
+                                          rows="12"
+                                          spellcheck="false"
+                                          wrap="off">&lt;x-app&gt;
+  &lt;x-page name="menu"&gt;
+    &lt;x-variable name="items" type="array"&gt;
+      [{ "id": 1, "label": "Coffee" }, { "id": 2, "label": "Tea" }]
+    &lt;/x-variable&gt;
+    &lt;x-for each="{{items()}}" as="item" index="i" track="id"&gt;
+      &lt;p&gt;{{i()}}: {{item.label()}}&lt;/p&gt;
+    &lt;/x-for&gt;
+    &lt;button onclick="items([...items()].reverse())"&gt;Reverse&lt;/button&gt;
+  &lt;/x-page&gt;
+&lt;/x-app&gt;</textarea>
+                            </div>
+                        </div>
+                        <div class="preview-pane">
+                            <div class="pane-label">Preview</div>
+                            <div class="preview-output">
+                                <p class="preview-status"
+                                   role="status">Loading DRX...</p>
+                                <div class="preview-frame"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <h2>Object Entries</h2>
+                <p>For an object, <code>key</code> exposes each property name and the <code>as</code> binding holds its value.</p>
+                <div class="example"
+                     data-example="">
+                    <div class="example-heading">
+                        <span>Iterate an Object</span><button class="reset"
+                                type="button"
+                                title="Reset example"
+                                aria-label="Reset example"><svg aria-hidden="true"
+                                 focusable="false"
+                                 width="16"
+                                 height="16"
+                                 viewBox="0 0 24 24"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 stroke-width="1.8"
+                                 stroke-linecap="round"
+                                 stroke-linejoin="round">
+                                <path d="M3 10a9 9 0 1 1 2.6 8.4" />
+                                <path d="M3 4v6h6" />
+                            </svg></button>
+                    </div>
+                    <div class="example-grid">
+                        <div class="source-pane">
+                            <div class="code-file">
+                                <label for="example-13-0">index.html<span>editable</span></label><textarea aria-label="Iterate an object: index.html"
+                                          autocapitalize="off"
+                                          autocomplete="off"
+                                          data-file="index.html"
+                                          id="example-13-0"
+                                          rows="14"
+                                          spellcheck="false"
+                                          wrap="off">&lt;x-app&gt;
+  &lt;x-page name="settings"&gt;
+    &lt;x-variable name="settings" type="object"&gt;
+      { "notifications": true, "compact": false }
+    &lt;/x-variable&gt;
+    &lt;x-for each="{{settings()}}" as="value" key="setting"&gt;
+      &lt;p&gt;{{setting()}}: {{value()}}&lt;/p&gt;
+    &lt;/x-for&gt;
+    &lt;button onclick="settings.compact(!settings.compact())"&gt;
+      Toggle compact
+    &lt;/button&gt;
+  &lt;/x-page&gt;
+&lt;/x-app&gt;</textarea>
+                            </div>
+                        </div>
+                        <div class="preview-pane">
+                            <div class="pane-label">Preview</div>
+                            <div class="preview-output">
+                                <p class="preview-status"
+                                   role="status">Loading DRX...</p>
+                                <div class="preview-frame"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </article>
+            <article data-page="api"
+                     hidden=""
+                     id="page-api">
+                <h1 tabindex="-1">API</h1>
+                <p class="intro">Describe the request. Call it from your script.</p>
+                <p>Declare requests in markup, then call <code>drx.apis.&lt;name&gt;.&lt;endpoint&gt;.request({ parameters, headers, body })</code> from a script.</p>
+                <p class="note">These examples make live requests to <a href="https://jsonplaceholder.typicode.com/"
+                       target="_blank"
+                       rel="noopener noreferrer">JSONPlaceholder</a>. Internet access is required.</p>
+                <h2 id="api-x-api"
+                    tabindex="-1"><code>&lt;x-api&gt;</code></h2>
+                <div class="table-wrap">
+                    <table data-tag="x-api">
+                        <thead>
+                            <tr>
+                                <th scope="col">Attribute</th>
+                                <th scope="col">Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>name</code></td>
+                                <td>The API client's identifier.</td>
+                            </tr>
+                            <tr>
+                                <td><code>url</code></td>
+                                <td>Base URL prepended to each endpoint's path.</td>
+                            </tr>
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td class="notation"
+                                    colspan="2"><code>property<strong>?</strong></code> is optional. <code><strong>*</strong>property</code> supports <code>{{ }}</code> expressions;</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                <h2 id="api-x-endpoint"
+                    tabindex="-1"><code>&lt;x-endpoint&gt;</code></h2>
+                <div class="table-wrap">
+                    <table data-tag="x-endpoint">
+                        <thead>
+                            <tr>
+                                <th scope="col">Attribute</th>
+                                <th scope="col">Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>name</code></td>
+                                <td>The endpoint's identifier.</td>
+                            </tr>
+                            <tr>
+                                <td><code>path</code></td>
+                                <td>Path appended to the API URL; may contain <code>{placeholder}</code> segments.</td>
+                            </tr>
+                            <tr>
+                                <td><code>method<strong>?</strong></code></td>
+                                <td>HTTP method; defaults to <code>GET</code>.</td>
+                            </tr>
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td class="notation"
+                                    colspan="2"><code>property<strong>?</strong></code> is optional. <code><strong>*</strong>property</code> supports <code>{{ }}</code> expressions;</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                <div class="example"
+                     data-example="">
+                    <div class="example-heading">
+                        <span>Make a Request</span><button class="reset"
+                                type="button"
+                                title="Reset example"
+                                aria-label="Reset example"><svg aria-hidden="true"
+                                 focusable="false"
+                                 width="16"
+                                 height="16"
+                                 viewBox="0 0 24 24"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 stroke-width="1.8"
+                                 stroke-linecap="round"
+                                 stroke-linejoin="round">
+                                <path d="M3 10a9 9 0 1 1 2.6 8.4" />
+                                <path d="M3 4v6h6" />
+                            </svg></button>
+                    </div>
+                    <div class="example-grid">
+                        <div class="source-pane">
+                            <div class="code-file">
+                                <label for="example-25-0">index.html<span>editable</span></label><textarea aria-label="Make a request: index.html"
+                                          autocapitalize="off"
+                                          autocomplete="off"
+                                          data-file="index.html"
+                                          id="example-25-0"
+                                          rows="20"
+                                          spellcheck="false"
+                                          wrap="off">&lt;x-app&gt;
+  &lt;x-api name="todos" url="https://jsonplaceholder.typicode.com"&gt;
+    &lt;x-endpoint name="list" path="/todos"&gt;
+      &lt;x-response type="array"&gt;&lt;/x-response&gt;
+    &lt;/x-endpoint&gt;
+  &lt;/x-api&gt;
+  &lt;x-page name="home"&gt;
+    &lt;x-variable name="items" type="array"&gt;[]&lt;/x-variable&gt;
+    &lt;script type="application/typescript"&gt;
+      export default DRX.definePage(drx =&gt; class {
+        async load() {
+          const response = await drx.apis.todos.list.request();
+          drx.page.variables.items.set((await response.value()).slice(0, 5));
+        }
+      });
+    &lt;/script&gt;
+    &lt;button onclick="load()"&gt;Load tasks&lt;/button&gt;
+    &lt;x-for each="{{items()}}" as="item" track="id"&gt;
+      &lt;p&gt;{{item.title()}}&lt;/p&gt;
+    &lt;/x-for&gt;
+  &lt;/x-page&gt;
+&lt;/x-app&gt;</textarea>
+                            </div>
+                        </div>
+                        <div class="preview-pane">
+                            <div class="pane-label">Preview</div>
+                            <div class="preview-output">
+                                <p class="preview-status"
+                                   role="status">Loading DRX...</p>
+                                <div class="preview-frame"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <p class="example-note">Fetches <code>/todos</code> and displays the first five tasks.</p>
+                <h2 id="api-x-parameter"
+                    tabindex="-1"><code>&lt;x-parameter&gt;</code></h2>
+                <div class="table-wrap">
+                    <table data-tag="x-parameter">
+                        <thead>
+                            <tr>
+                                <th scope="col">Attribute</th>
+                                <th scope="col">Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>name</code></td>
+                                <td>The parameter's identifier.</td>
+                            </tr>
+                            <tr>
+                                <td><code>required<strong>?</strong></code></td>
+                                <td>Presence flag: a missing value throws before the request is sent.</td>
+                            </tr>
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td class="notation"
+                                    colspan="2"><code>property<strong>?</strong></code> is optional. <code><strong>*</strong>property</code> supports <code>{{ }}</code> expressions;</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                <p>Parameters fill path placeholders. On endpoints without <code>&lt;x-body&gt;</code>, parameters not used in the path become query-string parameters.</p>
+                <h2 id="api-x-header"
+                    tabindex="-1"><code>&lt;x-header&gt;</code></h2>
+                <div class="table-wrap">
+                    <table data-tag="x-header">
+                        <thead>
+                            <tr>
+                                <th scope="col">Attribute</th>
+                                <th scope="col">Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>name</code></td>
+                                <td>The header's identifier.</td>
+                            </tr>
+                            <tr>
+                                <td><code>required<strong>?</strong></code></td>
+                                <td>Presence flag: a missing value throws before the request is sent.</td>
+                            </tr>
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td class="notation"
+                                    colspan="2"><code>property<strong>?</strong></code> is optional. <code><strong>*</strong>property</code> supports <code>{{ }}</code> expressions;</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                <div class="example"
+                     data-example="">
+                    <div class="example-heading">
+                        <span>Pass Parameters and Headers</span><button class="reset"
+                                type="button"
+                                title="Reset example"
+                                aria-label="Reset example"><svg aria-hidden="true"
+                                 focusable="false"
+                                 width="16"
+                                 height="16"
+                                 viewBox="0 0 24 24"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 stroke-width="1.8"
+                                 stroke-linecap="round"
+                                 stroke-linejoin="round">
+                                <path d="M3 10a9 9 0 1 1 2.6 8.4" />
+                                <path d="M3 4v6h6" />
+                            </svg></button>
+                    </div>
+                    <div class="example-grid">
+                        <div class="source-pane">
+                            <div class="code-file">
+                                <label for="example-26-0">index.html<span>editable</span></label><textarea aria-label="Pass parameters and headers: index.html"
+                                          autocapitalize="off"
+                                          autocomplete="off"
+                                          data-file="index.html"
+                                          id="example-26-0"
+                                          rows="20"
+                                          spellcheck="false"
+                                          wrap="off">&lt;x-app&gt;
+  &lt;x-api name="todos" url="https://jsonplaceholder.typicode.com"&gt;
+    &lt;x-endpoint name="get" path="/todos/{id}"&gt;
+      &lt;x-parameter name="id" required&gt;&lt;/x-parameter&gt;
+      &lt;x-header name="accept" required&gt;&lt;/x-header&gt;
+      &lt;x-response type="object"&gt;&lt;/x-response&gt;
+    &lt;/x-endpoint&gt;
+  &lt;/x-api&gt;
+  &lt;x-page name="home"&gt;
+    &lt;x-variable name="title"&gt;""&lt;/x-variable&gt;
+    &lt;script type="application/typescript"&gt;
+      export default DRX.definePage(drx =&gt; class {
+        async load() {
+          const response = await drx.apis.todos.get.request({
+            parameters: { id: 7 },
+            headers: { accept: 'application/json' }
+          });
+          drx.page.variables.title.set((await response.value()).title);
+        }
+      });
+    &lt;/script&gt;
+    &lt;button onclick="load()"&gt;Load task 7&lt;/button&gt;
+    &lt;p&gt;{{title()}}&lt;/p&gt;
+  &lt;/x-page&gt;
+&lt;/x-app&gt;</textarea>
+                            </div>
+                        </div>
+                        <div class="preview-pane">
+                            <div class="pane-label">Preview</div>
+                            <div class="preview-output">
+                                <p class="preview-status"
+                                   role="status">Loading DRX...</p>
+                                <div class="preview-frame"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <h2 id="api-x-body"
+                    tabindex="-1"><code>&lt;x-body&gt;</code></h2>
+                <div class="table-wrap">
+                    <table data-tag="x-body">
+                        <thead>
+                            <tr>
+                                <th scope="col">Attribute</th>
+                                <th scope="col">Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>type<strong>?</strong></code></td>
+                                <td>TSON type of the request body; defaults to <code>any</code>.</td>
+                            </tr>
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td class="notation"
+                                    colspan="2"><code>property<strong>?</strong></code> is optional. <code><strong>*</strong>property</code> supports <code>{{ }}</code> expressions;</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                <p>When <code>&lt;x-body&gt;</code> is declared and <code>options.body</code> is provided, the request sets <code>Content-Type: application/json</code> automatically.</p>
+                <h2 id="api-x-response"
+                    tabindex="-1"><code>&lt;x-response&gt;</code></h2>
+                <div class="table-wrap">
+                    <table data-tag="x-response">
+                        <thead>
+                            <tr>
+                                <th scope="col">Attribute</th>
+                                <th scope="col">Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>type<strong>?</strong></code></td>
+                                <td>TSON type of the response body; defaults to <code>any</code>.</td>
+                            </tr>
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td class="notation"
+                                    colspan="2"><code>property<strong>?</strong></code> is optional. <code><strong>*</strong>property</code> supports <code>{{ }}</code> expressions;</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                <p><code>response.value()</code> parses and type-validates the body, memoizing the result. <code>response.raw</code> exposes the underlying <code>Response</code>.</p>
+                <div class="example"
+                     data-example="">
+                    <div class="example-heading">
+                        <span>Send and Read a Body</span><button class="reset"
+                                type="button"
+                                title="Reset example"
+                                aria-label="Reset example"><svg aria-hidden="true"
+                                 focusable="false"
+                                 width="16"
+                                 height="16"
+                                 viewBox="0 0 24 24"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 stroke-width="1.8"
+                                 stroke-linecap="round"
+                                 stroke-linejoin="round">
+                                <path d="M3 10a9 9 0 1 1 2.6 8.4" />
+                                <path d="M3 4v6h6" />
+                            </svg></button>
+                    </div>
+                    <div class="example-grid">
+                        <div class="source-pane">
+                            <div class="code-file">
+                                <label for="example-27-0">index.html<span>editable</span></label><textarea aria-label="Send and read a body: index.html"
+                                          autocapitalize="off"
+                                          autocomplete="off"
+                                          data-file="index.html"
+                                          id="example-27-0"
+                                          rows="20"
+                                          spellcheck="false"
+                                          wrap="off">&lt;x-app&gt;
+  &lt;x-api name="todos" url="https://jsonplaceholder.typicode.com"&gt;
+    &lt;x-endpoint name="create" path="/todos" method="POST"&gt;
+      &lt;x-body type="object"&gt;&lt;/x-body&gt;
+      &lt;x-response type="object"&gt;&lt;/x-response&gt;
+    &lt;/x-endpoint&gt;
+  &lt;/x-api&gt;
+  &lt;x-page name="home"&gt;
+    &lt;x-variable name="result"&gt;""&lt;/x-variable&gt;
+    &lt;script type="application/typescript"&gt;
+      export default DRX.definePage(drx =&gt; class {
+        async create() {
+          const response = await drx.apis.todos.create.request({
+            body: { userId: 1, title: 'Ship it', completed: false }
+          });
+          drx.page.variables.result.set(
+            JSON.stringify(await response.value())
+          );
+        }
+      });
+    &lt;/script&gt;
+    &lt;button onclick="create()"&gt;Send request&lt;/button&gt;
+    &lt;p&gt;{{result()}}&lt;/p&gt;
+  &lt;/x-page&gt;
+&lt;/x-app&gt;</textarea>
+                            </div>
+                        </div>
+                        <div class="preview-pane">
+                            <div class="pane-label">Preview</div>
+                            <div class="preview-output">
+                                <p class="preview-status"
+                                   role="status">Loading DRX...</p>
+                                <div class="preview-frame"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <p class="example-note">JSONPlaceholder <a href="https://jsonplaceholder.typicode.com/guide/"
+                       target="_blank"
+                       rel="noopener noreferrer">simulates writes</a>: it returns the submitted data with an ID, but does not save the new task.</p>
+            </article>
+
+            <article data-page="service"
+                     hidden=""
+                     id="page-service">
+                <h1 tabindex="-1">Services</h1>
+                <p class="intro">Shared behavior without a template.</p>
+                <p>A service is a plain class for behavior that does not belong to one page or component. Call it with <code>drx.services.&lt;name&gt;.&lt;method&gt;(...)</code>.</p>
+                <h2><code>&lt;x-service&gt;</code></h2>
+                <div class="table-wrap">
+                    <table data-tag="x-service">
+                        <thead>
+                            <tr>
+                                <th scope="col">Attribute</th>
+                                <th scope="col">Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>name</code></td>
+                                <td>The service's identifier.</td>
+                            </tr>
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td class="notation"
+                                    colspan="2"><code>property<strong>?</strong></code> is optional. <code><strong>*</strong>property</code> supports <code>{{ }}</code> expressions;</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+
+                <h2 id="service-scripting"
+                    tabindex="-1">Scripting</h2>
+                <p>Place an inline <code>&lt;script type="application/typescript"&gt;</code> inside <code>&lt;x-service&gt;</code> and export <code>DRX.defineService(drx =&gt; class { ... })</code>.
+                    An imported <code>.ts</code> file uses the same export without the script tag.</p>
+                <p>Services cannot declare <code>&lt;x-variable&gt;</code> nodes. Variables belong directly to an App, Page, or Component.</p>
+                <div class="example"
+                     data-example="">
+                    <div class="example-heading">
+                        <span>Use a Service</span><button class="reset"
+                                type="button"
+                                title="Reset example"
+                                aria-label="Reset example"><svg aria-hidden="true"
+                                 focusable="false"
+                                 width="16"
+                                 height="16"
+                                 viewBox="0 0 24 24"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 stroke-width="1.8"
+                                 stroke-linecap="round"
+                                 stroke-linejoin="round">
+                                <path d="M3 10a9 9 0 1 1 2.6 8.4" />
+                                <path d="M3 4v6h6" />
+                            </svg></button>
+                    </div>
+                    <div class="example-grid">
+                        <div class="source-pane">
+                            <div class="code-file">
+                                <label for="example-20-0">index.html<span>editable</span></label><textarea aria-label="Use a service: index.html"
+                                          autocapitalize="off"
+                                          autocomplete="off"
+                                          data-file="index.html"
+                                          id="example-20-0"
+                                          rows="20"
+                                          spellcheck="false"
+                                          wrap="off">&lt;x-app&gt;
+  &lt;x-service name="greeter"&gt;
+    &lt;script type="application/typescript"&gt;
+      export default DRX.defineService(drx =&gt; class {
+        greet(name: string) { return 'Hello, ' + name; }
+      });
+    &lt;/script&gt;
+  &lt;/x-service&gt;
+  &lt;x-page name="home"&gt;
+    &lt;x-variable name="message"&gt;""&lt;/x-variable&gt;
+    &lt;script type="application/typescript"&gt;
+      export default DRX.definePage(drx =&gt; class {
+        onMount() {
+          drx.page.variables.message.set(
+            drx.services.greeter.greet('Ada')
+          );
+        }
+      });
+    &lt;/script&gt;
+    &lt;p&gt;{{message()}}&lt;/p&gt;
+  &lt;/x-page&gt;
+&lt;/x-app&gt;</textarea>
+                            </div>
+                        </div>
+                        <div class="preview-pane">
+                            <div class="pane-label">Preview</div>
+                            <div class="preview-output">
+                                <p class="preview-status"
+                                   role="status">Loading DRX...</p>
+                                <div class="preview-frame"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </article>
+            <article data-page="packages"
+                     hidden=""
+                     id="page-packages">
+                <h1 tabindex="-1">Packages</h1>
+                <p class="intro">Declare the package versions your scripts import.</p>
+                <p>The body is a JSON object mapping npm package names to versions. Use at most one <code>&lt;x-packages&gt;</code> per app or component. A component declaration is local to that
+                    component.</p>
+                <h2><code>&lt;x-packages&gt;</code></h2>
+                <div class="example"
+                     data-example="">
+                    <div class="example-heading">
+                        <span>Import a Package</span><button class="reset"
+                                type="button"
+                                title="Reset example"
+                                aria-label="Reset example"><svg aria-hidden="true"
+                                 focusable="false"
+                                 width="16"
+                                 height="16"
+                                 viewBox="0 0 24 24"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 stroke-width="1.8"
+                                 stroke-linecap="round"
+                                 stroke-linejoin="round">
+                                <path d="M3 10a9 9 0 1 1 2.6 8.4" />
+                                <path d="M3 4v6h6" />
+                            </svg></button>
+                    </div>
+                    <div class="example-grid">
+                        <div class="source-pane">
+                            <div class="code-file">
+                                <label for="example-21-0">index.html<span>editable</span></label><textarea aria-label="Import a package: index.html"
+                                          autocapitalize="off"
+                                          autocomplete="off"
+                                          data-file="index.html"
+                                          id="example-21-0"
+                                          rows="18"
+                                          spellcheck="false"
+                                          wrap="off">&lt;x-app&gt;
+  &lt;x-packages&gt;{ "lodash": "^4.17.21" }&lt;/x-packages&gt;
+  &lt;x-page name="home"&gt;
+    &lt;x-variable name="message"&gt;"hello world"&lt;/x-variable&gt;
+    &lt;script type="application/typescript"&gt;
+      import { upperCase } from 'lodash';
+      export default DRX.definePage(drx =&gt; class {
+        transform() {
+          const message = drx.page.variables.message;
+          message.set(upperCase(message.get()));
+        }
+      });
+    &lt;/script&gt;
+    &lt;p&gt;{{message()}}&lt;/p&gt;
+    &lt;button onclick="transform()"&gt;Uppercase&lt;/button&gt;
+  &lt;/x-page&gt;
+&lt;/x-app&gt;</textarea>
+                            </div>
+                        </div>
+                        <div class="preview-pane">
+                            <div class="pane-label">Preview</div>
+                            <div class="preview-output">
+                                <p class="preview-status"
+                                   role="status">Loading DRX...</p>
+                                <div class="preview-frame"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <p class="example-note">DRX resolves the package. This example also needs access to its package dependencies.</p>
+            </article>
+            <article data-page="asset"
+                     hidden=""
+                     id="page-asset">
+                <h1 tabindex="-1">Assets</h1>
+                <p class="intro">Use a named asset as a plain URL.</p>
+                <p><code>asset.&lt;name&gt;</code> is a static URL string, not a signal: do not add <code>()</code>. Set <code>src</code> for an external asset, or put literal content in the body for
+                    an inline asset.</p>
+                <h2><code>&lt;x-asset&gt;</code></h2>
+                <div class="table-wrap">
+                    <table data-tag="x-asset">
+                        <thead>
+                            <tr>
+                                <th scope="col">Attribute</th>
+                                <th scope="col">Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>name</code></td>
+                                <td>The asset's identifier.</td>
+                            </tr>
+                            <tr>
+                                <td><code>src<strong>?</strong></code></td>
+                                <td>External URL; omit for inline content.</td>
+                            </tr>
+                            <tr>
+                                <td><code>type<strong>?</strong></code></td>
+                                <td>MIME type for an inline asset. The documented fallback is <code>application/octet-stream</code>.</td>
+                            </tr>
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td class="notation"
+                                    colspan="2"><code>property<strong>?</strong></code> is optional. <code><strong>*</strong>property</code> supports <code>{{ }}</code> expressions;</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                <p class="example-note">The reference prose asks for an inline MIME type, while its table also gives a fallback. This example supplies <code>type</code> explicitly.</p>
+                <div class="example"
+                     data-example="">
+                    <div class="example-heading">
+                        <span>An Inline Asset</span><button class="reset"
+                                type="button"
+                                title="Reset example"
+                                aria-label="Reset example"><svg aria-hidden="true"
+                                 focusable="false"
+                                 width="16"
+                                 height="16"
+                                 viewBox="0 0 24 24"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 stroke-width="1.8"
+                                 stroke-linecap="round"
+                                 stroke-linejoin="round">
+                                <path d="M3 10a9 9 0 1 1 2.6 8.4" />
+                                <path d="M3 4v6h6" />
+                            </svg></button>
+                    </div>
+                    <div class="example-grid">
+                        <div class="source-pane">
+                            <div class="code-file">
+                                <label for="example-22-0">index.html<span>editable</span></label><textarea aria-label="An inline asset: index.html"
+                                          autocapitalize="off"
+                                          autocomplete="off"
+                                          data-file="index.html"
+                                          id="example-22-0"
+                                          rows="11"
+                                          spellcheck="false"
+                                          wrap="off">&lt;x-app&gt;
+  &lt;x-asset name="dot" type="image/svg+xml"&gt;
+    &lt;svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"&gt;
+      &lt;circle cx="12" cy="12" r="10" fill="steelblue" /&gt;
+    &lt;/svg&gt;
+  &lt;/x-asset&gt;
+  &lt;x-page name="home"&gt;
+    &lt;img src="{{asset.dot}}" width="48" height="48" alt="Blue dot" /&gt;
+  &lt;/x-page&gt;
+&lt;/x-app&gt;</textarea>
+                            </div>
+                        </div>
+                        <div class="preview-pane">
+                            <div class="pane-label">Preview</div>
+                            <div class="preview-output">
+                                <p class="preview-status"
+                                   role="status">Loading DRX...</p>
+                                <div class="preview-frame"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </article>
+            <article data-page="icon"
+                     hidden=""
+                     id="page-icon">
+                <h1 tabindex="-1">Icons</h1>
+                <p class="intro">Render a built-in icon as SVG.</p>
+                <p>An icon name with no match renders nothing. Other attributes bind to the rendered <code>&lt;svg&gt;</code> as they would on an ordinary element.</p>
+                <h2><code>&lt;x-icon&gt;</code></h2>
+                <div class="table-wrap">
+                    <table data-tag="x-icon">
+                        <thead>
+                            <tr>
+                                <th scope="col">Attribute</th>
+                                <th scope="col">Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code><strong>*</strong>name</code></td>
+                                <td>The built-in icon name to render.</td>
+                            </tr>
+                            <tr>
+                                <td><code><strong>*</strong>(any other attribute)<strong>?</strong></code></td>
+                                <td>Binds to the rendered <code>&lt;svg&gt;</code>.</td>
+                            </tr>
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td class="notation"
+                                    colspan="2"><code>property<strong>?</strong></code> is optional. <code><strong>*</strong>property</code> supports <code>{{ }}</code> expressions;</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                <div class="example"
+                     data-example="">
+                    <div class="example-heading">
+                        <span>Change an Icon with State</span><button class="reset"
+                                type="button"
+                                title="Reset example"
+                                aria-label="Reset example"><svg aria-hidden="true"
+                                 focusable="false"
+                                 width="16"
+                                 height="16"
+                                 viewBox="0 0 24 24"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 stroke-width="1.8"
+                                 stroke-linecap="round"
+                                 stroke-linejoin="round">
+                                <path d="M3 10a9 9 0 1 1 2.6 8.4" />
+                                <path d="M3 4v6h6" />
+                            </svg></button>
+                    </div>
+                    <div class="example-grid">
+                        <div class="source-pane">
+                            <div class="code-file">
+                                <label for="example-23-0">index.html<span>editable</span></label><textarea aria-label="Change an icon with state: index.html"
+                                          autocapitalize="off"
+                                          autocomplete="off"
+                                          data-file="index.html"
+                                          id="example-23-0"
+                                          rows="14"
+                                          spellcheck="false"
+                                          wrap="off">&lt;x-app&gt;
+  &lt;x-page name="details"&gt;
+    &lt;x-variable name="expanded"&gt;false&lt;/x-variable&gt;
+    &lt;button onclick="expanded(!expanded())"&gt;
+      Toggle
+      &lt;x-icon
+        name="{{expanded() ? 'chevron-up' : 'chevron-down'}}"
+        style.width="20px" style.height="20px" aria-hidden="true"
+      &gt;&lt;/x-icon&gt;
+    &lt;/button&gt;
+    &lt;x-if condition="{{expanded()}}"&gt;&lt;p&gt;More detail.&lt;/p&gt;&lt;/x-if&gt;
+  &lt;/x-page&gt;
+&lt;/x-app&gt;</textarea>
+                            </div>
+                        </div>
+                        <div class="preview-pane">
+                            <div class="pane-label">Preview</div>
+                            <div class="preview-output">
+                                <p class="preview-status"
+                                   role="status">Loading DRX...</p>
+                                <div class="preview-frame"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </article>
+            <article data-page="modals"
+                     hidden=""
+                     id="page-modals">
+                <h1 tabindex="-1">Modals</h1>
+                <p class="intro">Open a page and await the value it returns.</p>
+                <p>Any page can open with <code>drx.pages.&lt;name&gt;.showModal({ data })</code>. Its data is available from <code>onMount()</code> onward as <code>drx.modal.data</code> in scripts
+                    and <code>modal.data</code> in templates. Close it with <code>drx.modal.close(value)</code> or <code>modal.close(value)</code>.</p>
+                <p>DRX supplies a bare full-screen host. The page owns its backdrop, centering, and sizing.</p>
+                <div class="example"
+                     data-example="">
+                    <div class="example-heading">
+                        <span>Pass Data and Return a Result</span><button class="reset"
+                                type="button"
+                                title="Reset example"
+                                aria-label="Reset example"><svg aria-hidden="true"
+                                 focusable="false"
+                                 width="16"
+                                 height="16"
+                                 viewBox="0 0 24 24"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 stroke-width="1.8"
+                                 stroke-linecap="round"
+                                 stroke-linejoin="round">
+                                <path d="M3 10a9 9 0 1 1 2.6 8.4" />
+                                <path d="M3 4v6h6" />
+                            </svg></button>
+                    </div>
+                    <div class="example-grid">
+                        <div class="source-pane">
+                            <div class="code-file">
+                                <label for="example-24-0">index.html<span>editable</span></label><textarea aria-label="Pass data and return a result: index.html"
+                                          autocapitalize="off"
+                                          autocomplete="off"
+                                          data-file="index.html"
+                                          id="example-24-0"
+                                          rows="20"
+                                          spellcheck="false"
+                                          wrap="off">&lt;x-app&gt;
+  &lt;x-page name="home"&gt;
+    &lt;x-variable name="result"&gt;"No action taken"&lt;/x-variable&gt;
+    &lt;script type="application/typescript"&gt;
+      export default DRX.definePage(drx =&gt; class {
+        async ask() {
+          const result = await drx.pages.confirm.showModal({
+            data: { name: 'Q3 Report' }
+          });
+          drx.page.variables.result.set(
+            result.confirmed ? 'Confirmed' : 'Cancelled'
+          );
+        }
+      });
+    &lt;/script&gt;
+    &lt;button onclick="ask()"&gt;Delete report&lt;/button&gt;
+    &lt;p&gt;{{result()}}&lt;/p&gt;
+  &lt;/x-page&gt;
+  &lt;x-page name="confirm"&gt;
+    &lt;style&gt;
+      .overlay { position: fixed; inset: 0; display: grid;
+        place-items: center; background: #0005; }
+      .card { background: white; padding: 24px; }
+    &lt;/style&gt;
+    &lt;div class="overlay"&gt;
+      &lt;section class="card" role="dialog" aria-modal="true"
+        aria-labelledby="question"&gt;
+        &lt;h2 id="question"&gt;Delete {{modal.data.name}}?&lt;/h2&gt;
+        &lt;button onclick="modal.close({ confirmed: false })"&gt;Cancel&lt;/button&gt;
+        &lt;button onclick="modal.close({ confirmed: true })"&gt;Delete&lt;/button&gt;
+      &lt;/section&gt;
+    &lt;/div&gt;
+  &lt;/x-page&gt;
+&lt;/x-app&gt;</textarea>
+                            </div>
+                        </div>
+                        <div class="preview-pane">
+                            <div class="pane-label">Preview</div>
+                            <div class="preview-output">
+                                <p class="preview-status"
+                                   role="status">Loading DRX...</p>
+                                <div class="preview-frame"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <p class="example-note">This example demonstrates the data/result contract. A production dialog also needs focus management and keyboard handling.</p>
+            </article>
+            <article data-page="tson"
+                     hidden=""
+                     id="page-tson">
+                <h1 tabindex="-1">TSON</h1>
+                <p class="intro">Schemas describe data. Variables hold it.</p>
+                <p>The <code>type</code> attribute on <code>&lt;x-variable&gt;</code>, <code>&lt;x-property&gt;</code>, <code>&lt;x-event&gt;</code>, <code>&lt;x-body&gt;</code>, and
+                    <code>&lt;x-response&gt;</code> accepts a primitive type name or a named <code>&lt;x-type&gt;</code>. TSON is DRX's schema notation.
+                </p>
+                <div class="table-wrap">
+                    <table class="type-table">
+                        <thead>
+                            <tr>
+                                <th scope="col">Type</th>
+                                <th scope="col">Extra Keys</th>
+                                <th scope="col">Schema</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>string</code></td>
+                                <td>min, max, match (regex)</td>
+                                <td><code>{ "type": "string", "min": 1, "max": 40 }</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>number</code></td>
+                                <td>min, max, integer</td>
+                                <td><code>{ "type": "number", "integer": true, "min": 0 }</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>boolean</code></td>
+                                <td>None</td>
+                                <td><code>{ "type": "boolean" }</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>object</code></td>
+                                <td>properties</td>
+                                <td><code>{ "type": "object", "properties": { "name": { "type": "string" } } }</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>array</code></td>
+                                <td>itemDefinition, min, max</td>
+                                <td><code>{ "type": "array", "itemDefinition": { "type": "string" } }</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>enum</code></td>
+                                <td>flags (required)</td>
+                                <td><code>{ "type": "enum", "flags": ["success", "warning", "error"] }</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>record</code></td>
+                                <td>property</td>
+                                <td><code>{ "type": "record", "property": { "type": "boolean" } }</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>union</code></td>
+                                <td>union (array of types)</td>
+                                <td><code>{ "type": "union", "union": [{ "type": "string" }, { "type": "number" }] }</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>any</code></td>
+                                <td>None</td>
+                                <td><code>{ "type": "any" }</code></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <h2>Records and Unions</h2>
+                <p>A record allows arbitrary string keys sharing one value type. A union accepts a value matching one of its listed types.</p>
+                <div class="example"
+                     data-example="">
+                    <div class="example-heading">
+                        <span>Schema and Data</span><button class="reset"
+                                type="button"
+                                title="Reset example"
+                                aria-label="Reset example"><svg aria-hidden="true"
+                                 focusable="false"
+                                 width="16"
+                                 height="16"
+                                 viewBox="0 0 24 24"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 stroke-width="1.8"
+                                 stroke-linecap="round"
+                                 stroke-linejoin="round">
+                                <path d="M3 10a9 9 0 1 1 2.6 8.4" />
+                                <path d="M3 4v6h6" />
+                            </svg></button>
+                    </div>
+                    <div class="example-grid">
+                        <div class="source-pane">
+                            <div class="code-file">
+                                <label for="example-29-0">index.html<span>editable</span></label><textarea aria-label="Schema and data: index.html"
+                                          autocapitalize="off"
+                                          autocomplete="off"
+                                          data-file="index.html"
+                                          id="example-29-0"
+                                          rows="20"
+                                          spellcheck="false"
+                                          wrap="off">&lt;x-app&gt;
+  &lt;x-type name="tags"&gt;
+    { "type": "record", "property": { "type": "boolean" } }
+  &lt;/x-type&gt;
+  &lt;x-type name="identifier"&gt;
+    { "type": "union", "union": [
+      { "type": "string" }, { "type": "number" }
+    ] }
+  &lt;/x-type&gt;
+  &lt;x-page name="home"&gt;
+    &lt;x-variable name="tags" type="tags"&gt;
+      { "urgent": true, "reviewed": false }
+    &lt;/x-variable&gt;
+    &lt;x-variable name="id" type="identifier"&gt;"draft"&lt;/x-variable&gt;
+    &lt;p&gt;{{JSON.stringify(tags())}}&lt;/p&gt;
+    &lt;p&gt;ID: {{id()}}&lt;/p&gt;
+    &lt;button onclick="tags.reviewed(true)"&gt;Mark reviewed&lt;/button&gt;
+    &lt;button onclick="id(42)"&gt;Use a numeric ID&lt;/button&gt;
+  &lt;/x-page&gt;
+&lt;/x-app&gt;</textarea>
+                            </div>
+                        </div>
+                        <div class="preview-pane">
+                            <div class="pane-label">Preview</div>
+                            <div class="preview-output">
+                                <p class="preview-status"
+                                   role="status">Loading DRX...</p>
+                                <div class="preview-frame"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <h2>Descriptions and Defaults</h2>
+                <p>Any type may carry a string <code>description</code> and a <code>default</code> object containing <code>value</code>. On an object property, a default marks that property as
+                    optional.</p>
+                <div class="example"
+                     data-example="">
+                    <div class="example-heading">
+                        <span>An Optional Property</span><button class="reset"
+                                type="button"
+                                title="Reset example"
+                                aria-label="Reset example"><svg aria-hidden="true"
+                                 focusable="false"
+                                 width="16"
+                                 height="16"
+                                 viewBox="0 0 24 24"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 stroke-width="1.8"
+                                 stroke-linecap="round"
+                                 stroke-linejoin="round">
+                                <path d="M3 10a9 9 0 1 1 2.6 8.4" />
+                                <path d="M3 4v6h6" />
+                            </svg></button>
+                    </div>
+                    <div class="example-grid">
+                        <div class="source-pane">
+                            <div class="code-file">
+                                <label for="example-30-0">index.html<span>editable</span></label><textarea aria-label="An optional property: index.html"
+                                          autocapitalize="off"
+                                          autocomplete="off"
+                                          data-file="index.html"
+                                          id="example-30-0"
+                                          rows="13"
+                                          spellcheck="false"
+                                          wrap="off">&lt;x-app&gt;
+  &lt;x-type name="profile"&gt;
+    { "type": "object", "properties": {
+      "name": { "type": "string", "description": "Display name" },
+      "role": { "type": "string", "default": { "value": "member" } }
+    } }
+  &lt;/x-type&gt;
+  &lt;x-page name="home"&gt;
+    &lt;x-variable name="person" type="profile"&gt;{ "name": "Ada" }&lt;/x-variable&gt;
+    &lt;p&gt;{{person.name()}} / {{person.role()}}&lt;/p&gt;
+  &lt;/x-page&gt;
+&lt;/x-app&gt;</textarea>
+                            </div>
+                        </div>
+                        <div class="preview-pane">
+                            <div class="pane-label">Preview</div>
+                            <div class="preview-output">
+                                <p class="preview-status"
+                                   role="status">Loading DRX...</p>
+                                <div class="preview-frame"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </article>
+        </main>
+        <script>
+            'use strict';
+
+            const RUNTIME = 'https://cdn.jsdelivr.net/gh/Vorplex/mono@shtml/packages/vorplex/drx/bootstrap/drx.js';
+            const FILE_BASE = 'https://drx-preview.invalid/';
+            const pages = [...document.querySelectorAll('[data-page]')];
+            const links = [...document.querySelectorAll('nav a')];
+            const sidebar = document.getElementById('sidebar');
+            const menu = document.getElementById('menu-toggle');
+            const backdrop = document.getElementById('nav-backdrop');
+            const sessions = new Map();
+            const pendingRuns = new Map();
+            let currentPage;
+
+            // The pinned AMD build keeps this documentation deployable without a build step.
+            const MONACO_BASE = 'https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/';
+            const editors = new Map();
+            let monacoReady;
+
+            function loadMonaco() {
+                if (monacoReady) return monacoReady;
+                monacoReady = new Promise(resolve => {
+                    const finish = value => { clearTimeout(timeout); resolve(value); };
+                    const timeout = setTimeout(() => finish(null), 15000);
+                    const worker = 'self.MonacoEnvironment = { baseUrl: ' + JSON.stringify(MONACO_BASE) + ' };' +
+                        'importScripts(' + JSON.stringify(MONACO_BASE + 'vs/base/worker/workerMain.js') + ');';
+                    window.MonacoEnvironment = {
+                        globalAPI: true,
+                        getWorkerUrl: () => 'data:text/javascript;charset=utf-8,' + encodeURIComponent(worker)
+                    };
+                    const loader = document.createElement('script');
+                    loader.src = MONACO_BASE + 'vs/loader.js';
+                    loader.onerror = () => finish(null);
+                    loader.onload = () => {
+                        try {
+                            window.require.config({ paths: { vs: MONACO_BASE + 'vs' } });
+                            window.require(['vs/editor/editor.main'], () => finish(window.monaco), () => finish(null));
+                        } catch (_) { finish(null); }
+                    };
+                    document.head.append(loader);
+                });
+                return monacoReady;
+            }
+
+            async function mountEditors(page) {
+                // Keep native editing on touch devices, which Monaco does not officially support.
+                if (matchMedia('(pointer: coarse)').matches) return;
+                const monaco = await loadMonaco();
+                if (!monaco || page !== currentPage) return;
+                const languages = { html: 'html', drx: 'html', ts: 'typescript', css: 'css', json: 'json' };
+                for (const textarea of page.querySelectorAll('textarea[data-file]')) {
+                    if (editors.has(textarea)) continue;
+                    const host = document.createElement('div');
+                    host.className = 'monaco-host';
+                    host.style.height = textarea.getBoundingClientRect().height + 'px';
+                    textarea.after(host);
+                    let editor;
+                    try {
+                        editor = monaco.editor.create(host, {
+                            value: textarea.value,
+                            language: languages[textarea.dataset.file.split('.').pop()] || 'plaintext',
+                            theme: 'vs',
+                            ariaLabel: textarea.getAttribute('aria-label'),
+                            automaticLayout: true,
+                            fontSize: 12, lineHeight: 21, tabSize: 2,
+                            padding: { top: 15, bottom: 15 },
+                            lineNumbersMinChars: 3,
+                            wordWrap: 'on', scrollBeyondLastLine: false,
+                            minimap: { enabled: false }, folding: false, glyphMargin: false,
+                            overviewRulerLanes: 0, renderLineHighlight: 'none',
+                            guides: { indentation: false }, contextmenu: false,
+                            quickSuggestions: false, suggestOnTriggerCharacters: false,
+                            parameterHints: { enabled: false }, hover: { enabled: false },
+                            renderValidationDecorations: 'off'
+                        });
+                        textarea.hidden = true;
+                        const changes = editor.onDidChangeModelContent(() => {
+                            textarea.value = editor.getValue();
+                            scheduleRun(textarea.closest('[data-example]'));
+                        });
+                        const label = textarea.previousElementSibling;
+                        const focus = () => editor.focus();
+                        label.addEventListener('click', focus);
+                        editors.set(textarea, { editor, host, changes, label, focus });
+                    } catch (_) {
+                        const model = editor?.getModel();
+                        editor?.dispose();
+                        model?.dispose();
+                        host.remove();
+                        textarea.hidden = false;
+                    }
+                }
+            }
+
+            function stopEditors() {
+                for (const [textarea, { editor, host, changes, label, focus }] of editors) {
+                    textarea.value = editor.getValue();
+                    changes.dispose();
+                    label.removeEventListener('click', focus);
+                    const model = editor.getModel();
+                    editor.dispose();
+                    model?.dispose();
+                    host.remove();
+                    textarea.hidden = false;
+                }
+                editors.clear();
+            }
+
+
+            function toggleMenu(open) {
+                sidebar.classList.toggle('open', open);
+                document.body.classList.toggle('menu-open', open);
+                menu.setAttribute('aria-expanded', String(open));
+                backdrop.hidden = !open;
+            }
+            menu.addEventListener('click', () => toggleMenu(!sidebar.classList.contains('open')));
+            backdrop.addEventListener('click', () => { toggleMenu(false); menu.focus(); });
+            document.addEventListener('keydown', event => {
+                if (event.key === 'Escape' && sidebar.classList.contains('open')) {
+                    toggleMenu(false);
+                    menu.focus();
+                }
+            });
+            document.querySelector('.skip-link').addEventListener('click', event => {
+                event.preventDefault();
+                document.getElementById('main').focus();
+            });
+
+            function stopPreviews() {
+                for (const timer of pendingRuns.values()) clearTimeout(timer);
+                pendingRuns.clear();
+                for (const session of sessions.values()) {
+                    clearTimeout(session.timer);
+                    session.frame.remove();
+                }
+                sessions.clear();
+            }
+
+            function showPage(initial = false) {
+                const aliases = { 'quick-start': 'overview', 'page-container': 'page/page-containers', templating: 'expressions', types: 'tson', scripts: 'page/scripting' };
+                const hash = location.hash.slice(1);
+                const routeName = aliases[hash] || hash;
+                if (routeName !== hash) history.replaceState(null, '', '#' + routeName);
+                const [id, section] = routeName.split('/');
+                const page = pages.find(item => item.dataset.page === id) || pages[0];
+                if (page !== currentPage) {
+                    stopEditors();
+                    stopPreviews();
+                    for (const item of pages) item.hidden = item !== page;
+                    currentPage = page;
+                    for (const example of page.querySelectorAll('[data-example]')) run(example);
+                    mountEditors(page);
+                }
+                document.title = page.dataset.page === 'overview' ? 'DRX documentation' : page.querySelector('h1').textContent + ' - DRX';
+                const route = page.dataset.page + (section ? '/' + section : '');
+                const activeHash = links.some(link => link.hash === '#' + route) ? '#' + route : '#' + page.dataset.page;
+                for (const link of links) {
+                    const active = link.hash === activeHash;
+                    if (active) {
+                        link.setAttribute('aria-current', 'page');
+                        for (let parent = link.parentElement; parent; parent = parent.parentElement) {
+                            if (parent.tagName === 'DETAILS') parent.open = true;
+                        }
+                    } else link.removeAttribute('aria-current');
+                }
+                toggleMenu(false);
+                const target = document.getElementById(page.dataset.page + '-' + section) || page.querySelector('h1');
+                if (section) target.scrollIntoView({ block: 'start' });
+                else window.scrollTo(0, 0);
+                if (!initial) target.focus({ preventScroll: true });
+            }
+
+            // Runs inside the sandbox. This is preview infrastructure, not a DRX renderer.
+            function previewBridge(config) {
+                const report = (state, text = '') => parent.postMessage({ kind: 'drx-preview', state, text }, '*');
+                let loaded = false;
+                let failed = false;
+                function fail(text) { failed = true; report('error', String(text)); }
+                addEventListener('error', event => {
+                    if (event.target instanceof HTMLScriptElement && event.target.hasAttribute('data-drx-runtime')) {
+                        fail('The DRX runtime could not load. Check your connection, then edit the code to retry.');
+                    } else if (event.message) fail(event.message);
+                }, true);
+                addEventListener('unhandledrejection', event => fail(event.reason?.message || event.reason));
+                const originalError = console.error.bind(console);
+                console.error = (...args) => {
+                    originalError(...args);
+                    if (args.some(value => String(value).toLowerCase().includes('[drx] failed'))) {
+                        fail(args.map(value => value?.message || String(value)).join(' '));
+                    }
+                };
+
+                // Resolve editable imports from memory; external API requests use native fetch.
+                const originalFetch = window.fetch.bind(window);
+                window.fetch = (input, options) => {
+                    const raw = input instanceof Request ? input.url : String(input);
+                    const url = new URL(raw, config.base);
+                    if (url.origin === new URL(config.base).origin) {
+                        const path = decodeURIComponent(url.pathname).replace(/^\/+/, '');
+                        const file = [path, path + '.drx'].find(name => Object.hasOwn(config.files, name));
+                        return Promise.resolve(new Response(file ? config.files[file] : 'File not found', {
+                            status: file ? 200 : 404,
+                            headers: { 'Content-Type': file?.endsWith('.json') ? 'application/json' : 'text/plain' }
+                        }));
+                    }
+                    return originalFetch(input, options);
+                };
+                if (config.routing) {
+                    try { location.hash = '/'; } catch (_) { }
+                    document.addEventListener('click', event => {
+                        const anchor = event.composedPath().find(node => node instanceof HTMLAnchorElement);
+                        const href = anchor?.getAttribute('href');
+                        if (href?.startsWith('#')) { event.preventDefault(); location.hash = href; }
+                    }, true);
+                }
+                function checkReady() {
+                    if (loaded && !failed && document.body && !document.querySelector('x-app') &&
+                        [...document.body.children].some(node => !['SCRIPT', 'STYLE'].includes(node.tagName))) {
+                        report('ready');
+                        observer.disconnect();
+                    }
+                }
+                const observer = new MutationObserver(checkReady);
+                observer.observe(document.documentElement, { childList: true, subtree: true });
+                document.addEventListener('load', event => {
+                    if (event.target instanceof HTMLScriptElement && event.target.hasAttribute('data-drx-runtime')) {
+                        loaded = true;
+                        checkReady();
+                    }
+                }, true);
+            }
+
+            function previewDocument(files) {
+                const doc = new DOMParser().parseFromString(files['index.html'], 'text/html');
+                for (const node of doc.querySelectorAll('base')) node.remove();
+                const base = doc.createElement('base');
+                base.href = FILE_BASE;
+                doc.head.prepend(base);
+                const style = doc.createElement('style');
+                style.textContent = 'html{color-scheme:light}body{margin:0;padding:20px;background:white;color:#25272b;font:14px/1.6 system-ui}x-app{display:none}';
+                doc.head.append(style);
+                const config = { base: FILE_BASE, files, routing: Boolean(doc.querySelector('x-router')) };
+                const bridge = doc.createElement('script');
+                bridge.textContent = '(' + previewBridge.toString() + ')(' + JSON.stringify(config).replace(/</g, '\\u003c') + ');';
+                doc.head.prepend(bridge);
+                let runtime = [...doc.querySelectorAll('script[src]')].find(script => script.getAttribute('src') === RUNTIME);
+                if (!runtime) { runtime = doc.createElement('script'); runtime.src = RUNTIME; doc.head.append(runtime); }
+                runtime.defer = true;
+                runtime.setAttribute('data-drx-runtime', '');
+                return '<!doctype html>\n' + doc.documentElement.outerHTML;
+            }
+
+            // Refresh only after typing pauses, and only while this page is open.
+            function scheduleRun(example) {
+                clearTimeout(pendingRuns.get(example));
+                pendingRuns.set(example, setTimeout(() => {
+                    pendingRuns.delete(example);
+                    if (example.closest('[data-page]') === currentPage) run(example);
+                }, 400));
+            }
+
+            function resetExample(example) {
+                for (const textarea of example.querySelectorAll('textarea[data-file]')) {
+                    textarea.value = textarea.defaultValue;
+                    editors.get(textarea)?.editor.setValue(textarea.defaultValue);
+                }
+                run(example);
+            }
+
+            function run(example) {
+                clearTimeout(pendingRuns.get(example));
+                pendingRuns.delete(example);
+                const oldFrame = example.querySelector('iframe');
+                if (oldFrame) {
+                    clearTimeout(sessions.get(oldFrame.contentWindow)?.timer);
+                    sessions.delete(oldFrame.contentWindow);
+                    oldFrame.remove();
+                }
+                const files = Object.fromEntries([...example.querySelectorAll('textarea[data-file]')].map(editor => [editor.dataset.file, editor.value]));
+                const status = example.querySelector('.preview-status');
+                status.classList.remove('error');
+                status.textContent = 'Loading DRX...';
+                status.hidden = false;
+                const frame = document.createElement('iframe');
+                frame.title = example.querySelector('.example-heading span').textContent + ' preview';
+                frame.setAttribute('sandbox', 'allow-scripts');
+                frame.referrerPolicy = 'no-referrer';
+                example.querySelector('.preview-frame').append(frame);
+                const session = {
+                    frame, status, timer: setTimeout(() => {
+                        if (!status.hidden) status.textContent = 'DRX is still loading. Check your connection, then edit the code to retry.';
+                    }, 20000)
+                };
+                sessions.set(frame.contentWindow, session);
+                try { frame.srcdoc = previewDocument(files); }
+                catch (error) {
+                    clearTimeout(session.timer);
+                    status.textContent = error.message;
+                    status.classList.add('error');
+                }
+            }
+
+            window.addEventListener('message', event => {
+                const session = sessions.get(event.source);
+                if (!session || event.data?.kind !== 'drx-preview') return;
+                clearTimeout(session.timer);
+                session.status.hidden = event.data.state === 'ready';
+                if (!session.status.hidden) {
+                    session.status.textContent = event.data.text;
+                    session.status.classList.add('error');
+                }
+            });
+            for (const example of document.querySelectorAll('[data-example]')) {
+                example.querySelector('.reset').addEventListener('click', () => resetExample(example));
+                example.addEventListener('input', event => {
+                    if (!event.target.matches('textarea[data-file]')) return;
+                    if (event.isComposing) {
+                        clearTimeout(pendingRuns.get(example));
+                        pendingRuns.delete(example);
+                    } else scheduleRun(example);
+                });
+                example.addEventListener('compositionend', event => {
+                    if (event.target.matches('textarea[data-file]')) scheduleRun(example);
+                });
+            }
+            window.addEventListener('hashchange', () => showPage());
+            showPage(true);
+
+        </script>
+    </body>
+
+</html>
