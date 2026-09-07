@@ -35,8 +35,8 @@ export const EndpointEditorComponent = defineRemountingComponent((props: { endpo
         platform: PlatformService
     });
 
-    const shtml = useStore(service.platform.shtml.state);
-    const endpoint = shtml.apiEndpoints[props.endpointId];
+    const drx = useStore(service.platform.drx.state);
+    const endpoint = drx.apiEndpoints[props.endpointId];
     const tabs = [
         { value: 'parameters' as const, label: 'Parameters' },
         { value: 'headers' as const, label: 'Headers' },
@@ -47,8 +47,8 @@ export const EndpointEditorComponent = defineRemountingComponent((props: { endpo
 
     const typeOptions = createMemo(() => {
         const options: Record<string, string> = Object.fromEntries($Tson.definitions.map(type => [type, type]));
-        for (const typeId of shtml.app.typeIds()) {
-            const type = shtml.types[typeId];
+        for (const typeId of drx.app.typeIds()) {
+            const type = drx.types[typeId];
             options[type.name()] = type.name();
         }
         return options;
@@ -92,7 +92,7 @@ export const EndpointEditorComponent = defineRemountingComponent((props: { endpo
                                     appearance='flat'
                                     onClick={() => {
                                         const parameter = { id: $Id.guid(), name: '', required: false };
-                                        service.platform.shtml.state.reduce(reducer => [
+                                        service.platform.drx.state.reduce(reducer => [
                                             reducer.apiParameters.entity.create(parameter),
                                             reducer.apiEndpoints.entity.updateById(props.endpointId, endpoint => ({ parameterIds: [...endpoint.parameterIds, parameter.id] }))
                                         ]);
@@ -103,7 +103,7 @@ export const EndpointEditorComponent = defineRemountingComponent((props: { endpo
                         <div class={tableClasses().body}>
                             <For each={endpoint.parameterIds()}>
                                 {id => {
-                                    const parameter = shtml.apiParameters[id];
+                                    const parameter = drx.apiParameters[id];
                                     return (
                                         <div class={tableClasses().row}>
                                             <div class={tableClasses().cell}>
@@ -120,7 +120,7 @@ export const EndpointEditorComponent = defineRemountingComponent((props: { endpo
                                                     appearance={'flat'}
                                                     icon={'minus'}
                                                     onClick={() => {
-                                                        service.platform.shtml.state.reduce(reducer => [
+                                                        service.platform.drx.state.reduce(reducer => [
                                                             reducer.apiParameters.entity.delete(id),
                                                             reducer.apiEndpoints.entity.updateById(props.endpointId, endpoint => ({ parameterIds: endpoint.parameterIds.filter(existing => existing !== id) }))
                                                         ]);
@@ -146,7 +146,7 @@ export const EndpointEditorComponent = defineRemountingComponent((props: { endpo
                                     appearance='flat'
                                     onClick={() => {
                                         const header = { id: $Id.guid(), name: '', required: false };
-                                        service.platform.shtml.state.reduce(reducer => [
+                                        service.platform.drx.state.reduce(reducer => [
                                             reducer.apiHeaders.entity.create(header),
                                             reducer.apiEndpoints.entity.updateById(props.endpointId, endpoint => ({ headerIds: [...endpoint.headerIds, header.id] }))
                                         ]);
@@ -157,7 +157,7 @@ export const EndpointEditorComponent = defineRemountingComponent((props: { endpo
                         <div class={tableClasses().body}>
                             <For each={endpoint.headerIds()}>
                                 {id => {
-                                    const header = shtml.apiHeaders[id];
+                                    const header = drx.apiHeaders[id];
                                     return (
                                         <div class={tableClasses().row}>
                                             <div class={tableClasses().cell}>
@@ -174,7 +174,7 @@ export const EndpointEditorComponent = defineRemountingComponent((props: { endpo
                                                     appearance={'flat'}
                                                     icon={'minus'}
                                                     onClick={() => {
-                                                        service.platform.shtml.state.reduce(reducer => [
+                                                        service.platform.drx.state.reduce(reducer => [
                                                             reducer.apiHeaders.entity.delete(id),
                                                             reducer.apiEndpoints.entity.updateById(props.endpointId, endpoint => ({ headerIds: endpoint.headerIds.filter(existing => existing !== id) }))
                                                         ]);
@@ -194,23 +194,23 @@ export const EndpointEditorComponent = defineRemountingComponent((props: { endpo
                         label={'Body Type'}
                         clearable={true}
                         options={typeOptions()}
-                        value={endpoint.bodyId() ? shtml.apiBodies[endpoint.bodyId()].type() : undefined}
+                        value={endpoint.bodyId() ? drx.apiBodies[endpoint.bodyId()].type() : undefined}
                         onChange={type => {
                             const bodyId = endpoint.bodyId();
                             if (type == null) {
                                 if (!bodyId) return;
-                                service.platform.shtml.state.reduce(reducer => [
+                                service.platform.drx.state.reduce(reducer => [
                                     reducer.apiBodies.entity.delete(bodyId),
                                     reducer.apiEndpoints.entity.updateById(props.endpointId, () => ({ bodyId: undefined }))
                                 ]);
                                 return;
                             }
                             if (bodyId) {
-                                shtml.apiBodies[bodyId].type(type);
+                                drx.apiBodies[bodyId].type(type);
                                 return;
                             }
                             const body = { id: $Id.guid(), type };
-                            service.platform.shtml.state.reduce(reducer => [
+                            service.platform.drx.state.reduce(reducer => [
                                 reducer.apiBodies.entity.create(body),
                                 reducer.apiEndpoints.entity.updateById(props.endpointId, () => ({ bodyId: body.id }))
                             ]);
@@ -223,23 +223,23 @@ export const EndpointEditorComponent = defineRemountingComponent((props: { endpo
                         label={'Response Type'}
                         clearable={true}
                         options={typeOptions()}
-                        value={endpoint.responseId() ? shtml.apiResponses[endpoint.responseId()].type() : undefined}
+                        value={endpoint.responseId() ? drx.apiResponses[endpoint.responseId()].type() : undefined}
                         onChange={type => {
                             const responseId = endpoint.responseId();
                             if (type == null) {
                                 if (!responseId) return;
-                                service.platform.shtml.state.reduce(reducer => [
+                                service.platform.drx.state.reduce(reducer => [
                                     reducer.apiResponses.entity.delete(responseId),
                                     reducer.apiEndpoints.entity.updateById(props.endpointId, () => ({ responseId: undefined }))
                                 ]);
                                 return;
                             }
                             if (responseId) {
-                                shtml.apiResponses[responseId].type(type);
+                                drx.apiResponses[responseId].type(type);
                                 return;
                             }
                             const response = { id: $Id.guid(), type };
-                            service.platform.shtml.state.reduce(reducer => [
+                            service.platform.drx.state.reduce(reducer => [
                                 reducer.apiResponses.entity.create(response),
                                 reducer.apiEndpoints.entity.updateById(props.endpointId, () => ({ responseId: response.id }))
                             ]);

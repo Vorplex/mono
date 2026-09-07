@@ -1,4 +1,4 @@
-import { ExpressionDisplay, NodeType } from '@vorplex/shtml';
+import { ExpressionDisplay, NodeType } from '@vorplex/drx';
 import { defineRemountingComponent, useInjector, useStore } from '@vorplex/solid';
 import { createResource, createSignal, onCleanup, onMount, useContext } from 'solid-js';
 import { PanelComponent } from '../../../../components/panel.component';
@@ -14,7 +14,7 @@ export const TemplateContainerPreviewComponent = defineRemountingComponent((prop
     });
 
     const editorState = useContext(TemplateContainerEditorContext);
-    const shtml = useStore(service.platform.shtml.state);
+    const drx = useStore(service.platform.drx.state);
 
     let frame!: HTMLIFrameElement;
     const [mounted, setMounted] = createSignal(false);
@@ -24,23 +24,23 @@ export const TemplateContainerPreviewComponent = defineRemountingComponent((prop
         frameDocument.body.style.margin = '0';
         frameDocument.addEventListener('click', event => {
             event.preventDefault();
-            const chain = event.composedPath().filter((node): node is HTMLElement => node instanceof HTMLElement && node.hasAttribute('data-shtml-id'));
+            const chain = event.composedPath().filter((node): node is HTMLElement => node instanceof HTMLElement && node.hasAttribute('data-drx-id'));
             const target = chain[0];
             if (!target) return;
-            const ids = chain.map(node => node.getAttribute('data-shtml-id')!).reverse();
+            const ids = chain.map(node => node.getAttribute('data-drx-id')!).reverse();
             editorState.update({ selectedTreeItem: { type: NodeType.Element, id: ids[ids.length - 1], path: ids.slice(0, -1) } });
         });
         frameDocument.addEventListener('dblclick', event => {
-            const target = event.composedPath().find((node): node is HTMLElement => node instanceof HTMLElement && node.hasAttribute('data-shtml-id'));
+            const target = event.composedPath().find((node): node is HTMLElement => node instanceof HTMLElement && node.hasAttribute('data-drx-id'));
             if (!target) return;
-            const id = target.getAttribute('data-shtml-id')!;
-            const template = shtml.elements[id].template();
+            const id = target.getAttribute('data-drx-id')!;
+            const template = drx.elements[id].template();
             if (template.length !== 1 || template[0].type !== NodeType.Text) return;
             const textId = template[0].id;
             const textNode = target.firstChild as Text;
 
             event.preventDefault();
-            const raw = shtml.texts[textId].content();
+            const raw = drx.texts[textId].content();
             textNode.data = raw;
             target.contentEditable = 'true';
             target.focus();
@@ -58,7 +58,7 @@ export const TemplateContainerPreviewComponent = defineRemountingComponent((prop
             const commit = () => {
                 stop();
                 const value = textNode.data;
-                shtml.texts[textId].content(value);
+                drx.texts[textId].content(value);
                 textNode.data = ExpressionDisplay.mask(value);
             };
             const cancel = () => {
@@ -83,17 +83,17 @@ export const TemplateContainerPreviewComponent = defineRemountingComponent((prop
         async () => {
             dispose?.();
             dispose = undefined;
-            const preview = await service.platform.shtml.preview(frame.contentDocument!.body, {
+            const preview = await service.platform.drx.preview(frame.contentDocument!.body, {
                 target: props.target,
                 styleSheets: [
-                    () => '[data-shtml-id]:hover:not(:has([data-shtml-id]:hover)) { outline: 2px solid #7d8cff; outline-offset: -1px; cursor: pointer; }',
+                    () => '[data-drx-id]:hover:not(:has([data-drx-id]:hover)) { outline: 2px solid #7d8cff; outline-offset: -1px; cursor: pointer; }',
                     () => {
                         const hovered = editorState.signal.proxy.hoveredTreeItem();
-                        return hovered?.type === NodeType.Element ? `[data-shtml-id="${hovered.id}"] { outline: 2px solid #7d8cff; outline-offset: -1px; }` : '';
+                        return hovered?.type === NodeType.Element ? `[data-drx-id="${hovered.id}"] { outline: 2px solid #7d8cff; outline-offset: -1px; }` : '';
                     },
                     () => {
                         const selected = editorState.signal.proxy.selectedTreeItem();
-                        return selected?.type === NodeType.Element ? `[data-shtml-id="${selected.id}"] { outline: 2px solid ${Theme().info.outline}; outline-offset: -1px; }` : '';
+                        return selected?.type === NodeType.Element ? `[data-drx-id="${selected.id}"] { outline: 2px solid ${Theme().info.outline}; outline-offset: -1px; }` : '';
                     }
                 ]
             });

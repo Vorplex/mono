@@ -1,4 +1,4 @@
-import { ShtmlAssetSource } from '@vorplex/shtml';
+import { DrxAssetSource } from '@vorplex/drx';
 import { createStyle, defineRemountingComponent, useInjector, useStore } from '@vorplex/solid';
 import { Match, Show, Switch } from 'solid-js';
 import { FormInputComponent } from '../../../../components/forms/form-input.component';
@@ -20,8 +20,8 @@ export const AssetEditorComponent = defineRemountingComponent((props: { assetId:
         platform: PlatformService
     });
 
-    const shtml = useStore(service.platform.shtml.state);
-    const asset = shtml.assets[props.assetId];
+    const drx = useStore(service.platform.drx.state);
+    const asset = drx.assets[props.assetId];
 
     const editorLanguageMimeTypes: Record<string, string> = {
         'application/json': 'json',
@@ -58,14 +58,14 @@ export const AssetEditorComponent = defineRemountingComponent((props: { assetId:
                             inline={false}
                             label={'URL'}
                             placeholder={'https://...'}
-                            value={(asset.source() as Extract<ShtmlAssetSource, { type: 'external' }>).url}
+                            value={(asset.source() as Extract<DrxAssetSource, { type: 'external' }>).url}
                             onChange={value => asset.source({ type: 'external', url: value })}
                         />
                     </Match>
                     <Match when={asset.source().type === 'internal'}>
                         <MonacoComponent
-                            language={editorLanguageMimeTypes[(asset.source() as Extract<ShtmlAssetSource, { type: 'internal' }>).mimeType] ?? 'plaintext'}
-                            value={(asset.source() as Extract<ShtmlAssetSource, { type: 'internal' }>).content ?? ''}
+                            language={editorLanguageMimeTypes[(asset.source() as Extract<DrxAssetSource, { type: 'internal' }>).mimeType] ?? 'plaintext'}
+                            value={(asset.source() as Extract<DrxAssetSource, { type: 'internal' }>).content ?? ''}
                             onChanging={value => {
                                 const source = asset.source();
                                 asset.source({ type: 'internal', content: value, mimeType: source.type === 'internal' ? source.mimeType : undefined });

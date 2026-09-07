@@ -1,5 +1,5 @@
 import { $Array } from '@vorplex/core';
-import { NodeType } from '@vorplex/shtml';
+import { NodeType } from '@vorplex/drx';
 import { createStyle, useCachedSignal, useInjector, useStore } from '@vorplex/solid';
 import { classNames } from '@vorplex/web';
 import { createMemo, For, Show, useContext, type JSX } from 'solid-js';
@@ -74,8 +74,8 @@ export function ExplorerTreeComponent() {
     });
 
     const explorer = useStore(service.explorer.state);
-    const shtml = useStore(service.platform.shtml.state);
-    const app = shtml.app;
+    const drx = useStore(service.platform.drx.state);
+    const app = drx.app;
 
     const [expandedItems, setExpandedItems] = useCachedSignal(ExplorerTreeExpandedItemsCacheKey, []);
 
@@ -125,7 +125,7 @@ export function ExplorerTreeComponent() {
     };
 
     const VariableItem = (props: { id: string; scope: VariableScope }) => {
-        const variable = shtml.variables[props.id];
+        const variable = drx.variables[props.id];
         return (
             <Show when={variable.id()}>
                 <Row
@@ -141,7 +141,7 @@ export function ExplorerTreeComponent() {
     };
 
     const ServiceItem = (props: { id: string; scope: ServiceScope }) => {
-        const serviceNode = shtml.services[props.id];
+        const serviceNode = drx.services[props.id];
         return (
             <Show when={serviceNode.id()}>
                 <Row
@@ -154,7 +154,7 @@ export function ExplorerTreeComponent() {
     };
 
     const TypeItem = (props: { id: string; scope: TypeScope }) => {
-        const type = shtml.types[props.id];
+        const type = drx.types[props.id];
         return (
             <Show when={type.id()}>
                 <Row
@@ -169,7 +169,7 @@ export function ExplorerTreeComponent() {
     };
 
     const PropertyItem = (props: { componentId: string; id: string }) => {
-        const property = shtml.componentProperties[props.id];
+        const property = drx.componentProperties[props.id];
         return (
             <Show when={property.id()}>
                 <Row
@@ -187,7 +187,7 @@ export function ExplorerTreeComponent() {
     };
 
     const EventItem = (props: { componentId: string; id: string }) => {
-        const event = shtml.componentEvents[props.id];
+        const event = drx.componentEvents[props.id];
         return (
             <Show when={event.id()}>
                 <Row
@@ -205,7 +205,7 @@ export function ExplorerTreeComponent() {
     };
 
     const EndpointItem = (props: { apiId: string; id: string }) => {
-        const endpoint = shtml.apiEndpoints[props.id];
+        const endpoint = drx.apiEndpoints[props.id];
         return (
             <Show when={endpoint.id()}>
                 <Row
@@ -222,7 +222,7 @@ export function ExplorerTreeComponent() {
     };
 
     const ApiItem = (props: { id: string }) => {
-        const api = shtml.apis[props.id];
+        const api = drx.apis[props.id];
         const context = useContext(TreeViewContext);
         const isExpanded = createMemo(() => expanded(props.id));
         return (
@@ -246,7 +246,7 @@ export function ExplorerTreeComponent() {
     };
 
     const PageItem = (props: { id: string }) => {
-        const page = shtml.pages[props.id];
+        const page = drx.pages[props.id];
         const context = useContext(TreeViewContext);
         const isExpanded = createMemo(() => expanded(props.id));
         const container: ContainerTarget = { type: NodeType.Page, id: props.id };
@@ -272,7 +272,7 @@ export function ExplorerTreeComponent() {
     };
 
     const ComponentItem = (props: { id: string; scope: ComponentScope }) => {
-        const component = shtml.components[props.id];
+        const component = drx.components[props.id];
         const context = useContext(TreeViewContext);
         const isExpanded = createMemo(() => expanded(props.id));
         const ownScope: ComponentScope = { type: 'component', componentId: props.id };
@@ -320,7 +320,7 @@ export function ExplorerTreeComponent() {
     };
 
     const AssetItem = (props: { id: string }) => {
-        const asset = shtml.assets[props.id];
+        const asset = drx.assets[props.id];
         return (
             <Show when={asset.id()}>
                 <Row

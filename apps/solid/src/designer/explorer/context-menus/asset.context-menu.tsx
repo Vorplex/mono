@@ -1,5 +1,5 @@
 import { $Id, State } from '@vorplex/core';
-import { ShtmlAsset } from '@vorplex/shtml';
+import { DrxAsset } from '@vorplex/drx';
 import { useInjector } from '@vorplex/solid';
 import { TextFormGroup } from '../../../components/forms/form-input.component';
 import { ContextMenuItem } from '../../../directives/context-menu.directive';
@@ -27,12 +27,12 @@ export const AssetContextMenu: ContextMenuItem[] = [
                 })
             });
             if (!result) return;
-            const asset: ShtmlAsset = {
+            const asset: DrxAsset = {
                 id: $Id.guid(),
                 name: result.name,
                 source: { type: 'internal', content: '' }
             };
-            service.platform.shtml.state.reduce(reducer => [
+            service.platform.drx.state.reduce(reducer => [
                 reducer.assets.entity.create(asset),
                 reducer.app.value.update(app => ({
                     assetIds: [...app.assetIds, asset.id]
@@ -64,7 +64,7 @@ export function createAssetItemContextMenu(assetId: string, assetName: string): 
                     }
                 });
                 if (!result) return;
-                service.platform.shtml.state.reduce(reducer => [
+                service.platform.drx.state.reduce(reducer => [
                     reducer.assets.entity.updateById(assetId, { name: result.name })
                 ]);
             }
@@ -80,7 +80,7 @@ export function createAssetItemContextMenu(assetId: string, assetName: string): 
                 });
                 const confirmed = await service.modal.showConfirm('Delete', `Are you sure you want to delete "${assetName}"?`);
                 if (!confirmed) return;
-                service.platform.shtml.state.reduce(reducer => [
+                service.platform.drx.state.reduce(reducer => [
                     reducer.assets.entity.delete(assetId),
                     reducer.app.value.update(app => ({ assetIds: app.assetIds.filter(id => id !== assetId) }))
                 ]);

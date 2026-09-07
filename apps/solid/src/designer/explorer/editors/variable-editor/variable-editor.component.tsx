@@ -21,23 +21,23 @@ export const VariableEditorComponent = defineRemountingComponent((props: { varia
         platform: PlatformService
     });
 
-    const shtml = useStore(service.platform.shtml.state);
-    const variable = shtml.variables[props.variableId];
+    const drx = useStore(service.platform.drx.state);
+    const variable = drx.variables[props.variableId];
 
     const scopedTypeIds = createMemo(() => {
         switch (props.scope.type) {
             case 'app':
             case 'page':
-                return shtml.app.typeIds();
+                return drx.app.typeIds();
             case 'component':
-                return shtml.components[props.scope.componentId].typeIds();
+                return drx.components[props.scope.componentId].typeIds();
         }
     });
 
     const typeOptions = createMemo(() => {
         const options: Record<string, string> = Object.fromEntries($Tson.definitions.map(type => [type, type]));
         for (const typeId of scopedTypeIds()) {
-            const type = shtml.types[typeId];
+            const type = drx.types[typeId];
             options[type.name()] = type.name();
         }
         return options;

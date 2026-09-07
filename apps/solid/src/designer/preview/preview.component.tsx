@@ -9,7 +9,7 @@ export function PreviewComponent() {
         platform: PlatformService,
     });
 
-    const shtml = useStore(service.platform.shtml.state);
+    const drx = useStore(service.platform.drx.state);
 
     let frame!: HTMLIFrameElement;
     const [mounted, setMounted] = createSignal(false);
@@ -30,7 +30,7 @@ export function PreviewComponent() {
         async () => {
             dispose?.();
             dispose = undefined;
-            const preview = await service.platform.shtml.mount(frame.contentDocument.body);
+            const preview = await service.platform.drx.mount(frame.contentDocument.body);
             dispose = () => preview.dispose();
         }
     );

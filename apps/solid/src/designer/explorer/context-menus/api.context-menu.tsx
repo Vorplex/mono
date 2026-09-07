@@ -1,5 +1,5 @@
 import { $Id, $String } from '@vorplex/core';
-import { ShtmlApi, ShtmlApiEndpoint } from '@vorplex/shtml';
+import { DrxApi, DrxApiEndpoint } from '@vorplex/drx';
 import { useInjector } from '@vorplex/solid';
 import { TextFormGroup } from '../../../components/forms/form-input.component';
 import { ContextMenuItem } from '../../../directives/context-menu.directive';
@@ -33,13 +33,13 @@ export const ApiContextMenu: ContextMenuItem[] = [
                 }
             });
             if (!result) return;
-            const api: ShtmlApi = {
+            const api: DrxApi = {
                 id: $Id.guid(),
                 name: result.name,
                 url: result.url,
                 endpointIds: []
             };
-            service.platform.shtml.state.reduce(reducer => [
+            service.platform.drx.state.reduce(reducer => [
                 reducer.apis.entity.create(api),
                 reducer.app.value.update(app => ({ apiIds: [...app.apiIds, api.id] }))
             ]);
@@ -69,7 +69,7 @@ export function createApiItemContextMenu(apiId: string, apiName: string): Contex
                     }
                 });
                 if (!result) return;
-                const endpoint: ShtmlApiEndpoint = {
+                const endpoint: DrxApiEndpoint = {
                     id: $Id.guid(),
                     name: result.name,
                     path: '/',
@@ -77,7 +77,7 @@ export function createApiItemContextMenu(apiId: string, apiName: string): Contex
                     parameterIds: [],
                     headerIds: []
                 };
-                service.platform.shtml.state.reduce(reducer => [
+                service.platform.drx.state.reduce(reducer => [
                     reducer.apiEndpoints.entity.create(endpoint),
                     reducer.apis.entity.updateById(apiId, api => ({ endpointIds: [...api.endpointIds, endpoint.id] }))
                 ]);
@@ -103,7 +103,7 @@ export function createApiItemContextMenu(apiId: string, apiName: string): Contex
                     }
                 });
                 if (!result) return;
-                service.platform.shtml.state.reduce(reducer => [
+                service.platform.drx.state.reduce(reducer => [
                     reducer.apis.entity.updateById(apiId, { name: result.name })
                 ]);
             }
@@ -119,7 +119,7 @@ export function createApiItemContextMenu(apiId: string, apiName: string): Contex
                 });
                 const confirmed = await service.modal.showConfirm('Delete', `Are you sure you want to delete "${apiName}"?`);
                 if (!confirmed) return;
-                service.platform.shtml.state.reduce(reducer => [
+                service.platform.drx.state.reduce(reducer => [
                     reducer.apis.entity.delete(apiId),
                     reducer.app.value.update(app => ({ apiIds: app.apiIds.filter(id => id !== apiId) }))
                 ]);

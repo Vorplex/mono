@@ -1,5 +1,5 @@
 import { $Id } from '@vorplex/core';
-import { ShtmlComponentProperty } from '@vorplex/shtml';
+import { DrxComponentProperty } from '@vorplex/drx';
 import { useInjector } from '@vorplex/solid';
 import { TextFormGroup } from '../../../components/forms/form-input.component';
 import { ContextMenuItem } from '../../../directives/context-menu.directive';
@@ -28,12 +28,12 @@ export function createPropertyContextMenu(componentId: string): ContextMenuItem[
                     }
                 });
                 if (!result) return;
-                const property: ShtmlComponentProperty = {
+                const property: DrxComponentProperty = {
                     id: $Id.guid(),
                     name: result.name,
                     type: 'any'
                 };
-                service.platform.shtml.state.reduce(reducer => [
+                service.platform.drx.state.reduce(reducer => [
                     reducer.componentProperties.entity.create(property),
                     reducer.components.entity.updateById(componentId, component => ({ propertyIds: [...component.propertyIds, property.id] }))
                 ]);
@@ -64,7 +64,7 @@ export function createPropertyItemContextMenu(componentId: string, propertyId: s
                     }
                 });
                 if (!result) return;
-                service.platform.shtml.state.reduce(reducer => [
+                service.platform.drx.state.reduce(reducer => [
                     reducer.componentProperties.entity.updateById(propertyId, { name: result.name })
                 ]);
             }
@@ -80,7 +80,7 @@ export function createPropertyItemContextMenu(componentId: string, propertyId: s
                 });
                 const confirmed = await service.modal.showConfirm('Delete', `Are you sure you want to delete "${propertyName}"?`);
                 if (!confirmed) return;
-                service.platform.shtml.state.reduce(reducer => [
+                service.platform.drx.state.reduce(reducer => [
                     reducer.componentProperties.entity.delete(propertyId),
                     reducer.components.entity.updateById(componentId, component => ({ propertyIds: component.propertyIds.filter(id => id !== propertyId) }))
                 ]);

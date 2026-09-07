@@ -1,5 +1,5 @@
 import { $Id, State } from '@vorplex/core';
-import { ShtmlPage } from '@vorplex/shtml';
+import { DrxPage } from '@vorplex/drx';
 import { useInjector } from '@vorplex/solid';
 import { TextFormGroup } from '../../../components/forms/form-input.component';
 import { ContextMenuItem } from '../../../directives/context-menu.directive';
@@ -27,13 +27,13 @@ export const PageContextMenu: ContextMenuItem[] = [
                 })
             });
             if (!result) return;
-            const page: ShtmlPage = {
+            const page: DrxPage = {
                 id: $Id.guid(),
                 name: result.name,
                 variableIds: [],
                 template: []
             };
-            service.platform.shtml.state.reduce(reducer => [
+            service.platform.drx.state.reduce(reducer => [
                 reducer.pages.entity.create(page),
                 reducer.app.value.update(app => ({ pageIds: [...app.pageIds, page.id] }))
             ]);
@@ -63,7 +63,7 @@ export function createPageItemContextMenu(pageId: string, pageName: string): Con
                     }
                 });
                 if (!result) return;
-                service.platform.shtml.state.reduce(reducer => [
+                service.platform.drx.state.reduce(reducer => [
                     reducer.pages.entity.updateById(pageId, { name: result.name })
                 ]);
             }
@@ -79,7 +79,7 @@ export function createPageItemContextMenu(pageId: string, pageName: string): Con
                 });
                 const confirmed = await service.modal.showConfirm('Delete', `Are you sure you want to delete "${pageName}"?`);
                 if (!confirmed) return;
-                service.platform.shtml.state.reduce(reducer => [
+                service.platform.drx.state.reduce(reducer => [
                     reducer.pages.entity.delete(pageId),
                     reducer.app.value.update(app => ({ pageIds: app.pageIds.filter(id => id !== pageId) }))
                 ]);

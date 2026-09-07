@@ -1,5 +1,5 @@
 import { $Tson, MapAdaptor } from '@vorplex/core';
-import { NodeType, ShtmlElement } from '@vorplex/shtml';
+import { NodeType, DrxElement } from '@vorplex/drx';
 import { createStyle, defineRemountingComponent, ForIn, useInjector, useStore } from '@vorplex/solid';
 import { $Element } from '@vorplex/web';
 import { createMemo, JSX, Show } from 'solid-js';
@@ -62,10 +62,10 @@ export const ElementPropertiesPanelComponent = defineRemountingComponent((props:
         platform: PlatformService
     });
 
-    const shtml = useStore(service.platform.shtml.state);
-    const element = shtml.elements[props.elementId];
+    const drx = useStore(service.platform.drx.state);
+    const element = drx.elements[props.elementId];
 
-    const locals = createMemo(() => service.platform.shtml.getLocals(element.id()));
+    const locals = createMemo(() => service.platform.drx.getLocals(element.id()));
     const attributes = createMemo(() => {
         const normal: Record<string, string> = {};
         const events: Record<string, string> = {};
@@ -90,7 +90,7 @@ export const ElementPropertiesPanelComponent = defineRemountingComponent((props:
         const template = element.template();
         if (!template) return undefined;
         if (template.length === 0) return '';
-        if (template.length === 1 && template[0].type === NodeType.Text) return shtml.texts[template[0].id].content();
+        if (template.length === 1 && template[0].type === NodeType.Text) return drx.texts[template[0].id].content();
         return undefined;
     });
 
@@ -269,8 +269,8 @@ export const ElementPropertiesPanelComponent = defineRemountingComponent((props:
                             value={textValue()}
                             accepts={$Tson.string()}
                             onChange={value => {
-                                const state = service.platform.shtml.state.value;
-                                service.platform.shtml.state.set(ShtmlElement.setText(state.elements[props.elementId], state, value));
+                                const state = service.platform.drx.state.value;
+                                service.platform.drx.state.set(DrxElement.setText(state.elements[props.elementId], state, value));
                             }}
                         />
                     </FieldComponent>

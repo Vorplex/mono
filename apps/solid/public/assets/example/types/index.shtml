@@ -1,2 +1,0 @@
-<x-import src="./app.type.shtml"></x-import>
-<x-import src="./post.type.shtml"></x-import>

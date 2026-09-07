@@ -1,0 +1,2 @@
+<x-import src="./logo.drx"></x-import>
+<x-import src="./google.drx"></x-import>

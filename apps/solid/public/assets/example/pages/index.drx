@@ -1,0 +1,9 @@
+<x-import src="./dashboard/page.drx"></x-import>
+<x-import src="./header/page.drx"></x-import>
+<x-import src="./nav/page.drx"></x-import>
+<x-import src="./posts/page.drx"></x-import>
+<x-import src="./post-editor/page.drx"></x-import>
+<x-import src="./settings/page.drx"></x-import>
+<x-import src="./settings/profile/page.drx"></x-import>
+<x-import src="./settings/preferences/page.drx"></x-import>
+<x-import src="./404/page.drx"></x-import>

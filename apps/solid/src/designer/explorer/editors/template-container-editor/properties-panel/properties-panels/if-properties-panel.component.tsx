@@ -19,8 +19,8 @@ export const IfPropertiesPanelComponent = defineRemountingComponent((props: { if
         platform: PlatformService
     });
 
-    const shtml = useStore(service.platform.shtml.state);
-    const ifNode = shtml.ifs[props.ifId];
+    const drx = useStore(service.platform.drx.state);
+    const ifNode = drx.ifs[props.ifId];
 
     return (
         <PanelComponent icon='sliders-horizontal' title='If Properties'>
@@ -29,7 +29,7 @@ export const IfPropertiesPanelComponent = defineRemountingComponent((props: { if
                     <ExpressionInputComponent
                         value={ifNode.condition()}
                         accepts={$Tson.boolean()}
-                        locals={service.platform.shtml.getLocals(props.ifId)}
+                        locals={service.platform.drx.getLocals(props.ifId)}
                         onChange={value => ifNode.condition(value)}
                     />
                 </FieldComponent>

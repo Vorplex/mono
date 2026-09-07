@@ -26,7 +26,7 @@ export function createEndpointItemContextMenu(apiId: string, endpointId: string,
                     }
                 });
                 if (!result) return;
-                service.platform.shtml.state.reduce(reducer => [
+                service.platform.drx.state.reduce(reducer => [
                     reducer.apiEndpoints.entity.updateById(endpointId, { name: result.name })
                 ]);
             }
@@ -42,7 +42,7 @@ export function createEndpointItemContextMenu(apiId: string, endpointId: string,
                 });
                 const confirmed = await service.modal.showConfirm('Delete', `Are you sure you want to delete "${endpointName}"?`);
                 if (!confirmed) return;
-                service.platform.shtml.state.reduce(reducer => [
+                service.platform.drx.state.reduce(reducer => [
                     reducer.apiEndpoints.entity.delete(endpointId),
                     reducer.apis.entity.updateById(apiId, api => ({ endpointIds: api.endpointIds.filter(id => id !== endpointId) }))
                 ]);

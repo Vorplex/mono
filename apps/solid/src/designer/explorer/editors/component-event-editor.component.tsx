@@ -19,14 +19,14 @@ export const ComponentEventEditorComponent = defineRemountingComponent((props: {
         platform: PlatformService
     });
 
-    const shtml = useStore(service.platform.shtml.state);
-    const event = shtml.componentEvents[props.eventId];
-    const component = shtml.components[props.componentId];
+    const drx = useStore(service.platform.drx.state);
+    const event = drx.componentEvents[props.eventId];
+    const component = drx.components[props.componentId];
 
     const typeOptions = createMemo(() => {
         const options: Record<string, string> = Object.fromEntries($Tson.definitions.map(type => [type, type]));
         for (const typeId of component.typeIds()) {
-            const type = shtml.types[typeId];
+            const type = drx.types[typeId];
             options[type.name()] = type.name();
         }
         return options;

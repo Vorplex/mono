@@ -1,4 +1,4 @@
-import { ShtmlDocument } from '@vorplex/shtml';
+import { DrxDocument } from '@vorplex/drx';
 import { createStyle, useInjector, useStore } from '@vorplex/solid';
 import { createSignal, Match, Show, Switch } from 'solid-js';
 import { RadioButtonComponent } from '../components/radio-button.component';
@@ -44,20 +44,20 @@ export function DesignerComponent() {
         modal: ModalService
     });
 
-    const shtml = useStore(service.platform.shtml.state);
+    const drx = useStore(service.platform.drx.state);
     const explorerStore = useStore(service.explorer.state);
-    const [raw, setRaw] = createSignal(service.platform.shtml.toFormattedString());
+    const [raw, setRaw] = createSignal(service.platform.drx.toFormattedString());
 
     return (
-        <Show when={shtml()}>
+        <Show when={drx()}>
             <div class={classes().container}>
                 <div class={classes().header}>
                     <RadioButtonComponent
                         options={[
                             {
                                 icon: 'code-xml',
-                                label: 'SHTML',
-                                value: 'shtml'
+                                label: 'DRX',
+                                value: 'drx'
                             },
                             {
                                 icon: 'pencil-ruler',
@@ -72,9 +72,9 @@ export function DesignerComponent() {
                         ] as const}
                         value={explorerStore.mode()}
                         onChange={async value => {
-                            if (explorerStore.mode() === 'shtml') {
+                            if (explorerStore.mode() === 'drx') {
                                 try {
-                                    service.platform.shtml.state.set(ShtmlDocument.parse(raw()).state.value);
+                                    service.platform.drx.state.set(DrxDocument.parse(raw()).state.value);
                                 } catch (error) {
                                     await service.modal.showError(error);
                                     throw error;
@@ -85,7 +85,7 @@ export function DesignerComponent() {
                     />
                 </div>
                 <Switch>
-                    <Match when={explorerStore.mode() === 'shtml'}>
+                    <Match when={explorerStore.mode() === 'drx'}>
                         <div class={classes().content}>
                             <MonacoComponent
                                 language='html'

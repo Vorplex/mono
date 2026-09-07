@@ -8,14 +8,14 @@ export const TypeEditorComponent = defineRemountingComponent((props: { typeId: s
         platform: PlatformService
     });
 
-    const shtml = useStore(service.platform.shtml.state);
-    const type = shtml.types[props.typeId];
+    const drx = useStore(service.platform.drx.state);
+    const type = drx.types[props.typeId];
 
     return (
         <TsonEditorComponent
             name={type.name()}
             definition={type.type()}
-            onChange={definition => service.platform.shtml.state.reduce(reducer => [
+            onChange={definition => service.platform.drx.state.reduce(reducer => [
                 reducer.types.entity.updateById(props.typeId, { type: definition })
             ])}
         />

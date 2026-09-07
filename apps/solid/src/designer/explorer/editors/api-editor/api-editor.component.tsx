@@ -20,8 +20,8 @@ export const ApiEditorComponent = defineRemountingComponent((props: { apiId: str
         platform: PlatformService
     });
 
-    const shtml = useStore(service.platform.shtml.state);
-    const api = shtml.apis[props.apiId];
+    const drx = useStore(service.platform.drx.state);
+    const api = drx.apis[props.apiId];
 
     return (
         <PanelComponent icon='globe' title='Api Properties'>

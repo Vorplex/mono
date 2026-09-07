@@ -1,4 +1,4 @@
-import { NodeType } from '@vorplex/shtml';
+import { NodeType } from '@vorplex/drx';
 import { defineRemountingComponent, useInjector, useStore } from '@vorplex/solid';
 import { type IDisposable } from 'monaco-editor';
 import { onCleanup, onMount } from 'solid-js';
@@ -14,11 +14,11 @@ export const ScriptEditorComponent = defineRemountingComponent((props: { target:
         intellisense: IntellisenseService
     });
 
-    const shtml = useStore(service.platform.shtml.state);
+    const drx = useStore(service.platform.drx.state);
     const container = {
-        [NodeType.App]: shtml.app,
-        [NodeType.Page]: shtml.pages[props.target.id],
-        [NodeType.Component]: shtml.components[props.target.id]
+        [NodeType.App]: drx.app,
+        [NodeType.Page]: drx.pages[props.target.id],
+        [NodeType.Component]: drx.components[props.target.id]
     }[props.target.type];
 
     const target: IntellisenseTarget = {
@@ -29,7 +29,7 @@ export const ScriptEditorComponent = defineRemountingComponent((props: { target:
 
     let intellisense: IDisposable | undefined;
     onMount(async () => {
-        intellisense = await service.intellisense.registerIntellisense(service.platform.shtml, target);
+        intellisense = await service.intellisense.registerIntellisense(service.platform.drx, target);
     });
     onCleanup(() => intellisense?.dispose());
 

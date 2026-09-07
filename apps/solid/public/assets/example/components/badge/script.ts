@@ -1,6 +1,6 @@
-export default Shtml.defineComponent(shtml => class {
+export default DRX.defineComponent(drx => class {
     dismiss() {
-        console.log(`BADGE TEXT ${shtml.component.props.text()}`);
-        shtml.component.events.dismissed.emit('dismissed');
+        console.log(`BADGE TEXT ${drx.component.props.text()}`);
+        drx.component.events.dismissed.emit('dismissed');
     }
 });

@@ -1,10 +1,10 @@
-export default Shtml.definePage(shtml => class {
+export default DRX.definePage(drx => class {
     constructor() {
-        shtml.app.variables.app.set({ name: 'App Name' });
-        // shtml.app.variables.app.get();
-        // shtml.app.variables.app.reset();
-        // shtml.app.variables.app.validate();
-        const result = shtml.app.instance.sum(1, 2);
+        drx.app.variables.app.set({ name: 'App Name' });
+        // drx.app.variables.app.get();
+        // drx.app.variables.app.reset();
+        // drx.app.variables.app.validate();
+        const result = drx.app.instance.sum(1, 2);
     }
     onMount() {
 

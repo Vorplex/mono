@@ -1,5 +1,5 @@
 import { $Id, State } from '@vorplex/core';
-import { ShtmlVariable } from '@vorplex/shtml';
+import { DrxVariable } from '@vorplex/drx';
 import { useInjector } from '@vorplex/solid';
 import { TextFormGroup } from '../../../components/forms/form-input.component';
 import { ContextMenuItem } from '../../../directives/context-menu.directive';
@@ -28,12 +28,12 @@ export function createVariableContextMenu(scope: VariableScope): ContextMenuItem
                     })
                 });
                 if (!result) return;
-                const variable: ShtmlVariable = {
+                const variable: DrxVariable = {
                     id: $Id.guid(),
                     name: result.name,
                     type: 'string'
                 };
-                service.platform.shtml.state.reduce(reducer => {
+                service.platform.drx.state.reduce(reducer => {
                     const operations = [reducer.variables.entity.create(variable)];
                     switch (scope.type) {
                         case 'app':
@@ -75,7 +75,7 @@ export function createVariableItemContextMenu(scope: VariableScope, variableId: 
                     }
                 });
                 if (!result) return;
-                service.platform.shtml.state.reduce(reducer => [
+                service.platform.drx.state.reduce(reducer => [
                     reducer.variables.entity.updateById(variableId, { name: result.name })
                 ]);
             }
@@ -91,7 +91,7 @@ export function createVariableItemContextMenu(scope: VariableScope, variableId: 
                 });
                 const confirmed = await service.modal.showConfirm('Delete', `Are you sure you want to delete "${variableName}"?`);
                 if (!confirmed) return;
-                service.platform.shtml.state.reduce(reducer => {
+                service.platform.drx.state.reduce(reducer => {
                     const operations = [reducer.variables.entity.delete(variableId)];
                     switch (scope.type) {
                         case 'app':

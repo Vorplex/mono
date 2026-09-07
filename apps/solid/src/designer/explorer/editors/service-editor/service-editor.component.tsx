@@ -12,12 +12,12 @@ export const ServiceEditorComponent = defineRemountingComponent((props: { servic
         intellisense: IntellisenseService
     });
 
-    const shtml = useStore(service.platform.shtml.state);
-    const serviceNode = shtml.services[props.serviceId];
+    const drx = useStore(service.platform.drx.state);
+    const serviceNode = drx.services[props.serviceId];
 
     let intellisense: IDisposable | undefined;
     onMount(async () => {
-        intellisense = await service.intellisense.registerIntellisense(service.platform.shtml, { type: 'service', serviceId: props.serviceId });
+        intellisense = await service.intellisense.registerIntellisense(service.platform.drx, { type: 'service', serviceId: props.serviceId });
     });
     onCleanup(() => intellisense?.dispose());
 

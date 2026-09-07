@@ -1,4 +1,4 @@
-import { NodeType } from '@vorplex/shtml';
+import { NodeType } from '@vorplex/drx';
 import { defineRemountingComponent, useInjector, useStore } from '@vorplex/solid';
 import { MonacoComponent } from '../../../../components/script-editor/monaco.component';
 import { PlatformService } from '../../../../services/platform.service';
@@ -10,11 +10,11 @@ export const StyleEditorComponent = defineRemountingComponent((props: { target: 
         platform: PlatformService
     });
 
-    const shtml = useStore(service.platform.shtml.state);
+    const drx = useStore(service.platform.drx.state);
     const container = {
-        [NodeType.App]: shtml.app,
-        [NodeType.Page]: shtml.pages[props.target.id],
-        [NodeType.Component]: shtml.components[props.target.id]
+        [NodeType.App]: drx.app,
+        [NodeType.Page]: drx.pages[props.target.id],
+        [NodeType.Component]: drx.components[props.target.id]
     }[props.target.type];
 
     return (

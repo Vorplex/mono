@@ -1,5 +1,5 @@
 import { $Id, State } from '@vorplex/core';
-import { ShtmlType } from '@vorplex/shtml';
+import { DrxType } from '@vorplex/drx';
 import { useInjector } from '@vorplex/solid';
 import { TextFormGroup } from '../../../components/forms/form-input.component';
 import { ContextMenuItem } from '../../../directives/context-menu.directive';
@@ -32,12 +32,12 @@ export function createTypeContextMenu(scope: TypeScope): ContextMenuItem[] {
                     })
                 });
                 if (!result) return;
-                const type: ShtmlType = {
+                const type: DrxType = {
                     id: $Id.guid(),
                     name: result.name,
                     type: { type: 'any' }
                 };
-                service.platform.shtml.state.reduce(reducer => {
+                service.platform.drx.state.reduce(reducer => {
                     const operations = [reducer.types.entity.create(type)];
                     switch (scope.type) {
                         case 'app':
@@ -76,7 +76,7 @@ export function createTypeItemContextMenu(scope: TypeScope, typeId: string, type
                     }
                 });
                 if (!result) return;
-                service.platform.shtml.state.reduce(reducer => [
+                service.platform.drx.state.reduce(reducer => [
                     reducer.types.entity.updateById(typeId, { name: result.name })
                 ]);
             }
@@ -92,7 +92,7 @@ export function createTypeItemContextMenu(scope: TypeScope, typeId: string, type
                 });
                 const confirmed = await service.modal.showConfirm('Delete', `Are you sure you want to delete "${typeName}"?`);
                 if (!confirmed) return;
-                service.platform.shtml.state.reduce(reducer => {
+                service.platform.drx.state.reduce(reducer => {
                     const operations = [reducer.types.entity.delete(typeId)];
                     switch (scope.type) {
                         case 'app':

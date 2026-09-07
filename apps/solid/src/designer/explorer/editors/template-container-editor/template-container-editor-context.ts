@@ -1,5 +1,5 @@
 import { State } from '@vorplex/core';
-import { NodeType } from '@vorplex/shtml';
+import { NodeType } from '@vorplex/drx';
 import { createContext } from 'solid-js';
 
 export type TemplateContainerTarget =

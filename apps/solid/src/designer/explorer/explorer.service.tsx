@@ -1,5 +1,5 @@
 import { Injectable, State } from '@vorplex/core';
-import { NodeType } from '@vorplex/shtml';
+import { NodeType } from '@vorplex/drx';
 
 export enum ExplorerNode {
     Page,
@@ -46,7 +46,7 @@ export type ExplorerSelectedItem =
 
 export interface ExplorerState {
     selectedItem?: ExplorerSelectedItem;
-    mode: 'design' | 'preview' | 'shtml';
+    mode: 'design' | 'preview' | 'drx';
 }
 
 @Injectable({ global: true })

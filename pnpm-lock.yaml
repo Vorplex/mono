@@ -52,6 +52,46 @@ importers:
         specifier: ^2.8.2
         version: 2.8.2
 
+  apps/jexcel:
+    dependencies:
+      '@vorplex/api':
+        specifier: workspace:*
+        version: link:../../packages/vorplex/api
+      '@vorplex/compiler':
+        specifier: workspace:*
+        version: link:../../packages/vorplex/compiler
+      '@vorplex/core':
+        specifier: workspace:*
+        version: link:../../packages/vorplex/core
+      '@vorplex/drx':
+        specifier: workspace:*
+        version: link:../../packages/vorplex/drx
+      '@vorplex/solid':
+        specifier: workspace:*
+        version: link:../../packages/vorplex/solid
+      '@vorplex/web':
+        specifier: workspace:*
+        version: link:../../packages/vorplex/web
+      monaco-editor:
+        specifier: ^0.56.0
+        version: 0.56.0
+      solid-js:
+        specifier: ^1.9.9
+        version: 1.9.10
+    devDependencies:
+      '@babel/plugin-proposal-decorators':
+        specifier: ^7.29.7
+        version: 7.29.7(@babel/core@7.29.7)
+      esbuild:
+        specifier: ^0.28.2
+        version: 0.28.2
+      esbuild-plugin-solid:
+        specifier: ^0.6.0
+        version: 0.6.0(esbuild@0.28.2)(solid-js@1.9.10)
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+
   apps/node:
     dependencies:
       '@vorplex/api':
@@ -88,9 +128,9 @@ importers:
       '@vorplex/core':
         specifier: workspace:*
         version: link:../../packages/vorplex/core
-      '@vorplex/shtml':
+      '@vorplex/drx':
         specifier: workspace:*
-        version: link:../../packages/vorplex/shtml
+        version: link:../../packages/vorplex/drx
       '@vorplex/solid':
         specifier: workspace:*
         version: link:../../packages/vorplex/solid
@@ -227,20 +267,7 @@ importers:
         specifier: ^3.0.5
         version: 3.2.4(@types/node@25.2.3)(happy-dom@20.11.1)(tsx@4.21.0)(yaml@2.8.2)
 
-  packages/vorplex/node:
-    dependencies:
-      '@types/node':
-        specifier: ^25.2.3
-        version: 25.2.3
-      tslib:
-        specifier: ^2.8.1
-        version: 2.8.1
-    devDependencies:
-      vitest:
-        specifier: ^3.0.5
-        version: 3.2.4(@types/node@25.2.3)(happy-dom@20.11.1)(tsx@4.21.0)(yaml@2.8.2)
-
-  packages/vorplex/shtml:
+  packages/vorplex/drx:
     dependencies:
       '@vorplex/compiler':
         specifier: workspace:*
@@ -264,6 +291,19 @@ importers:
       tsx:
         specifier: ^4.21.0
         version: 4.21.0
+      vitest:
+        specifier: ^3.0.5
+        version: 3.2.4(@types/node@25.2.3)(happy-dom@20.11.1)(tsx@4.21.0)(yaml@2.8.2)
+
+  packages/vorplex/node:
+    dependencies:
+      '@types/node':
+        specifier: ^25.2.3
+        version: 25.2.3
+      tslib:
+        specifier: ^2.8.1
+        version: 2.8.1
+    devDependencies:
       vitest:
         specifier: ^3.0.5
         version: 3.2.4(@types/node@25.2.3)(happy-dom@20.11.1)(tsx@4.21.0)(yaml@2.8.2)

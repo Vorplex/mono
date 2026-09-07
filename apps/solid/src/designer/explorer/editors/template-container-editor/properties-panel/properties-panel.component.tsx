@@ -1,4 +1,4 @@
-import { NodeType } from '@vorplex/shtml';
+import { NodeType } from '@vorplex/drx';
 import { useStore } from '@vorplex/solid';
 import { Match, Switch, useContext } from 'solid-js';
 import { TemplateContainerEditorContext } from '../template-container-editor-context';

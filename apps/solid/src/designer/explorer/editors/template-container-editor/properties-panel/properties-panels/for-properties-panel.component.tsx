@@ -19,8 +19,8 @@ export const ForPropertiesPanelComponent = defineRemountingComponent((props: { f
         platform: PlatformService
     });
 
-    const shtml = useStore(service.platform.shtml.state);
-    const forNode = shtml.fors[props.forId];
+    const drx = useStore(service.platform.drx.state);
+    const forNode = drx.fors[props.forId];
 
     return (
         <PanelComponent icon='sliders-horizontal' title='For Properties'>
@@ -28,7 +28,7 @@ export const ForPropertiesPanelComponent = defineRemountingComponent((props: { f
                 <FieldComponent label={'Each'}>
                     <ExpressionInputComponent
                         value={forNode.each()}
-                        locals={service.platform.shtml.getLocals(forNode.id())}
+                        locals={service.platform.drx.getLocals(forNode.id())}
                         accepts={$Tson.union({ union: [$Tson.array(), $Tson.object(), $Tson.record()] })}
                         onChange={value => forNode.each(value)}
                     />

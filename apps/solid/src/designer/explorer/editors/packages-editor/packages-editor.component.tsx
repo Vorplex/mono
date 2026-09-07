@@ -9,8 +9,8 @@ export const PackagesEditorComponent = defineRemountingComponent((props: { scope
         platform: PlatformService
     });
 
-    const shtml = useStore(service.platform.shtml.state);
-    const scope = shtml.app.id() === props.scopeId ? shtml.app : shtml.components[props.scopeId];
+    const drx = useStore(service.platform.drx.state);
+    const scope = drx.app.id() === props.scopeId ? drx.app : drx.components[props.scopeId];
 
     return (
         <MonacoComponent

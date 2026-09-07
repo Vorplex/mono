@@ -1,5 +1,5 @@
 import { TsonDefinition } from '@vorplex/core';
-import { ExpressionParser } from '@vorplex/shtml';
+import { ExpressionParser } from '@vorplex/drx';
 import { createStyle, useInjector } from '@vorplex/solid';
 import { createMemo, createSignal, For, Match, Switch } from 'solid-js';
 import { ButtonComponent } from '../../../../../components/button.component';

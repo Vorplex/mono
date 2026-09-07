@@ -1,18 +1,18 @@
-export default Shtml.definePage(shtml => class {
+export default DRX.definePage(drx => class {
     onMount() {
-        shtml.app.instance.loadPosts();
-        if (shtml.router.params.id) console.log(`VIEWING POST ${shtml.router.params.id}`);
+        drx.app.instance.loadPosts();
+        if (drx.router.params.id) console.log(`VIEWING POST ${drx.router.params.id}`);
     }
     addPost() {
-        shtml.pages['post-editor'].showModal();
+        drx.pages['post-editor'].showModal();
     }
     editPost(id: number) {
-        shtml.router.navigate(`/posts/${id}/edit`);
+        drx.router.navigate(`/posts/${id}/edit`);
     }
     editPostModal(id: number) {
-        shtml.pages['post-editor'].showModal({ data: { id } });
+        drx.pages['post-editor'].showModal({ data: { id } });
     }
     deletePost(id: number) {
-        shtml.app.instance.deletePost(id);
+        drx.app.instance.deletePost(id);
     }
 });

@@ -1,5 +1,5 @@
 import { $Array } from '@vorplex/core';
-import { ExpressionDisplay, NodeType, ShtmlDocumentState, ShtmlTemplateItem, ShtmlTemplateTargetType } from '@vorplex/shtml';
+import { ExpressionDisplay, NodeType, DrxDocumentState, DrxTemplateItem, DrxTemplateTargetType } from '@vorplex/drx';
 import { createStyle, useCachedSignal, useInjector, useStore } from '@vorplex/solid';
 import { classNames } from '@vorplex/web';
 import { createMemo, Show, useContext, type JSX } from 'solid-js';
@@ -78,15 +78,15 @@ export function TemplateContainerEditorTreeComponent(props: { target: TemplateCo
     });
 
     const editor = useStore(useContext(TemplateContainerEditorContext));
-    const shtml = useStore(service.platform.shtml.state);
-    const container = createMemo(() => props.target.type === 'component' ? shtml.components[props.target.id] : shtml.pages[props.target.id]);
+    const drx = useStore(service.platform.drx.state);
+    const container = createMemo(() => props.target.type === 'component' ? drx.components[props.target.id] : drx.pages[props.target.id]);
 
     const [collapsedItems, setCollapsedItems] = useCachedSignal(TemplateContainerEditorTreeCollapsedItemsCacheKey, []);
     const items = createMemo(() => {
         const template = container()?.template();
         if (!Array.isArray(template)) return [];
         const items: VirtualListItem[] = [];
-        const traverse = (template: ShtmlTemplateItem[], depth: number = 0, path: string[] = []) => {
+        const traverse = (template: DrxTemplateItem[], depth: number = 0, path: string[] = []) => {
             for (const item of template) {
                 switch (item.type) {
                     case NodeType.Text:
@@ -111,13 +111,13 @@ export function TemplateContainerEditorTreeComponent(props: { target: TemplateCo
                 if (collapsedItems().includes(item.id)) continue;
                 const childPath = [...path, item.id];
                 if (item.type === NodeType.Element) {
-                    const template = shtml.elements[item.id].template();
+                    const template = drx.elements[item.id].template();
                     const isLeaf = template.length === 1 && template[0].type === NodeType.Text;
                     if (!isLeaf) traverse(template, depth + 1, childPath);
                 } else if (item.type === NodeType.If) {
-                    traverse(shtml.ifs[item.id].template(), depth + 1, childPath);
+                    traverse(drx.ifs[item.id].template(), depth + 1, childPath);
                 } else if (item.type === NodeType.For) {
-                    traverse(shtml.fors[item.id].template(), depth + 1, childPath);
+                    traverse(drx.fors[item.id].template(), depth + 1, childPath);
                 }
             }
         };
@@ -159,7 +159,7 @@ export function TemplateContainerEditorTreeComponent(props: { target: TemplateCo
                                 return () => setCollapsedItems(items => $Array.toggle(items, props.id));
                             },
                             dropped: ({ data, area }: { data: { id: string; type: NodeType }; area: DropzoneAcceptArea }) => {
-                                const getTemplate = (type: NodeType, id: string, state: ShtmlDocumentState): ShtmlTemplateItem[] => {
+                                const getTemplate = (type: NodeType, id: string, state: DrxDocumentState): DrxTemplateItem[] => {
                                     switch (type) {
                                         case NodeType.Page: return state.pages[id].template;
                                         case NodeType.Component: return state.components[id].template;
@@ -169,18 +169,18 @@ export function TemplateContainerEditorTreeComponent(props: { target: TemplateCo
                                         default: return [];
                                     }
                                 };
-                                const from = service.platform.shtml.getNodeParent(data.id) as { type: ShtmlTemplateTargetType; id: string } | undefined;
+                                const from = service.platform.drx.getNodeParent(data.id) as { type: DrxTemplateTargetType; id: string } | undefined;
                                 if (!from) return;
-                                const state = service.platform.shtml.state.value;
+                                const state = service.platform.drx.state.value;
                                 if (area === 'middle') {
-                                    const to = { type: props.type as ShtmlTemplateTargetType, id: props.id };
-                                    service.platform.shtml.moveNode(data, from, to, getTemplate(props.type, props.id, state).length);
+                                    const to = { type: props.type as DrxTemplateTargetType, id: props.id };
+                                    service.platform.drx.moveNode(data, from, to, getTemplate(props.type, props.id, state).length);
                                 } else {
-                                    const to = service.platform.shtml.getNodeParent(props.id) as { type: ShtmlTemplateTargetType; id: string } | undefined;
+                                    const to = service.platform.drx.getNodeParent(props.id) as { type: DrxTemplateTargetType; id: string } | undefined;
                                     if (!to) return;
                                     const toTemplate = getTemplate(to.type, to.id, state);
                                     const index = toTemplate.findIndex(item => item.id === props.id) + (area === 'top' ? 0 : 1);
-                                    service.platform.shtml.moveNode(data, from, to, index);
+                                    service.platform.drx.moveNode(data, from, to, index);
                                 }
                             }
                         }
@@ -203,7 +203,7 @@ export function TemplateContainerEditorTreeComponent(props: { target: TemplateCo
     };
 
     const TextItem = (props: { id: string; depth: number; path: string[] }) => {
-        const node = shtml.texts[props.id];
+        const node = drx.texts[props.id];
         return (
             <Show when={node.id()}>
                 <TreeItem
@@ -218,12 +218,12 @@ export function TemplateContainerEditorTreeComponent(props: { target: TemplateCo
     };
 
     const ElementItem = (props: { id: string; depth: number; path: string[] }) => {
-        const node = shtml.elements[props.id];
+        const node = drx.elements[props.id];
         const expanded = createMemo(() => !collapsedItems().includes(props.id));
         const leaf = createMemo(() => {
             const template = node.template();
             if (template.length === 1 && template[0].type === NodeType.Text) {
-                return ExpressionDisplay.mask(shtml.texts[template[0].id].content());
+                return ExpressionDisplay.mask(drx.texts[template[0].id].content());
             }
         });
         const expandable = createMemo(() => node.template().length > 0 && !leaf());
@@ -252,7 +252,7 @@ export function TemplateContainerEditorTreeComponent(props: { target: TemplateCo
     };
 
     const IfItem = (props: { id: string; depth: number; path: string[] }) => {
-        const node = shtml.ifs[props.id];
+        const node = drx.ifs[props.id];
         const expanded = createMemo(() => !collapsedItems().includes(props.id));
         const expandable = createMemo(() => node.template().length > 0);
         return (
@@ -272,7 +272,7 @@ export function TemplateContainerEditorTreeComponent(props: { target: TemplateCo
     };
 
     const ForItem = (props: { id: string; depth: number; path: string[] }) => {
-        const node = shtml.fors[props.id];
+        const node = drx.fors[props.id];
         const expanded = createMemo(() => !collapsedItems().includes(props.id));
         const expandable = createMemo(() => node.template().length > 0);
         return (
@@ -294,7 +294,7 @@ export function TemplateContainerEditorTreeComponent(props: { target: TemplateCo
     };
 
     const PageContainerItem = (props: { id: string; depth: number; path: string[] }) => {
-        const node = shtml.pageContainers[props.id];
+        const node = drx.pageContainers[props.id];
         return (
             <Show when={node.id()}>
                 <TreeItem
@@ -309,7 +309,7 @@ export function TemplateContainerEditorTreeComponent(props: { target: TemplateCo
     };
 
     const ComponentInstanceItem = (props: { id: string; depth: number; path: string[] }) => {
-        const node = shtml.componentInstances[props.id];
+        const node = drx.componentInstances[props.id];
         return (
             <Show when={node.id()}>
                 <TreeItem

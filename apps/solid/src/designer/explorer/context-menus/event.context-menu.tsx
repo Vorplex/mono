@@ -1,5 +1,5 @@
 import { $Id } from '@vorplex/core';
-import { ShtmlComponentEvent } from '@vorplex/shtml';
+import { DrxComponentEvent } from '@vorplex/drx';
 import { useInjector } from '@vorplex/solid';
 import { TextFormGroup } from '../../../components/forms/form-input.component';
 import { ContextMenuItem } from '../../../directives/context-menu.directive';
@@ -28,12 +28,12 @@ export function createEventContextMenu(componentId: string): ContextMenuItem[] {
                     }
                 });
                 if (!result) return;
-                const event: ShtmlComponentEvent = {
+                const event: DrxComponentEvent = {
                     id: $Id.guid(),
                     name: result.name,
                     type: 'any'
                 };
-                service.platform.shtml.state.reduce(reducer => [
+                service.platform.drx.state.reduce(reducer => [
                     reducer.componentEvents.entity.create(event),
                     reducer.components.entity.updateById(componentId, component => ({ eventIds: [...component.eventIds, event.id] }))
                 ]);
@@ -64,7 +64,7 @@ export function createEventItemContextMenu(componentId: string, eventId: string,
                     }
                 });
                 if (!result) return;
-                service.platform.shtml.state.reduce(reducer => [
+                service.platform.drx.state.reduce(reducer => [
                     reducer.componentEvents.entity.updateById(eventId, { name: result.name })
                 ]);
             }
@@ -80,7 +80,7 @@ export function createEventItemContextMenu(componentId: string, eventId: string,
                 });
                 const confirmed = await service.modal.showConfirm('Delete', `Are you sure you want to delete "${eventName}"?`);
                 if (!confirmed) return;
-                service.platform.shtml.state.reduce(reducer => [
+                service.platform.drx.state.reduce(reducer => [
                     reducer.componentEvents.entity.delete(eventId),
                     reducer.components.entity.updateById(componentId, component => ({ eventIds: component.eventIds.filter(id => id !== eventId) }))
                 ]);

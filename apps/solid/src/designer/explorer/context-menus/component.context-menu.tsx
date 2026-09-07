@@ -1,5 +1,5 @@
 import { $Id, State } from '@vorplex/core';
-import { ShtmlComponent } from '@vorplex/shtml';
+import { DrxComponent } from '@vorplex/drx';
 import { useInjector } from '@vorplex/solid';
 import { TextFormGroup } from '../../../components/forms/form-input.component';
 import { ContextMenuItem } from '../../../directives/context-menu.directive';
@@ -32,7 +32,7 @@ export function createComponentContextMenu(scope: ComponentScope): ContextMenuIt
                     })
                 });
                 if (!result) return;
-                const component: ShtmlComponent = {
+                const component: DrxComponent = {
                     id: $Id.guid(),
                     name: result.name,
                     variableIds: [],
@@ -45,7 +45,7 @@ export function createComponentContextMenu(scope: ComponentScope): ContextMenuIt
                     apiIds: [],
                     template: []
                 };
-                service.platform.shtml.state.reduce(reducer => {
+                service.platform.drx.state.reduce(reducer => {
                     const operations = [reducer.components.entity.create(component)];
                     switch (scope.type) {
                         case 'app':
@@ -84,7 +84,7 @@ export function createComponentItemContextMenu(scope: ComponentScope, componentI
                     }
                 });
                 if (!result) return;
-                service.platform.shtml.state.reduce(reducer => [
+                service.platform.drx.state.reduce(reducer => [
                     reducer.components.entity.updateById(componentId, { name: result.name })
                 ]);
             }
@@ -100,7 +100,7 @@ export function createComponentItemContextMenu(scope: ComponentScope, componentI
                 });
                 const confirmed = await service.modal.showConfirm('Delete', `Are you sure you want to delete "${componentName}"?`);
                 if (!confirmed) return;
-                service.platform.shtml.state.reduce(reducer => {
+                service.platform.drx.state.reduce(reducer => {
                     const operations = [reducer.components.entity.delete(componentId)];
                     switch (scope.type) {
                         case 'app':

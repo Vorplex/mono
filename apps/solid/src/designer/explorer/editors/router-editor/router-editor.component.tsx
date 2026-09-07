@@ -26,12 +26,12 @@ export function RouterEditorComponent() {
         platform: PlatformService
     });
 
-    const shtml = useStore(service.platform.shtml.state);
+    const drx = useStore(service.platform.drx.state);
 
-    const pageOptions = () => Object.fromEntries(shtml.app.pageIds().map(id => [shtml.pages[id].name(), shtml.pages[id].name()]));
+    const pageOptions = () => Object.fromEntries(drx.app.pageIds().map(id => [drx.pages[id].name(), drx.pages[id].name()]));
 
     const setRoutes = (routes: Record<string, string>) => {
-        shtml.app.router(Object.keys(routes).length === 0 ? undefined : { routes });
+        drx.app.router(Object.keys(routes).length === 0 ? undefined : { routes });
     };
 
     return (
@@ -43,18 +43,18 @@ export function RouterEditorComponent() {
                         <div class={routesTableClasses().cell}>Page</div>
                         <div class={routesTableClasses().cell}>
                             <ButtonComponent icon='plus' appearance='flat' onClick={() => {
-                                const routes = { ...(shtml.app.router()?.routes ?? {}) };
+                                const routes = { ...(drx.app.router()?.routes ?? {}) };
                                 let pattern = '/route';
                                 let index = 1;
                                 while (pattern in routes) pattern = `/route-${index++}`;
-                                routes[pattern] = shtml.app.pageIds().map(id => shtml.pages[id].name())[0] ?? '';
+                                routes[pattern] = drx.app.pageIds().map(id => drx.pages[id].name())[0] ?? '';
                                 setRoutes(routes);
                             }} />
                         </div>
                     </div>
                 </div>
                 <div class={routesTableClasses().body}>
-                    <For each={Object.entries(shtml.app.router()?.routes ?? {})}>
+                    <For each={Object.entries(drx.app.router()?.routes ?? {})}>
                         {([pattern, page]) => (
                             <div class={routesTableClasses().row}>
                                 <div class={routesTableClasses().cell}>
@@ -63,7 +63,7 @@ export function RouterEditorComponent() {
                                         placeholder={'/route/:param'}
                                         onChanged={value => {
                                             if (value === '' || value === pattern) return;
-                                            const routes = { ...(shtml.app.router()?.routes ?? {}) };
+                                            const routes = { ...(drx.app.router()?.routes ?? {}) };
                                             const page = routes[pattern];
                                             delete routes[pattern];
                                             routes[value] = page;
@@ -76,7 +76,7 @@ export function RouterEditorComponent() {
                                         value={page}
                                         placeholder={'[page]'}
                                         options={pageOptions()}
-                                        onChange={value => setRoutes({ ...(shtml.app.router()?.routes ?? {}), [pattern]: value ?? '' })}
+                                        onChange={value => setRoutes({ ...(drx.app.router()?.routes ?? {}), [pattern]: value ?? '' })}
                                     />
                                 </div>
                                 <div class={routesTableClasses().cell}>
@@ -84,7 +84,7 @@ export function RouterEditorComponent() {
                                         appearance={'flat'}
                                         icon={'minus'}
                                         onClick={() => {
-                                            const routes = { ...(shtml.app.router()?.routes ?? {}) };
+                                            const routes = { ...(drx.app.router()?.routes ?? {}) };
                                             delete routes[pattern];
                                             setRoutes(routes);
                                         }}

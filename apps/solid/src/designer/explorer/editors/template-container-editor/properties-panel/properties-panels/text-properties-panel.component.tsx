@@ -19,8 +19,8 @@ export const TextPropertiesPanelComponent = defineRemountingComponent((props: { 
         platform: PlatformService
     });
 
-    const shtml = useStore(service.platform.shtml.state);
-    const text = shtml.texts[props.textId];
+    const drx = useStore(service.platform.drx.state);
+    const text = drx.texts[props.textId];
 
     return (
         <PanelComponent icon='type' title='Text Properties'>
@@ -29,7 +29,7 @@ export const TextPropertiesPanelComponent = defineRemountingComponent((props: { 
                     <ExpressionInputComponent
                         value={text.content()}
                         accepts={$Tson.string()}
-                        locals={service.platform.shtml.getLocals(props.textId)}
+                        locals={service.platform.drx.getLocals(props.textId)}
                         onChange={value => text.content(value)}
                     />
                 </FieldComponent>

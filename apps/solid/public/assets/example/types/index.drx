@@ -1,0 +1,2 @@
+<x-import src="./app.type.drx"></x-import>
+<x-import src="./post.type.drx"></x-import>

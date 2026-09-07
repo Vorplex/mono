@@ -18,9 +18,9 @@ export const PageContainerPropertiesPanelComponent = defineRemountingComponent((
         platform: PlatformService
     });
 
-    const shtml = useStore(service.platform.shtml.state);
-    const pageContainer = shtml.pageContainers[props.pageContainerId];
-    const pages = createMemo(() => Object.values(shtml.pages()).reduce((pages, page) => Object.assign(pages, { [page.name]: page.name }), {}));
+    const drx = useStore(service.platform.drx.state);
+    const pageContainer = drx.pageContainers[props.pageContainerId];
+    const pages = createMemo(() => Object.values(drx.pages()).reduce((pages, page) => Object.assign(pages, { [page.name]: page.name }), {}));
 
     return (
         <PanelComponent icon='sliders-horizontal' title='Page Container Properties'>

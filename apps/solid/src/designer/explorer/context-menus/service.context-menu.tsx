@@ -1,5 +1,5 @@
 import { $Id, State } from '@vorplex/core';
-import { ShtmlService } from '@vorplex/shtml';
+import { DrxService } from '@vorplex/drx';
 import { useInjector } from '@vorplex/solid';
 import { TextFormGroup } from '../../../components/forms/form-input.component';
 import { ContextMenuItem } from '../../../directives/context-menu.directive';
@@ -32,12 +32,12 @@ export function createServiceContextMenu(scope: ServiceScope): ContextMenuItem[]
                     })
                 });
                 if (!result) return;
-                const newService: ShtmlService = {
+                const newService: DrxService = {
                     id: $Id.guid(),
                     name: result.name,
                     script: ''
                 };
-                service.platform.shtml.state.reduce(reducer => {
+                service.platform.drx.state.reduce(reducer => {
                     const operations = [reducer.services.entity.create(newService)];
                     switch (scope.type) {
                         case 'app':
@@ -76,7 +76,7 @@ export function createServiceItemContextMenu(scope: ServiceScope, serviceId: str
                     }
                 });
                 if (!result) return;
-                service.platform.shtml.state.reduce(reducer => [
+                service.platform.drx.state.reduce(reducer => [
                     reducer.services.entity.updateById(serviceId, { name: result.name })
                 ]);
             }
@@ -92,7 +92,7 @@ export function createServiceItemContextMenu(scope: ServiceScope, serviceId: str
                 });
                 const confirmed = await service.modal.showConfirm('Delete', `Are you sure you want to delete "${serviceName}"?`);
                 if (!confirmed) return;
-                service.platform.shtml.state.reduce(reducer => {
+                service.platform.drx.state.reduce(reducer => {
                     const operations = [reducer.services.entity.delete(serviceId)];
                     switch (scope.type) {
                         case 'app':
