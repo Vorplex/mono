@@ -16,6 +16,7 @@ import { TypeEditorComponent } from './editors/type-editor/type-editor.component
 import { VariableEditorComponent } from './editors/variable-editor/variable-editor.component';
 import { ExplorerTreeComponent } from './explorer-tree.component';
 import { ExplorerNode, ExplorerSelectedItem, ExplorerService } from './explorer.service';
+import { useQuickCommand } from './quick-command.component';
 
 export function ExplorerComponent() {
 
@@ -24,6 +25,8 @@ export function ExplorerComponent() {
     });
 
     const explorerStore = useStore(service.explorer.state);
+
+    useQuickCommand();
 
     const getSelectedItem = <T extends ExplorerNode>() => explorerStore.selectedItem as unknown as SignalProxy<Extract<ExplorerSelectedItem, { type: T }>>;
 

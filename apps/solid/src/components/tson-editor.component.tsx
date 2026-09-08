@@ -46,7 +46,7 @@ function getDefinitionAtPath(definition: TsonDefinition, paths: string[]): TsonD
     return definition ?? { type: 'any' };
 }
 
-const TSON_TYPE_OPTIONS: DropdownOption<TsonDefinition['type']>[] = $Tson.definitions.map(item => ({ key: item, value: item }));
+const TSON_TYPE_OPTIONS: DropdownOption<TsonDefinition['type']>[] = $Tson.definitions.map(item => ({ value: item, label: item }));
 
 const TsonEditorBreadcrumbComponentClasses = createStyle(() => ({
     container: {
@@ -321,7 +321,7 @@ export function TsonEnumEditorComponent(props: { definition: TsonEnumDefinition,
                     description={'The default value to assign if undefined'}
                     clearable={true}
                     value={props.definition.default == null ? undefined : String(props.definition.default.value)}
-                    options={(props.definition.flags ?? []).map(flag => ({ key: String(flag), value: String(flag) }))}
+                    options={(props.definition.flags ?? []).map(flag => ({ value: String(flag), label: String(flag) }))}
                     onChange={value => props.onChange({ ...props.definition, default: { value } })}
                 />
             </Show>

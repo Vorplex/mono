@@ -96,10 +96,12 @@ const classes = createStyle(() => ({
                 color: Theme().accent.color,
             },
         },
-        '&:not(.disabled):not(.loading):not(.selected):not(.readonly)': {
-            '&:focus-within, &:hover, &:active': {
-                cursor: 'pointer',
-                boxShadow: Theme().hoverShadow,
+        '&:not(.disabled):not(.loading):not(.readonly)': {
+            cursor: 'pointer',
+            '&:not(.selected)': {
+                '&:focus-within, &:hover, &:active': {
+                    boxShadow: Theme().hoverShadow,
+                }
             }
         },
         '&.selected': {

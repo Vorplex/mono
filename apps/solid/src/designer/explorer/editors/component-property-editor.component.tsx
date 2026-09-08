@@ -25,10 +25,10 @@ export const ComponentPropertyEditorComponent = defineRemountingComponent((props
     const component = drx.components[props.componentId];
 
     const typeOptions = createMemo(() => {
-        const options: DropdownOption[] = $Tson.definitions.map(type => ({ key: type, value: type }));
+        const options: DropdownOption[] = $Tson.definitions.map(type => ({ value: type, label: type }));
         for (const typeId of component.typeIds()) {
             const type = drx.types[typeId];
-            options.push({ key: type.name(), value: type.name(), group: component.name() });
+            options.push({ value: type.name(), label: type.name(), group: component.name() });
         }
         return options;
     });

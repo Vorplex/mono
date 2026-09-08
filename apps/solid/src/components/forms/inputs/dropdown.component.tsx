@@ -1,12 +1,12 @@
 import { createPopup, createStyle, PopupPosition, PopupSize, type Portal } from '@vorplex/solid';
-import { createMemo, createSignal, For, onCleanup, Show } from 'solid-js';
+import { createEffect, createMemo, createSignal, For, onCleanup, Show } from 'solid-js';
 import { Classes, Theme } from '../../../consts/theme';
 import { ButtonComponent } from '../../button.component';
 import { Icon } from '../../icon.component';
 
 export interface DropdownOption<T extends string = string> {
-    key: T;
-    value: string;
+    value: T;
+    label: string;
     group?: string;
 }
 
@@ -26,6 +26,9 @@ const classes = createStyle(() => ({
         position: 'relative',
         '& > input:first-child:not(:only-child)': {
             paddingRight: '22px'
+        },
+        '&:focus-within > *:nth-child(2)': {
+            color: Theme().accent.color
         }
     },
     chevron: {
@@ -64,13 +67,13 @@ export function DropdownFormInputComponent<T extends string = string>(props: Dro
     let popup: Portal | undefined;
     let selectedFromList = false;
 
-    const selectedOption = createMemo(() => props.options.find(option => option.key === props.value));
+    const selectedOption = createMemo(() => props.options.find(option => option.value === props.value));
     const [query, setQuery] = createSignal<string>();
-    const displayValue = createMemo(() => query() ?? selectedOption()?.value ?? '');
+    const displayValue = createMemo(() => query() ?? selectedOption()?.label ?? '');
 
     const filtered = createMemo(() => {
         const search = (query() ?? '').toLowerCase();
-        return props.options.filter(option => option.value.toLowerCase().includes(search));
+        return props.options.filter(option => option.label.toLowerCase().includes(search));
     });
 
     const groups = createMemo(() => {
@@ -86,7 +89,21 @@ export function DropdownFormInputComponent<T extends string = string>(props: Dro
         return ordered;
     });
 
-    const commit = (value: T | undefined) => {
+    const flatOptions = createMemo(() => groups().flatMap(group => group.options));
+    const [highlightIndex, setHighlightIndex] = createSignal(0);
+
+    createEffect(() => {
+        flatOptions();
+        setHighlightIndex(0);
+    });
+
+    const optionRefs = new Map<T, HTMLElement>();
+    createEffect(() => {
+        const option = flatOptions()[highlightIndex()];
+        if (option) optionRefs.get(option.value)?.scrollIntoView({ block: 'nearest' });
+    });
+
+    const selectValue = (value: T | undefined) => {
         selectedFromList = true;
         props.onChange?.(value);
         setQuery(undefined);
@@ -109,7 +126,7 @@ export function DropdownFormInputComponent<T extends string = string>(props: Dro
                             appearance={'flat'}
                             class={classes().option}
                             onMouseDown={event => event.preventDefault()}
-                            onClick={() => commit(undefined)}
+                            onClick={() => selectValue(undefined)}
                         />
                     </Show>
                     <For each={groups()}>
@@ -119,14 +136,16 @@ export function DropdownFormInputComponent<T extends string = string>(props: Dro
                                     <div class={classes().groupLabel}>{group.group}</div>
                                 </Show>
                                 <For each={group.options}>
-                                    {option => (
+                                    {(option, index) => (
                                         <ButtonComponent
-                                            label={option.value}
+                                            ref={el => { if (el) optionRefs.set(option.value, el); }}
+                                            label={option.label}
                                             appearance={'flat'}
                                             class={classes().option}
-                                            selected={option.key === props.value}
+                                            selected={option.value === props.value || index() === highlightIndex()}
+                                            onMouseEnter={() => setHighlightIndex(index())}
                                             onMouseDown={event => event.preventDefault()}
-                                            onClick={() => commit(option.key)}
+                                            onClick={() => selectValue(option.value)}
                                         />
                                     )}
                                 </For>
@@ -163,6 +182,22 @@ export function DropdownFormInputComponent<T extends string = string>(props: Dro
                     openPopup();
                     setQuery(event.currentTarget.value);
                     if (props.acceptText) props.onChange?.(event.currentTarget.value as T);
+                }}
+                onKeyDown={event => {
+                    if (event.key === 'ArrowDown') {
+                        event.preventDefault();
+                        if (!popup) { openPopup(); return; }
+                        setHighlightIndex(index => Math.min(index + 1, flatOptions().length - 1));
+                    } else if (event.key === 'ArrowUp') {
+                        event.preventDefault();
+                        if (!popup) { openPopup(); return; }
+                        setHighlightIndex(index => Math.max(index - 1, 0));
+                    } else if (event.key === 'Enter' || (event.key === ' ' && !props.acceptText)) {
+                        const option = flatOptions()[highlightIndex()];
+                        if (!popup || !option) return;
+                        event.preventDefault();
+                        selectValue(option.value);
+                    }
                 }}
                 onBlur={() => {
                     popup?.destroy();

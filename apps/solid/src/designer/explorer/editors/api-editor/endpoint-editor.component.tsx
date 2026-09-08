@@ -47,14 +47,14 @@ export const EndpointEditorComponent = defineRemountingComponent((props: { endpo
     const [tab, setTab] = createSignal<typeof tabs[number]['value']>('parameters');
 
     const typeOptions = createMemo(() => {
-        const options: DropdownOption[] = $Tson.definitions.map(type => ({ key: type, value: type }));
+        const options: DropdownOption[] = $Tson.definitions.map(type => ({ value: type, label: type }));
         for (const typeId of drx.app.typeIds()) {
             const type = drx.types[typeId];
-            options.push({ key: type.name(), value: type.name(), group: 'App' });
+            options.push({ value: type.name(), label: type.name(), group: 'App' });
         }
         for (const typeId of api.typeIds()) {
             const type = drx.types[typeId];
-            options.push({ key: type.name(), value: type.name(), group: api.name() });
+            options.push({ value: type.name(), label: type.name(), group: api.name() });
         }
         return options;
     });
@@ -65,11 +65,11 @@ export const EndpointEditorComponent = defineRemountingComponent((props: { endpo
                 <DropdownFormInputComponent
                     value={endpoint.method()}
                     options={[
-                        { key: 'GET', value: 'GET' },
-                        { key: 'POST', value: 'POST' },
-                        { key: 'PUT', value: 'PUT' },
-                        { key: 'PATCH', value: 'PATCH' },
-                        { key: 'DELETE', value: 'DELETE' }
+                        { value: 'GET', label: 'GET' },
+                        { value: 'POST', label: 'POST' },
+                        { value: 'PUT', label: 'PUT' },
+                        { value: 'PATCH', label: 'PATCH' },
+                        { value: 'DELETE', label: 'DELETE' }
                     ]}
                     onChange={value => endpoint.method(value ?? 'GET')}
                 />

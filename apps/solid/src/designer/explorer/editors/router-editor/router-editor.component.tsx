@@ -28,7 +28,7 @@ export function RouterEditorComponent() {
 
     const drx = useStore(service.platform.drx.state);
 
-    const pageOptions = () => drx.app.pageIds().map(id => ({ key: drx.pages[id].name(), value: drx.pages[id].name() }));
+    const pageOptions = () => drx.app.pageIds().map(id => ({ value: drx.pages[id].name(), label: drx.pages[id].name() }));
 
     const setRoutes = (routes: Record<string, string>) => {
         drx.app.router(Object.keys(routes).length === 0 ? undefined : { routes });

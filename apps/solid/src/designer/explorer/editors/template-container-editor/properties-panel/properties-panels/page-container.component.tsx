@@ -20,7 +20,7 @@ export const PageContainerPropertiesPanelComponent = defineRemountingComponent((
 
     const drx = useStore(service.platform.drx.state);
     const pageContainer = drx.pageContainers[props.pageContainerId];
-    const pages = createMemo(() => Object.values(drx.pages()).map(page => ({ key: page.name, value: page.name })));
+    const pages = createMemo(() => Object.values(drx.pages()).map(page => ({ value: page.name, label: page.name })));
 
     return (
         <PanelComponent icon='sliders-horizontal' title='Page Container Properties'>

@@ -56,16 +56,16 @@ export const VariableEditorComponent = defineRemountingComponent((props: { varia
     });
 
     const typeOptions = createMemo(() => {
-        const options: DropdownOption[] = $Tson.definitions.map(type => ({ key: type, value: type }));
+        const options: DropdownOption[] = $Tson.definitions.map(type => ({ value: type, label: type }));
         for (const typeId of scopedTypeIds()) {
             const type = drx.types[typeId];
-            options.push({ key: type.name(), value: type.name(), group: scopeLabel() });
+            options.push({ value: type.name(), label: type.name(), group: scopeLabel() });
         }
         for (const apiId of scopedApiIds()) {
             const api = drx.apis[apiId];
             for (const typeId of api.typeIds()) {
                 const type = drx.types[typeId];
-                options.push({ key: type.name(), value: type.name(), group: api.name() });
+                options.push({ value: type.name(), label: type.name(), group: api.name() });
             }
         }
         return options;

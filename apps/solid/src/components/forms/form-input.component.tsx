@@ -276,14 +276,14 @@ export function FormInputComponentPlayground() {
         nullable: false,
         value: undefined,
         options: [
-            { key: 'a', value: 'ABSA' },
-            { key: 'b', value: 'SARS' },
-            { key: 'c', value: 'FNB' },
-            { key: 'd', value: 'Nedbank' },
-            { key: 'e', value: 'Standard Bank' },
-            { key: 'f', value: 'Capitec' },
-            { key: 'g', value: 'Capitec' },
-            { key: 'h', value: 'Sybrin' },
+            { value: 'a', label: 'ABSA' },
+            { value: 'b', label: 'SARS' },
+            { value: 'c', label: 'FNB' },
+            { value: 'd', label: 'Nedbank' },
+            { value: 'e', label: 'Standard Bank' },
+            { value: 'f', label: 'Capitec' },
+            { value: 'g', label: 'Capitec' },
+            { value: 'h', label: 'Sybrin' },
         ]
     });
 
@@ -293,17 +293,17 @@ export function FormInputComponentPlayground() {
                 type={'dropdown'}
                 label={'Type'}
                 options={[
-                    { key: 'text', value: 'Text' },
-                    { key: 'checkbox', value: 'Checkbox' },
-                    { key: 'dropdown', value: 'Dropdown' },
-                    { key: 'number', value: 'Number' },
-                    { key: 'date', value: 'Date' },
-                    { key: 'color', value: 'Color' },
-                    { key: 'textarea', value: 'Textarea' },
-                    { key: 'modal', value: 'Modal' },
-                    { key: 'yaml', value: 'YAML' },
-                    { key: 'tags', value: 'Tags' },
-                    { key: 'file', value: 'File' }
+                    { value: 'text', label: 'Text' },
+                    { value: 'checkbox', label: 'Checkbox' },
+                    { value: 'dropdown', label: 'Dropdown' },
+                    { value: 'number', label: 'Number' },
+                    { value: 'date', label: 'Date' },
+                    { value: 'color', label: 'Color' },
+                    { value: 'textarea', label: 'Textarea' },
+                    { value: 'modal', label: 'Modal' },
+                    { value: 'yaml', label: 'YAML' },
+                    { value: 'tags', label: 'Tags' },
+                    { value: 'file', label: 'File' }
                 ]}
                 value={settings().type}
                 onChange={value => setSettings(settings => ({ ...settings, type: value as FormInputType }))}

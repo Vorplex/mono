@@ -118,7 +118,7 @@ export const ElementPropertiesPanelComponent = defineRemountingComponent((props:
         'u', 'ul',
         'var', 'video',
         'wbr'
-    ].map(tag => ({ key: tag, value: tag }));
+    ].map(tag => ({ value: tag, label: tag }));
 
     return (
         <PanelComponent icon='sliders-horizontal' title='Element Properties'>

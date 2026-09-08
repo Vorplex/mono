@@ -63,11 +63,10 @@ export const ApiContextMenu: ContextMenuItem[] = [
                     label: 'Import From',
                     description: 'The OpenAPI JSON to import',
                     options: [
-                        { key: 'url', value: 'URL' },
-                        { key: 'json', value: 'JSON' }
+                        { value: 'url', label: 'URL' },
+                        { value: 'json', label: 'JSON' }
                     ],
                     value: 'url',
-                    autoFocus: true,
                     onChange: value => {
                         form.update(form => ({
                             ...form,
@@ -80,6 +79,7 @@ export const ApiContextMenu: ContextMenuItem[] = [
                 url: {
                     type: 'text',
                     label: 'URL',
+                    autoFocus: true,
                     description: 'The URL of the OpenAPI/Swagger document',
                     placeholder: 'https://domain:9000/path/swagger/v1/swagger.json',
                     validate: value => ({ error: $String.isNullOrEmpty(value) ? 'Required' : null })
