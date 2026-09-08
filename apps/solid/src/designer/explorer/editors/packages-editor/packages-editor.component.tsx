@@ -6,6 +6,7 @@ import { parse, stringify } from 'yaml';
 import { ButtonComponent } from '../../../../components/button.component';
 import { RadioButtonComponent } from '../../../../components/radio-button.component';
 import { MonacoComponent } from '../../../../components/script-editor/monaco.component';
+import { ModalService } from '../../../../services/modal.service';
 import { PlatformService } from '../../../../services/platform.service';
 
 
@@ -30,7 +31,8 @@ const classes = createStyle(() => ({
 export const PackagesEditorComponent = defineRemountingComponent((props: { scopeId: string }) => {
 
     const service = useInjector({
-        platform: PlatformService
+        platform: PlatformService,
+        modal: ModalService
     });
 
     const drx = useStore(service.platform.drx.state);
@@ -56,10 +58,12 @@ export const PackagesEditorComponent = defineRemountingComponent((props: { scope
                     label={'Install'}
                     onClick={async () => {
                         const packages = scope.packages() ?? {};
+                        const task = new Task('Resolve Dependency Tree');
+                        service.modal.showTask(task);
                         const tree = await NPM.resolveDependencyTree(packages, {
                             getPackageJson: (name, version) => JsDelivr.getPackageJson(name, version),
                             resolveVersion: (name, semanticVersion) => JsDelivr.resolveVersion(name, semanticVersion)
-                        }, new Task('Resolve Dependency Tree'));
+                        }, task);
                         scope.dependencyTree(tree);
                         setSelectedTab('dependency-tree');
                     }}

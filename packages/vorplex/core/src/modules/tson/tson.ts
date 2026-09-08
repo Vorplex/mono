@@ -177,7 +177,7 @@ export class $Tson {
             case 'union':
                 return `${definition.union.map(definition => this.generateTypeScriptDefinition(definition)).join(' | ')}`;
             case 'ref':
-                throw new Error(`Cannot generate a TypeScript definition for an unresolved TSON ref with id (${definition.id})`);
+                throw new Error(`Cannot generate a TypeScript definition for an unresolved TSON ref with id "${definition.id}"`);
         }
     }
 
@@ -255,7 +255,7 @@ export class $Tson {
                 case 'enum': return meta({ enum: definition.flags });
                 case 'union': return meta({ oneOf: definition.union.map(item => build(item, $defs)) });
                 case 'ref':
-                    throw new Error(`Cannot generate a JSON Schema for an unresolved TSON ref with id (${definition.id})`);
+                    throw new Error(`Cannot generate a JSON Schema for an unresolved TSON ref with id "${definition.id}"`);
             }
         };
 
@@ -318,7 +318,7 @@ export class $Tson {
                     if (results.length === 0) return undefined;
                     return results.length === 1 ? results[0] : this.union({ union: results as TsonDefinition[] });
                 }
-                case 'ref': throw new Error(`Cannot resolve a path through an unresolved TSON ref with id (${definition.id})`);
+                case 'ref': throw new Error(`Cannot resolve a path through an unresolved TSON ref with id "${definition.id}"`);
                 default: return undefined;
             }
         };
@@ -329,9 +329,9 @@ export class $Tson {
         const resolveRefs = (definition: TsonDefinition, seen: ReadonlySet<string>): TsonDefinition => {
             if (definition == null) return definition;
             if (definition.type === 'ref') {
-                if (seen.has(definition.id)) throw new Error(`Circular TSON ref detected with id (${definition.id})`);
+                if (seen.has(definition.id)) throw new Error(`Circular TSON ref detected with id "${definition.id}"`);
                 const resolved = resolve(definition.id);
-                if (resolved == null) throw new Error(`Unable to resolve TSON ref with id (${definition.id})`);
+                if (resolved == null) throw new Error(`Unable to resolve TSON ref with id "${definition.id}"`);
                 return resolveRefs(resolved, new Set(seen).add(definition.id));
             }
             switch (definition.type) {

@@ -51,7 +51,7 @@ export class JsDelivr {
         if (cached) return cached;
         const url = $Path.join(this.resolveUrl, `${name}@${semanticVersion}`);
         const response = await fetch(url);
-        if (!response.ok) throw new Error(`Failed to fetch package (${name}) version (${semanticVersion}). ${response.statusText}`);
+        if (!response.ok) throw new Error(`Failed to fetch package "${name}" version "${semanticVersion}". ${response.statusText}`);
         const data = (await response.json()) as { version: string };
         await this.cache.set('cache', 'package-version', key, data.version);
         return data.version;
@@ -60,7 +60,7 @@ export class JsDelivr {
     public static async getPackageVersions(name: string): Promise<string[]> {
         const url = $Path.join(this.dataUrl, name);
         const response = await fetch(url);
-        if (!response.ok) throw new Error(`Failed to fetch package (${name}) versions. ${response.statusText}`);
+        if (!response.ok) throw new Error(`Failed to fetch package "${name}" versions. ${response.statusText}`);
         const data = (await response.json()) as {
             versions: { version: string }[];
         };
@@ -74,7 +74,7 @@ export class JsDelivr {
         if (cached) return cached;
         const url = $Path.join(this.dataUrl, `${name}@${version}`);
         const response = await fetch(url);
-        if (!response.ok) throw new Error(`Failed to fetch package (${name}) metadata. ${response.statusText}`);
+        if (!response.ok) throw new Error(`Failed to fetch package "${name}" metadata. ${response.statusText}`);
         const data = await response.json();
         await this.cache.set('cache', 'data', key, data);
         return data;
@@ -115,13 +115,13 @@ export class JsDelivr {
     public static async getFile(name: string, semanticVersion: string, path?: string): Promise<PackageFile> {
         const resolvedVersion = await this.resolveVersion(name, semanticVersion);
         const resolvedPath = path ? await this.resolveFilePath(name, resolvedVersion, path) : null;
-        if (path && !resolvedPath) throw new Error(`Failed to resolve path (${path}) from package (${name}) version (${semanticVersion}). Not Found.`);
+        if (path && !resolvedPath) throw new Error(`Failed to resolve path "${path}" from package "${name}" version "${semanticVersion}". Not Found.`);
         const key = `${name}@${resolvedVersion}:${resolvedPath ?? ''}` as const;
         const cached = await this.cache.get('cache', 'file', key);
         if (cached) return cached;
         const url = $Path.join(this.url, `${name}@${resolvedVersion}`, resolvedPath);
         const response = await fetch(url);
-        if (!response.ok) throw new Error(`Failed to fetch package (${name}) file (${resolvedPath ?? '<default>'}). ${response.statusText}`);
+        if (!response.ok) throw new Error(`Failed to fetch package "${name}" file "${resolvedPath ?? '<default>'}". ${response.statusText}`);
         const version = response.headers.get('x-jsd-version');
         const file: PackageFile = {
             packageName: name,
@@ -172,6 +172,6 @@ export class JsDelivr {
                 return file;
             }
         }
-        throw new Error(`Failed to resolve file path for import (${packageName}${subpath ? `/${subpath}` : ''}@${semanticVersion})`);
+        throw new Error(`Failed to resolve file path for import "${packageName}${subpath ? `/${subpath}` : ''}@${semanticVersion}"`);
     }
 }

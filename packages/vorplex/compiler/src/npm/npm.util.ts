@@ -15,13 +15,13 @@ export class NPM {
 
     public static async getData(name: string) {
         const response = await fetch($Path.join(NPM.url, name));
-        if (!response.ok) throw new Error(`Failed to get package (${name}) data. ${response.statusText}`);
+        if (!response.ok) throw new Error(`Failed to get package "${name}" data. ${response.statusText}`);
         return await response.json();
     }
 
     public static async gePackageJson(name: string, version: string): Promise<PackageJson> {
         const response = await fetch($Path.join(NPM.url, name, version));
-        if (!response.ok) throw new Error(`Failed to get package (${name}) data. ${response.statusText}`);
+        if (!response.ok) throw new Error(`Failed to get package "${name}" data. ${response.statusText}`);
         return await response.json();
     }
 
@@ -30,7 +30,7 @@ export class NPM {
             const seen: DependencyTree = {};
 
             async function resolvePackage(name: string, range: string, ancestors: any[] = [], task: Task): Promise<DependencyNode> {
-                task.log(`Resolving package (${name}@${range})`);
+                task.log(`Resolving package "${name}@${range}"`);
 
                 task.log(`Searching for package in ancestors`);
                 for (const ancestor of ancestors) {
@@ -44,7 +44,7 @@ export class NPM {
 
                 task.log('Resolving package version');
                 const version = await resolver.resolveVersion(name, range);
-                task.log(`Version (${version}) was resolved for range (${range})`);
+                task.log(`Version "${version}" was resolved for range "${range}"`);
 
                 const key = `${name}@${version}`;
                 if (seen[key]) {
@@ -196,7 +196,7 @@ export class NPM {
     public static parseImportString(string: string) {
         string = string.replace(/\/$/, '');
         const match = string.match(/^(?<packageName>(?:@[\w.-]+\/[\w.-]+|[\w.-]+))(?:\/(?<subpath>.+?))?(?:\/?@(?<version>\d+(?:\.\d+)*(?:-[\w.]+)?(?:\+[\w.]+)?))?$/);
-        if (!match) throw new Error(`Invalid import string (${string})`);
+        if (!match) throw new Error(`Invalid import string "${string}"`);
         return match?.groups as {
             packageName: string;
             subpath?: string;

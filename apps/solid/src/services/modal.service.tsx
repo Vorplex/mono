@@ -1,10 +1,12 @@
-import { $Object, Injectable, State, type Injector } from '@vorplex/core';
-import { createPortal, ForIn, InjectorContext, Portal, useStore } from '@vorplex/solid';
-import { useContext } from 'solid-js';
+import { $Object, Injectable, State, Task, type Injector } from '@vorplex/core';
+import { createPortal, ForIn, InjectorContext, Portal, useStore, useSubscription } from '@vorplex/solid';
+import { createMemo, createSignal, Show, useContext } from 'solid-js';
 import { ButtonComponent } from '../components/button.component';
 import { FormInputComponent, FormInputs } from '../components/forms/form-input.component';
 import { Icon } from '../components/icon.component';
 import { ModalComponent, ModalComponentProps } from '../components/modal.component';
+import { MonacoComponent } from '../components/script-editor/monaco.component';
+import { TaskLoggerComponent } from '../components/task-logger.component';
 import { Theme } from '../consts/theme';
 
 @Injectable({ global: true })
@@ -164,6 +166,82 @@ export class ModalService {
                     );
                 }
             });
+        });
+    }
+
+    public showTask(task: Task) {
+        return this.show({
+            modal: modal => ({
+                header: (
+                    <div style={{ display: 'grid', 'grid-auto-flow': 'column', 'grid-auto-columns': 'max-content', gap: '5px', 'align-items': 'center' }}>
+                        <Icon name={'info'} />
+                        <span>{task.name}</span>
+                    </div>
+                ),
+                body: (
+                    <div style={{ width: '80vw', height: '80vh', display: 'grid', overflow: 'hidden' }}>
+                        <TaskLoggerComponent task={task} />
+                    </div>
+                ),
+                footer: (() => {
+                    const taskEvent = useSubscription(task, { type: 'action', task, source: task, action: task });
+                    const busy = createMemo(() => taskEvent()?.task.getStatus() === 'busy');
+                    return (
+                        <>
+                            <Show when={busy()}>
+                                <ButtonComponent
+                                    label={'Cancel'}
+                                    onClick={() => task.cancel()}
+                                />
+                            </Show>
+                            <ButtonComponent
+                                intent={'accent'}
+                                label={busy() ? 'Compiling' : 'Ok'}
+                                loading={busy()}
+                                onClick={() => modal.resolve()}
+                            />
+                        </>
+                    );
+                })()
+            })
+        });
+    }
+
+    public showMonaco(options: { language: 'typescript' | 'yaml' | 'xml', title: string, value: string, readonly?: boolean, onChange?: (value: string) => void }) {
+        return this.show({
+            modal: modal => {
+                const [value, setValue] = createSignal(options.value);
+
+                return ({
+                    backdropDismissal: true,
+                    header: (
+                        <div style={{ display: 'grid', 'grid-auto-flow': 'column', 'grid-auto-columns': 'max-content', gap: '5px', 'align-items': 'center' }}>
+                            <Icon name={'info'} />
+                            <span>{options.title}</span>
+                        </div>
+                    ),
+                    body: (
+                        <div style={{ width: '80vw', height: '80vh' }}>
+                            <MonacoComponent
+                                language={options.language}
+                                readonly={options.readonly}
+                                value={value()}
+                                onChanging={value => setValue(value)}
+                            />
+                        </div>
+                    ),
+                    footer: (
+                        <ButtonComponent
+                            intent={'accent'}
+                            label={'Ok'}
+                            onClick={() => {
+                                modal.resolve();
+                                options.onChange?.(value());
+                            }}
+                        />
+                    )
+                });
+            }
         });
     }
 

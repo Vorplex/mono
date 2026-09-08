@@ -38,7 +38,7 @@ export class Compiler {
     public static async compile(options: CompilerOptions) {
         const task = options.task ?? new Task('Compile');
         try {
-            task.log(`Compiling $[files] using entry file path (${options.entryFilePath})`, { attachments: { files: { type: 'yaml', value: stringify(options.files) } } });
+            task.log(`Compiling $[files] using entry file path "${options.entryFilePath}"`, { attachments: { files: { type: 'yaml', value: stringify(options.files) } } });
             const importOrigin: Record<string, string> = {};
             return await Bundler.bundle({
                 path: options.entryFilePath,
@@ -69,7 +69,7 @@ export class Compiler {
                             } else {
                                 task.log('Fetching external file content');
                                 const response = await fetch(importPath);
-                                if (!response.ok) throw new Error(`Failed to resolve import (${importPath}). ${response.statusText}`);
+                                if (!response.ok) throw new Error(`Failed to resolve import "${importPath}". ${response.statusText}`);
                                 const content = await response.text();
                                 task.log('Returning external file $[content]', { attachments: { content: { type: 'text', value: content } } });
                                 return { content };
@@ -90,19 +90,19 @@ export class Compiler {
                                     const polyfill = NODE_BUILTIN_POLYFILLS[string.packageName];
                                     if (polyfill) {
                                         const version = dependencyTree[polyfill.name]?.version ?? dependencyTree[string.packageName]?.version ?? polyfill.version;
-                                        task.log(`Resolving Node.js built-in (${string.packageName}) via browser polyfill (${polyfill.name}@${version})`);
+                                        task.log(`Resolving Node.js built-in "${string.packageName}" via browser polyfill "${polyfill.name}@${version}"`);
                                         string.packageName = polyfill.name;
                                         string.version = version;
                                     } else if (importerPath in options.files) {
-                                        throw new Error(`Unable to determine package (${string.packageName}) version.`);
+                                        throw new Error(`Unable to determine package "${string.packageName}" version.`);
                                     } else {
-                                        task.log(`Returning mock module for package (${string.packageName}) as import doesn't have it as a dependency.`, { level: 'warning' });
+                                        task.log(`Returning mock module for package "${string.packageName}" as import doesn't have it as a dependency.`, { level: 'warning' });
                                         return;
                                     }
                                 }
                             }
                             const filePath = await JsDelivr.resolveImportFilePath(string.packageName, string.version, string.subpath);
-                            task.log(`Import resolved to file path (${filePath})`);
+                            task.log(`Import resolved to file path "${filePath}"`);
                             const file = await JsDelivr.getFile(string.packageName, string.version, filePath);
                             task.log('Returning file $[content] from CDN', { attachments: { content: { type: 'text', value: file.content } } });
                             return { path: file.url, content: file.content };

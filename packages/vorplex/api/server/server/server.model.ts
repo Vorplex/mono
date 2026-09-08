@@ -118,7 +118,7 @@ export class Server {
                             const match = $Router.match(`${controller.route}${handler.route}`, request.url);
                             if (match) {
                                 const query = $Router.getQueryParameters(request.url);
-                                task.log(`Forwarding request to controller (${controller.route}) handler (${handler.route})`);
+                                task.log(`Forwarding request to controller "${controller.route}" handler "${handler.route}"`);
                                 for (const guard of controller.guards ?? []) {
                                     const authorized = await guard({
                                         injector: this.injector,
@@ -135,7 +135,7 @@ export class Server {
                                     }
                                 });
                                 for (const parameter of handler.parameters ?? []) {
-                                    if (!parameter.endsWith('?') && $String.isNullOrEmpty(query[parameter])) throw new HttpError(HttpResponseCodes.BadRequest, `Missing required query parameter (${parameter})`);
+                                    if (!parameter.endsWith('?') && $String.isNullOrEmpty(query[parameter])) throw new HttpError(HttpResponseCodes.BadRequest, `Missing required query parameter "${parameter}"`);
                                 }
                                 const result = await handler.callback({
                                     injector: this.injector,
@@ -259,7 +259,7 @@ export class Server {
                     if (hub.name === parsedPacket.hub) {
                         for (const action of hub.actions) {
                             if (action.name === parsedPacket.action) {
-                                task.log(`Forwarding packet to hub (${hub.name}) with action (${action.name})`, {
+                                task.log(`Forwarding packet to hub "${hub.name}" with action "${action.name}"`, {
                                     attachments: { packet: { type: 'json', value: JSON.stringify(packet, null, 4) } }
                                 });
                                 let data = parsedPacket.data;
@@ -267,7 +267,7 @@ export class Server {
                                     const [parsedData, dataErrors] = $Tson.parse(action.schema).parse(parsedPacket.data);
                                     if (dataErrors.length > 0) {
                                         const [dataError] = dataErrors;
-                                        throw new WebError(`Failed to parse packet data for hub (${hub.name}) with action (${action.name})`, {
+                                        throw new WebError(`Failed to parse packet data for hub "${hub.name}" with action "${action.name}"`, {
                                             message: dataError.message,
                                             path: dataError.path,
                                             schema: dataError.schema,
@@ -290,7 +290,7 @@ export class Server {
                         }
                     }
                 }
-                throw new WebError(`No hub (${parsedPacket.hub}) was found with action (${parsedPacket.action})`);
+                throw new WebError(`No hub "${parsedPacket.hub}" was found with action "${parsedPacket.action}"`);
             } catch (error) {
                 task.fail(error);
                 if (error instanceof WebError) {

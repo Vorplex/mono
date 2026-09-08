@@ -50,7 +50,7 @@ export class ModuleLoader {
                 if (version) return subpath ? version[subpath] : version;
             }
         }
-        throw new Error(`No package was registered for import (${namespace})`);
+        throw new Error(`No package was registered for import "${namespace}"`);
     }
 
     public static registerModule(name: string, version: string, module: any) {

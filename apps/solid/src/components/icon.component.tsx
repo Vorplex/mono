@@ -1,12 +1,13 @@
+import { createAnimation } from '@vorplex/solid';
 import { splitProps, type JSX } from 'solid-js';
 
 const SHEET_URL = 'https://cdn.jsdelivr.net/npm/lucide-static/sprite.svg';
 
-// Fetches the Lucide sprite once, no matter how many Icons mount, and injects its raw
-// <svg><symbol>...</symbol></svg> markup into this document -- Chromium doesn't resolve <use href="#id">
-// against an external/detached document, so the sprite has to actually live here for <use> below to resolve.
-// <use> re-resolves its reference at paint time, so an Icon rendered before this finishes loading just picks
-// up its geometry automatically the moment the sprite lands -- nothing here needs to signal "ready".
+const spin = createAnimation(() => ({
+    from: { transform: 'rotate(0deg)' },
+    to: { transform: 'rotate(360deg)' }
+}));
+
 let loading: Promise<void> | undefined;
 function ensureSheetLoaded(): Promise<void> {
     loading ??= fetch(SHEET_URL)
@@ -21,9 +22,6 @@ function ensureSheetLoaded(): Promise<void> {
 
 ensureSheetLoaded();
 
-// Every symbol id in the Lucide sprite (see SHEET_URL above), generated from
-// https://cdn.jsdelivr.net/npm/lucide-static/sprite.svg -- keeps the name prop below to a real closed set
-// instead of a bare string.
 export type Icon =
     | 'a-arrow-down'
     | 'a-arrow-up'
@@ -1786,8 +1784,8 @@ export type Icon =
     | 'zoom-in'
     | 'zoom-out';
 
-export function Icon(props: { name: Icon } & JSX.SvgSVGAttributes<SVGSVGElement>) {
-    const [local, rest] = splitProps(props, ['name', 'style']);
+export function Icon(props: { name: Icon, spin?: boolean } & JSX.SvgSVGAttributes<SVGSVGElement>) {
+    const [local, rest] = splitProps(props, ['name', 'style', 'spin']);
 
     return (
         <svg {...rest} style={{
@@ -1799,6 +1797,7 @@ export function Icon(props: { name: Icon } & JSX.SvgSVGAttributes<SVGSVGElement>
             'stroke-width': '2',
             'stroke-linecap': 'round',
             'stroke-linejoin': 'round',
+            ...(local.spin && { animation: `${spin()} 1s linear infinite` }),
             ...(local.style as JSX.CSSProperties)
         }}>
             <use href={`#${local.name}`}></use>

@@ -88,7 +88,7 @@ export class Injector {
                         resolved.set(key, this.get(dependencyType));
                     } catch (error) {
                         if (error instanceof InjectorError) {
-                            throw new InjectorError(`Failed to resolve dependency of type (${$Reflection.getTypeName(dependencyType)}) on type (${$Reflection.getTypeName(type)}). ${error.message}`);
+                            throw new InjectorError(`Failed to resolve dependency of type "${$Reflection.getTypeName(dependencyType)}" on type "${$Reflection.getTypeName(type)}". ${error.message}`);
                         }
                         throw error;
                     }
@@ -124,7 +124,7 @@ export class Injector {
                 provider.value = this.createProviderInstance(provider);
                 return provider.value;
             } else if (!optional) {
-                throw new InjectorError(`No provider registered for type (${$Reflection.getTypeName(type)}).`);
+                throw new InjectorError(`No provider registered for type "${$Reflection.getTypeName(type)}".`);
             }
         }
     }

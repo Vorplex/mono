@@ -163,7 +163,7 @@ export class Signal<T = any> {
             const next = new Map<unknown, Entry>();
             for (const item of items) {
                 const id = key(item);
-                if (next.has(id)) throw new Error(`Duplicate keyed value (${String(id)})`);
+                if (next.has(id)) throw new Error(`Duplicate keyed value "${String(id)}"`);
                 let entry = entries.get(id);
                 if (entry) {
                     entries.delete(id);

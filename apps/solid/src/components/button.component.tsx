@@ -165,7 +165,10 @@ export function ButtonComponent(props: ButtonProps) {
             }}
         >
             <Show when={loading() || local.loading || local.icon}>
-                <Icon name={local.loading ? 'loader-circle' : local.icon} />
+                <Icon
+                    name={local.loading ? 'loader-circle' : local.icon}
+                    spin={local.loading}
+                />
             </Show>
             <Show when={local.label}>
                 <span innerText={local.label} />
