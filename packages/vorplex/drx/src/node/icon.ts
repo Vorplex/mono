@@ -34,9 +34,9 @@ export const DrxIcon = {
     },
     to(item: DrxIcon): Element {
         const element = document.createElement(NodeType.Icon);
-        element.setAttribute('id', item.id);
-        element.setAttribute('name', item.name);
-        for (const [name, value] of Object.entries(item.attributes)) element.setAttribute(name, value);
+        DrxDom.setAttribute(element, 'id', item.id);
+        DrxDom.setAttribute(element, 'name', item.name);
+        for (const [name, value] of Object.entries(item.attributes)) DrxDom.setAttribute(element, name, value);
         return element;
     },
     mount(container: Node, item: DrxIcon, context: RenderContext): void {

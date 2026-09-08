@@ -39,12 +39,12 @@ export const DrxFor = {
     },
     to(item: DrxFor, state: DrxDocumentState): Element {
         const element = document.createElement(NodeType.For);
-        element.setAttribute('id', item.id);
-        element.setAttribute('each', item.each);
-        element.setAttribute('as', item.as);
-        if (item.index) element.setAttribute('index', item.index);
-        if (item.key) element.setAttribute('key', item.key);
-        if (item.track) element.setAttribute('track', item.track);
+        DrxDom.setAttribute(element, 'id', item.id);
+        DrxDom.setAttribute(element, 'each', item.each);
+        DrxDom.setAttribute(element, 'as', item.as);
+        if (item.index) DrxDom.setAttribute(element, 'index', item.index);
+        if (item.key) DrxDom.setAttribute(element, 'key', item.key);
+        if (item.track) DrxDom.setAttribute(element, 'track', item.track);
         for (const child of DrxTemplate.to(item.template, state)) element.appendChild(child);
         return element;
     },

@@ -43,10 +43,10 @@ export const DrxApiEndpoint = {
     },
     to(endpoint: DrxApiEndpoint, state: DrxDocumentState): Element {
         const element = document.createElement(NodeType.ApiEndpoint);
-        element.setAttribute('id', endpoint.id);
-        element.setAttribute('name', endpoint.name);
-        element.setAttribute('path', endpoint.path);
-        element.setAttribute('method', endpoint.method);
+        DrxDom.setAttribute(element, 'id', endpoint.id);
+        DrxDom.setAttribute(element, 'name', endpoint.name);
+        DrxDom.setAttribute(element, 'path', endpoint.path);
+        DrxDom.setAttribute(element, 'method', endpoint.method);
         for (const id of endpoint.parameterIds) element.appendChild(DrxApiParameter.to(state.apiParameters[id]));
         for (const id of endpoint.headerIds) element.appendChild(DrxApiHeader.to(state.apiHeaders[id]));
         if (endpoint.bodyId) element.appendChild(DrxApiBody.to(state.apiBodies[endpoint.bodyId]));

@@ -52,9 +52,9 @@ export const DrxComponentInstance = {
     },
     to(item: DrxComponentInstance): Element {
         const element = document.createElement(NodeType.ComponentInstance);
-        element.setAttribute('id', item.id);
-        element.setAttribute('component', item.component);
-        for (const [name, value] of Object.entries(item.attributes)) element.setAttribute(name, value);
+        DrxDom.setAttribute(element, 'id', item.id);
+        DrxDom.setAttribute(element, 'component', item.component);
+        for (const [name, value] of Object.entries(item.attributes)) DrxDom.setAttribute(element, name, value);
         return element;
     },
     // Isolated: fully sandboxed from app/page context, reachable only through declared props (in) and events

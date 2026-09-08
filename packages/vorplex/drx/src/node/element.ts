@@ -3,6 +3,7 @@ import { ExpressionParser } from '../expression-parser';
 import { PreviewContext } from '../preview-context';
 import { RenderContext } from '../render-context';
 import { DrxDocumentState } from '../drx';
+import { DrxDom } from '../drx-dom';
 import { NodeType } from './node-type';
 import { DrxTemplate, DrxTemplateItem } from './template-item';
 import { DrxText } from './text';
@@ -29,7 +30,7 @@ export const DrxElement = {
     },
     to(item: DrxElement, state: DrxDocumentState): Element {
         const element = document.createElement(item.tag);
-        for (const [name, value] of Object.entries(item.attributes)) element.setAttribute(name, value);
+        for (const [name, value] of Object.entries(item.attributes)) DrxDom.setAttribute(element, name, value);
         for (const child of DrxTemplate.to(item.template, state)) element.appendChild(child);
         return element;
     },

@@ -25,9 +25,9 @@ export const DrxComponentProperty = {
     },
     to(property: DrxComponentProperty): Element {
         const element = document.createElement(NodeType.ComponentProperty);
-        element.setAttribute('id', property.id);
-        element.setAttribute('name', property.name);
-        element.setAttribute('type', property.type);
+        DrxDom.setAttribute(element, 'id', property.id);
+        DrxDom.setAttribute(element, 'name', property.name);
+        DrxDom.setAttribute(element, 'type', property.type);
         return element;
     }
 };

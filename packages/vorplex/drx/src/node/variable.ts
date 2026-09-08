@@ -35,9 +35,9 @@ export const DrxVariable = {
     },
     to(variable: DrxVariable): Element {
         const element = document.createElement(NodeType.Variable);
-        element.setAttribute('id', variable.id);
-        element.setAttribute('name', variable.name);
-        element.setAttribute('type', variable.type);
+        DrxDom.setAttribute(element, 'id', variable.id);
+        DrxDom.setAttribute(element, 'name', variable.name);
+        DrxDom.setAttribute(element, 'type', variable.type);
         if (variable.value != null) DrxDom.setJsonContent(element, variable.value);
         return element;
     },

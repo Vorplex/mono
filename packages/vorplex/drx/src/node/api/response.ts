@@ -23,8 +23,8 @@ export const DrxApiResponse = {
     },
     to(response: DrxApiResponse): Element {
         const element = document.createElement(NodeType.ApiResponse);
-        element.setAttribute('id', response.id);
-        element.setAttribute('type', response.type);
+        DrxDom.setAttribute(element, 'id', response.id);
+        DrxDom.setAttribute(element, 'type', response.type);
         return element;
     }
 };

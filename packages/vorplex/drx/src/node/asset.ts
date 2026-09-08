@@ -34,12 +34,12 @@ export const DrxAsset = {
     },
     to(asset: DrxAsset): Element {
         const element = document.createElement(NodeType.Asset);
-        element.setAttribute('id', asset.id);
-        element.setAttribute('name', asset.name);
+        DrxDom.setAttribute(element, 'id', asset.id);
+        DrxDom.setAttribute(element, 'name', asset.name);
         if (asset.source.type === 'external') {
-            element.setAttribute('src', asset.source.url);
+            DrxDom.setAttribute(element, 'src', asset.source.url);
         } else {
-            if (asset.source.mimeType) element.setAttribute('type', asset.source.mimeType);
+            if (asset.source.mimeType) DrxDom.setAttribute(element, 'type', asset.source.mimeType);
             if (asset.source.content) element.innerHTML = asset.source.content;
         }
         return element;

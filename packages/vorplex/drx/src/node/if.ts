@@ -31,8 +31,8 @@ export const DrxIf = {
     },
     to(item: DrxIf, state: DrxDocumentState): Element {
         const element = document.createElement(NodeType.If);
-        element.setAttribute('id', item.id);
-        element.setAttribute('condition', item.condition);
+        DrxDom.setAttribute(element, 'id', item.id);
+        DrxDom.setAttribute(element, 'condition', item.condition);
         for (const child of DrxTemplate.to(item.template, state)) element.appendChild(child);
         return element;
     },

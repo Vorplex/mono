@@ -68,8 +68,8 @@ export const DrxApp = {
     },
     to(app: DrxApp, state: DrxDocumentState): Element {
         const element = document.createElement(NodeType.App);
-        element.setAttribute('id', app.id);
-        if (app.name) element.setAttribute('name', app.name);
+        DrxDom.setAttribute(element, 'id', app.id);
+        if (app.name) DrxDom.setAttribute(element, 'name', app.name);
         if (app.packages) element.appendChild(DrxPackages.to(app.packages));
         if (app.dependencyTree) element.appendChild(DrxDependencyTree.to(app.dependencyTree));
         DrxDom.createScript(element, app.script);

@@ -25,9 +25,9 @@ export const DrxComponentEvent = {
     },
     to(event: DrxComponentEvent): Element {
         const element = document.createElement(NodeType.ComponentEvent);
-        element.setAttribute('id', event.id);
-        element.setAttribute('name', event.name);
-        element.setAttribute('type', event.type);
+        DrxDom.setAttribute(element, 'id', event.id);
+        DrxDom.setAttribute(element, 'name', event.name);
+        DrxDom.setAttribute(element, 'type', event.type);
         return element;
     }
 };

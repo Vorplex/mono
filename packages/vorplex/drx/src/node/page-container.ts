@@ -30,8 +30,8 @@ export const DrxPageContainer = {
     },
     to(item: DrxPageContainer): Element {
         const element = document.createElement(NodeType.PageContainer);
-        element.setAttribute('id', item.id);
-        element.setAttribute('page', item.page);
+        DrxDom.setAttribute(element, 'id', item.id);
+        DrxDom.setAttribute(element, 'page', item.page);
         return element;
     },
     mount(container: Node, item: DrxPageContainer, context: RenderContext): Scope {

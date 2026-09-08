@@ -25,8 +25,8 @@ export const DrxType = {
     },
     to(type: DrxType): Element {
         const element = document.createElement(NodeType.Type);
-        element.setAttribute('id', type.id);
-        element.setAttribute('name', type.name);
+        DrxDom.setAttribute(element, 'id', type.id);
+        DrxDom.setAttribute(element, 'name', type.name);
         DrxDom.setJsonContent(element, type.type);
         return element;
     },

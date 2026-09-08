@@ -41,8 +41,8 @@ export const DrxPage = {
     },
     to(page: DrxPage, state: DrxDocumentState): Element {
         const element = document.createElement(NodeType.Page);
-        element.setAttribute('id', page.id);
-        element.setAttribute('name', page.name);
+        DrxDom.setAttribute(element, 'id', page.id);
+        DrxDom.setAttribute(element, 'name', page.name);
         DrxDom.createScript(element, page.script);
         DrxDom.createStyle(element, page.style);
         for (const id of page.variableIds) element.appendChild(DrxVariable.to(state.variables[id]));

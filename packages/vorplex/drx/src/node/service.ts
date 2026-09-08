@@ -25,8 +25,8 @@ export const DrxService = {
     },
     to(service: DrxService): Element {
         const element = document.createElement(NodeType.Service);
-        element.setAttribute('id', service.id);
-        element.setAttribute('name', service.name);
+        DrxDom.setAttribute(element, 'id', service.id);
+        DrxDom.setAttribute(element, 'name', service.name);
         DrxDom.createScript(element, service.script);
         return element;
     }

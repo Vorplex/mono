@@ -27,10 +27,10 @@ export const DrxApiHeader = {
     },
     to(header: DrxApiHeader): Element {
         const element = document.createElement(NodeType.ApiHeader);
-        element.setAttribute('id', header.id);
-        element.setAttribute('name', header.name);
-        element.setAttribute('required', String(header.required));
-        if (header.description) element.setAttribute('description', header.description);
+        DrxDom.setAttribute(element, 'id', header.id);
+        DrxDom.setAttribute(element, 'name', header.name);
+        DrxDom.setAttribute(element, 'required', String(header.required));
+        if (header.description) DrxDom.setAttribute(element, 'description', header.description);
         return element;
     }
 };

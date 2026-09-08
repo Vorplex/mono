@@ -34,8 +34,8 @@ export const DrxRouter = {
         const element = document.createElement(NodeType.Router);
         for (const [route, page] of Object.entries(router.routes)) {
             const routeElement = document.createElement(NodeType.RouterRoute);
-            routeElement.setAttribute('route', route);
-            routeElement.setAttribute('page', page);
+            DrxDom.setAttribute(routeElement, 'route', route);
+            DrxDom.setAttribute(routeElement, 'page', page);
             element.appendChild(routeElement);
         }
         return element;

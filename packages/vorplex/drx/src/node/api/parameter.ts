@@ -27,10 +27,10 @@ export const DrxApiParameter = {
     },
     to(parameter: DrxApiParameter): Element {
         const element = document.createElement(NodeType.ApiParameter);
-        element.setAttribute('id', parameter.id);
-        element.setAttribute('name', parameter.name);
-        element.setAttribute('required', String(parameter.required));
-        if (parameter.description) element.setAttribute('description', parameter.description);
+        DrxDom.setAttribute(element, 'id', parameter.id);
+        DrxDom.setAttribute(element, 'name', parameter.name);
+        DrxDom.setAttribute(element, 'required', String(parameter.required));
+        if (parameter.description) DrxDom.setAttribute(element, 'description', parameter.description);
         return element;
     }
 };

@@ -50,5 +50,8 @@ export const DrxDom = {
     },
     setJsonContent(element: Element, value: any) {
         element.textContent = JSON.stringify(value);
+    },
+    setAttribute(element: Element, attribute: string, value: string | null | undefined) {
+        if (value != null) element.setAttribute(attribute, value);
     }
 };
