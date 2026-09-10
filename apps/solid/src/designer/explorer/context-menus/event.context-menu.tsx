@@ -4,8 +4,7 @@ import { useInjector } from '@vorplex/solid';
 import { TextFormGroup } from '../../../components/forms/form-input.component';
 import { ContextMenuItem } from '../../../directives/context-menu.directive';
 import { ModalService } from '../../../services/modal.service';
-import { PlatformService } from '../../../services/platform.service';
-import { ExplorerNode, ExplorerService } from '../explorer.service';
+import { ExplorerNode, PlatformService } from '../../../services/platform.service';
 
 export function createEventContextMenu(componentId: string): ContextMenuItem[] {
     return [
@@ -15,7 +14,6 @@ export function createEventContextMenu(componentId: string): ContextMenuItem[] {
             onClick: async () => {
                 const service = useInjector({
                     platform: PlatformService,
-                    explorer: ExplorerService,
                     modal: ModalService
                 });
                 const result = await service.modal.showForm<{ name: TextFormGroup }>({
@@ -37,7 +35,7 @@ export function createEventContextMenu(componentId: string): ContextMenuItem[] {
                     reducer.componentEvents.entity.create(event),
                     reducer.components.entity.updateById(componentId, component => ({ eventIds: [...component.eventIds, event.id] }))
                 ]);
-                service.explorer.selectItem({ type: ExplorerNode.ComponentEvent, id: event.id, componentId });
+                service.platform.state.set(state => state.explorer.selectedItem, { type: ExplorerNode.ComponentEvent, id: event.id, componentId });
             }
         }
     ];
@@ -75,7 +73,6 @@ export function createEventItemContextMenu(componentId: string, eventId: string,
             onClick: async () => {
                 const service = useInjector({
                     platform: PlatformService,
-                    explorer: ExplorerService,
                     modal: ModalService
                 });
                 const confirmed = await service.modal.showConfirm('Delete', `Are you sure you want to delete "${eventName}"?`);
@@ -84,10 +81,8 @@ export function createEventItemContextMenu(componentId: string, eventId: string,
                     reducer.componentEvents.entity.delete(eventId),
                     reducer.components.entity.updateById(componentId, component => ({ eventIds: component.eventIds.filter(id => id !== eventId) }))
                 ]);
-                const selected = service.explorer.state.value.selectedItem;
-                if (selected?.type === ExplorerNode.ComponentEvent && selected.id === eventId) {
-                    service.explorer.state.update({ selectedItem: undefined });
-                }
+                const selected = service.platform.state.value.explorer.selectedItem;
+                if (selected?.type === ExplorerNode.ComponentEvent && selected.id === eventId) service.platform.state.set(state => state.explorer.selectedItem, undefined);
             }
         }
     ];

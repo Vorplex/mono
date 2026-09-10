@@ -1,8 +1,7 @@
 import { NodeType } from '@vorplex/drx';
 import { defineRemountingComponent, useInjector, useStore } from '@vorplex/solid';
 import { MonacoComponent } from '../../../../components/script-editor/monaco.component';
-import { PlatformService } from '../../../../services/platform.service';
-import { ContainerTarget } from '../../explorer.service';
+import { ContainerTarget, PlatformService } from '../../../../services/platform.service';
 
 export const StyleEditorComponent = defineRemountingComponent((props: { target: ContainerTarget }) => {
 

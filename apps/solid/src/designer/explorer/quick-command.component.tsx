@@ -7,8 +7,7 @@ import { DropdownFormInputComponent } from '../../components/forms/inputs/dropdo
 import { HighlightedTextComponent } from '../../components/highlighted-text.component';
 import { Icon } from '../../components/icon.component';
 import { Classes, Theme } from '../../consts/theme';
-import { PlatformService } from '../../services/platform.service';
-import { ExplorerNode, ExplorerSelectedItem, ExplorerService } from './explorer.service';
+import { ExplorerNode, ExplorerSelectedItem, PlatformService } from '../../services/platform.service';
 
 const CATEGORIES = {
     [ExplorerNode.Page]: { label: 'Page', icon: 'monitor' },
@@ -184,8 +183,7 @@ function collectItems(drx: SignalProxy<DrxDocumentState>): QuickCommandItem[] {
 
 export function QuickCommandComponent(props: { close: () => void }) {
     const service = useInjector({
-        platform: PlatformService,
-        explorer: ExplorerService
+        platform: PlatformService
     });
 
     const drx = useStore(service.platform.drx.state);
@@ -217,7 +215,7 @@ export function QuickCommandComponent(props: { close: () => void }) {
     });
 
     const select = (item: QuickCommandItem) => {
-        service.explorer.selectItem(item.select);
+        service.platform.state.set(state => state.explorer.selectedItem, item.select);
         props.close();
     };
 

@@ -1,6 +1,7 @@
 import { SignalProxy } from '@vorplex/core';
 import { useInjector, useStore } from '@vorplex/solid';
 import { Match, Switch } from 'solid-js';
+import { ExplorerNode, ExplorerSelectedItem, PlatformService } from '../../services/platform.service';
 import { ApiEditorComponent } from './editors/api-editor/api-editor.component';
 import { EndpointEditorComponent } from './editors/api-editor/endpoint-editor.component';
 import { AssetEditorComponent } from './editors/asset-editor/asset-editor.component';
@@ -15,16 +16,15 @@ import { TemplateContainerEditorComponent } from './editors/template-container-e
 import { TypeEditorComponent } from './editors/type-editor/type-editor.component';
 import { VariableEditorComponent } from './editors/variable-editor/variable-editor.component';
 import { ExplorerTreeComponent } from './explorer-tree.component';
-import { ExplorerNode, ExplorerSelectedItem, ExplorerService } from './explorer.service';
 import { useQuickCommand } from './quick-command.component';
 
 export function ExplorerComponent() {
 
     const service = useInjector({
-        explorer: ExplorerService
+        platform: PlatformService
     });
 
-    const explorerStore = useStore(service.explorer.state);
+    const explorerStore = useStore(service.platform.state).explorer;
 
     useQuickCommand();
 

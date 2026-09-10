@@ -4,8 +4,7 @@ import { useInjector } from '@vorplex/solid';
 import { TextFormGroup } from '../../../components/forms/form-input.component';
 import { ContextMenuItem } from '../../../directives/context-menu.directive';
 import { ModalService } from '../../../services/modal.service';
-import { PlatformService } from '../../../services/platform.service';
-import { ExplorerNode, ExplorerService, VariableScope } from '../explorer.service';
+import { ExplorerNode, PlatformService, VariableScope } from '../../../services/platform.service';
 
 export function createVariableContextMenu(scope: VariableScope): ContextMenuItem[] {
     return [
@@ -15,7 +14,6 @@ export function createVariableContextMenu(scope: VariableScope): ContextMenuItem
             onClick: async () => {
                 const service = useInjector({
                     platform: PlatformService,
-                    explorer: ExplorerService,
                     modal: ModalService
                 });
                 const result = await service.modal.showForm<{ name: TextFormGroup }>({
@@ -48,7 +46,7 @@ export function createVariableContextMenu(scope: VariableScope): ContextMenuItem
                     }
                     return operations;
                 });
-                service.explorer.selectItem({ type: ExplorerNode.Variable, id: variable.id, scope });
+                service.platform.state.set(state => state.explorer.selectedItem, { type: ExplorerNode.Variable, id: variable.id, scope });
             }
         }
     ];
@@ -86,7 +84,6 @@ export function createVariableItemContextMenu(scope: VariableScope, variableId: 
             onClick: async () => {
                 const service = useInjector({
                     platform: PlatformService,
-                    explorer: ExplorerService,
                     modal: ModalService
                 });
                 const confirmed = await service.modal.showConfirm('Delete', `Are you sure you want to delete "${variableName}"?`);
@@ -106,10 +103,8 @@ export function createVariableItemContextMenu(scope: VariableScope, variableId: 
                     }
                     return operations;
                 });
-                const selected = service.explorer.state.value.selectedItem;
-                if (selected?.type === ExplorerNode.Variable && selected.id === variableId) {
-                    service.explorer.state.update({ selectedItem: undefined });
-                }
+                const selected = service.platform.state.value.explorer.selectedItem;
+                if (selected?.type === ExplorerNode.Variable && selected.id === variableId) service.platform.state.set(state => state.explorer.selectedItem, undefined);
             }
         }
     ];

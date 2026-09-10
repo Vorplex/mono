@@ -4,8 +4,7 @@ import { useInjector } from '@vorplex/solid';
 import { TextFormGroup } from '../../../components/forms/form-input.component';
 import { ContextMenuItem } from '../../../directives/context-menu.directive';
 import { ModalService } from '../../../services/modal.service';
-import { PlatformService } from '../../../services/platform.service';
-import { ExplorerNode, ExplorerService } from '../explorer.service';
+import { ExplorerNode, PlatformService } from '../../../services/platform.service';
 
 export function createPropertyContextMenu(componentId: string): ContextMenuItem[] {
     return [
@@ -15,7 +14,6 @@ export function createPropertyContextMenu(componentId: string): ContextMenuItem[
             onClick: async () => {
                 const service = useInjector({
                     platform: PlatformService,
-                    explorer: ExplorerService,
                     modal: ModalService
                 });
                 const result = await service.modal.showForm<{ name: TextFormGroup }>({
@@ -37,7 +35,7 @@ export function createPropertyContextMenu(componentId: string): ContextMenuItem[
                     reducer.componentProperties.entity.create(property),
                     reducer.components.entity.updateById(componentId, component => ({ propertyIds: [...component.propertyIds, property.id] }))
                 ]);
-                service.explorer.selectItem({ type: ExplorerNode.ComponentProperty, id: property.id, componentId });
+                service.platform.state.set(state => state.explorer.selectedItem, { type: ExplorerNode.ComponentProperty, id: property.id, componentId });
             }
         }
     ];
@@ -75,7 +73,6 @@ export function createPropertyItemContextMenu(componentId: string, propertyId: s
             onClick: async () => {
                 const service = useInjector({
                     platform: PlatformService,
-                    explorer: ExplorerService,
                     modal: ModalService
                 });
                 const confirmed = await service.modal.showConfirm('Delete', `Are you sure you want to delete "${propertyName}"?`);
@@ -84,10 +81,8 @@ export function createPropertyItemContextMenu(componentId: string, propertyId: s
                     reducer.componentProperties.entity.delete(propertyId),
                     reducer.components.entity.updateById(componentId, component => ({ propertyIds: component.propertyIds.filter(id => id !== propertyId) }))
                 ]);
-                const selected = service.explorer.state.value.selectedItem;
-                if (selected?.type === ExplorerNode.ComponentProperty && selected.id === propertyId) {
-                    service.explorer.state.update({ selectedItem: undefined });
-                }
+                const selected = service.platform.state.value.explorer.selectedItem;
+                if (selected?.type === ExplorerNode.ComponentProperty && selected.id === propertyId) service.platform.state.set(state => state.explorer.selectedItem, undefined);
             }
         }
     ];

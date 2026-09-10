@@ -7,13 +7,13 @@ import { Theme } from '../consts/theme';
 import { ModalService } from '../services/modal.service';
 import { PlatformService } from '../services/platform.service';
 import { ExplorerComponent } from './explorer/explorer.component';
-import { ExplorerService } from './explorer/explorer.service';
 import { PreviewComponent } from './preview/preview.component';
+import { ProblemsPanelComponent } from './problems-panel.component';
 
 const classes = createStyle(() => ({
     container: {
         display: 'grid',
-        gridTemplateRows: 'max-content auto',
+        gridTemplateRows: 'max-content auto max-content',
         gap: '5px',
         overflow: 'hidden',
         padding: '5px',
@@ -40,12 +40,11 @@ export function DesignerComponent() {
 
     const service = useInjector({
         platform: PlatformService,
-        explorer: ExplorerService,
         modal: ModalService
     });
 
     const drx = useStore(service.platform.drx.state);
-    const explorerStore = useStore(service.explorer.state);
+    const explorerStore = useStore(service.platform.state).explorer;
     const [raw, setRaw] = createSignal(service.platform.drx.toFormattedString());
 
     return (
@@ -103,6 +102,7 @@ export function DesignerComponent() {
                         <PreviewComponent />
                     </Match>
                 </Switch>
+                <ProblemsPanelComponent />
             </div>
         </Show>
     );

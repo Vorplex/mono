@@ -4,8 +4,7 @@ import { useInjector } from '@vorplex/solid';
 import { TextFormGroup } from '../../../components/forms/form-input.component';
 import { ContextMenuItem } from '../../../directives/context-menu.directive';
 import { ModalService } from '../../../services/modal.service';
-import { PlatformService } from '../../../services/platform.service';
-import { ExplorerNode, ExplorerService } from '../explorer.service';
+import { ExplorerNode, PlatformService } from '../../../services/platform.service';
 
 export type ServiceScope =
     | { type: 'app' }
@@ -19,7 +18,6 @@ export function createServiceContextMenu(scope: ServiceScope): ContextMenuItem[]
             onClick: async () => {
                 const service = useInjector({
                     platform: PlatformService,
-                    explorer: ExplorerService,
                     modal: ModalService
                 });
                 const result = await service.modal.showForm<{ name: TextFormGroup }>({
@@ -49,7 +47,7 @@ export function createServiceContextMenu(scope: ServiceScope): ContextMenuItem[]
                     }
                     return operations;
                 });
-                service.explorer.selectItem({ type: ExplorerNode.Service, id: newService.id });
+                service.platform.state.set(state => state.explorer.selectedItem, { type: ExplorerNode.Service, id: newService.id });
             }
         }
     ];
@@ -87,7 +85,6 @@ export function createServiceItemContextMenu(scope: ServiceScope, serviceId: str
             onClick: async () => {
                 const service = useInjector({
                     platform: PlatformService,
-                    explorer: ExplorerService,
                     modal: ModalService
                 });
                 const confirmed = await service.modal.showConfirm('Delete', `Are you sure you want to delete "${serviceName}"?`);
@@ -104,10 +101,8 @@ export function createServiceItemContextMenu(scope: ServiceScope, serviceId: str
                     }
                     return operations;
                 });
-                const selected = service.explorer.state.value.selectedItem;
-                if (selected?.type === ExplorerNode.Service && selected.id === serviceId) {
-                    service.explorer.state.update({ selectedItem: undefined });
-                }
+                const selected = service.platform.state.value.explorer.selectedItem;
+                if (selected?.type === ExplorerNode.Service && selected.id === serviceId) service.platform.state.set(state => state.explorer.selectedItem, undefined);
             }
         }
     ];

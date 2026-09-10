@@ -8,7 +8,7 @@ import { PanelComponent } from '../../components/panel.component';
 import { TreeViewContext } from '../../components/tree-view-item.component';
 import { Theme } from '../../consts/theme';
 import { ContextMenuItem } from '../../directives/context-menu.directive';
-import { PlatformService } from '../../services/platform.service';
+import { ContainerTarget, ExplorerNode, ExplorerSelectedItem, PlatformService, VariableScope } from '../../services/platform.service';
 import { ApiContextMenu, createApiItemContextMenu } from './context-menus/api.context-menu';
 import { AssetContextMenu, createAssetItemContextMenu } from './context-menus/asset.context-menu';
 import { ComponentScope, createComponentContextMenu, createComponentItemContextMenu } from './context-menus/component.context-menu';
@@ -19,7 +19,6 @@ import { createPropertyContextMenu, createPropertyItemContextMenu } from './cont
 import { createServiceContextMenu, createServiceItemContextMenu, ServiceScope } from './context-menus/service.context-menu';
 import { createTypeContextMenu, createTypeItemContextMenu, TypeScope } from './context-menus/type.context-menu';
 import { createVariableContextMenu, createVariableItemContextMenu } from './context-menus/variable.context-menu';
-import { ContainerTarget, ExplorerNode, ExplorerSelectedItem, ExplorerService, VariableScope } from './explorer.service';
 
 const classes = createStyle(() => ({
     tree: {
@@ -69,11 +68,10 @@ const ExplorerTreeExpandedItemsCacheKey = Symbol();
 export function ExplorerTreeComponent() {
 
     const service = useInjector({
-        platform: PlatformService,
-        explorer: ExplorerService
+        platform: PlatformService
     });
 
-    const explorer = useStore(service.explorer.state);
+    const explorer = useStore(service.platform.state).explorer;
     const drx = useStore(service.platform.drx.state);
     const app = drx.app;
 
@@ -81,7 +79,7 @@ export function ExplorerTreeComponent() {
 
     const expanded = (id: string) => expandedItems().includes(id);
     const toggle = (id: string) => setExpandedItems(items => $Array.toggle(items, id));
-    const select = (item: ExplorerSelectedItem) => explorer.selectedItem(item);
+    const select = (item: ExplorerSelectedItem) => service.platform.state.set(state => state.explorer.selectedItem, item);
     const isSelected = (item: ExplorerSelectedItem) => explorer.selectedItem.type() === item.type && explorer.selectedItem.id() === item.id;
 
     const Row = (props: { icon: Icon; label: JSX.Element; selected?: boolean; select?: () => void; expandable?: boolean; expanded?: boolean; onToggle?: () => void; contextMenu?: ContextMenuItem[] }) => {

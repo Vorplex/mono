@@ -4,8 +4,7 @@ import { type IDisposable } from 'monaco-editor';
 import { onCleanup, onMount } from 'solid-js';
 import { MonacoComponent } from '../../../../components/script-editor/monaco.component';
 import { IntellisenseService, type IntellisenseTarget } from '../../../../services/intellisense.service';
-import { PlatformService } from '../../../../services/platform.service';
-import { ContainerTarget } from '../../explorer.service';
+import { ContainerTarget, PlatformService } from '../../../../services/platform.service';
 
 export const ScriptEditorComponent = defineRemountingComponent((props: { target: ContainerTarget }) => {
 

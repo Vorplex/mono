@@ -4,8 +4,7 @@ import { useInjector } from '@vorplex/solid';
 import { TextFormGroup } from '../../../components/forms/form-input.component';
 import { ContextMenuItem } from '../../../directives/context-menu.directive';
 import { ModalService } from '../../../services/modal.service';
-import { PlatformService } from '../../../services/platform.service';
-import { ExplorerNode, ExplorerService } from '../explorer.service';
+import { ExplorerNode, PlatformService } from '../../../services/platform.service';
 
 export const AssetContextMenu: ContextMenuItem[] = [
     {
@@ -14,7 +13,6 @@ export const AssetContextMenu: ContextMenuItem[] = [
         onClick: async () => {
             const service = useInjector({
                 platform: PlatformService,
-                explorer: ExplorerService,
                 modal: ModalService
             });
             const result = await service.modal.showForm<{ name: TextFormGroup }>({
@@ -38,7 +36,7 @@ export const AssetContextMenu: ContextMenuItem[] = [
                     assetIds: [...app.assetIds, asset.id]
                 }))
             ]);
-            service.explorer.selectItem({ type: ExplorerNode.Asset, id: asset.id });
+            service.platform.state.set(state => state.explorer.selectedItem, { type: ExplorerNode.Asset, id: asset.id });
         }
     }
 ];
@@ -75,7 +73,6 @@ export function createAssetItemContextMenu(assetId: string, assetName: string): 
             onClick: async () => {
                 const service = useInjector({
                     platform: PlatformService,
-                    explorer: ExplorerService,
                     modal: ModalService
                 });
                 const confirmed = await service.modal.showConfirm('Delete', `Are you sure you want to delete "${assetName}"?`);
@@ -84,10 +81,8 @@ export function createAssetItemContextMenu(assetId: string, assetName: string): 
                     reducer.assets.entity.delete(assetId),
                     reducer.app.value.update(app => ({ assetIds: app.assetIds.filter(id => id !== assetId) }))
                 ]);
-                const selected = service.explorer.state.value.selectedItem;
-                if (selected?.type === ExplorerNode.Asset && selected.id === assetId) {
-                    service.explorer.state.update({ selectedItem: undefined });
-                }
+                const selected = service.platform.state.value.explorer.selectedItem;
+                if (selected?.type === ExplorerNode.Asset && selected.id === assetId) service.platform.state.set(state => state.explorer.selectedItem, undefined);
             }
         }
     ];

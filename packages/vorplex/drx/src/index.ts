@@ -10,6 +10,7 @@ export * from './preview-context';
 export * from './render-context';
 export * from './script-compiler';
 export * from './style-sheet';
+export * from './validation';
 export * from './node/app';
 export * from './node/asset';
 export * from './node/dependency-tree';

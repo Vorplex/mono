@@ -1,16 +1,15 @@
 import { $Array } from '@vorplex/core';
-import { ExpressionDisplay, NodeType, DrxDocumentState, DrxTemplateItem, DrxTemplateTargetType } from '@vorplex/drx';
-import { createStyle, useCachedSignal, useInjector, useStore } from '@vorplex/solid';
+import { DrxDocumentState, DrxTemplateItem, DrxTemplateTargetType, ExpressionDisplay, NodeType } from '@vorplex/drx';
+import { createStyle, useInjector, useStore } from '@vorplex/solid';
 import { classNames } from '@vorplex/web';
-import { createMemo, Show, useContext, type JSX } from 'solid-js';
+import { createEffect, createMemo, Show, untrack, type JSX } from 'solid-js';
 import { Icon } from '../../../../components/icon.component';
 import { PanelComponent } from '../../../../components/panel.component';
 import { VirtualList, type VirtualListItem } from '../../../../components/virtual-list.component';
 import { Theme } from '../../../../consts/theme';
 import { ContextMenuItem } from '../../../../directives/context-menu.directive';
 import { type DropzoneAcceptArea } from '../../../../directives/draggable.directive';
-import { PlatformService } from '../../../../services/platform.service';
-import { TemplateContainerEditorContext, TemplateContainerTarget } from './template-container-editor-context';
+import { PlatformService, TemplateContainerTarget } from '../../../../services/platform.service';
 import {
     ComponentInstanceTreeItemContextMenu,
     ElementTreeItemContextMenu,
@@ -69,19 +68,25 @@ const classes = createStyle(() => ({
     }
 }));
 
-const TemplateContainerEditorTreeCollapsedItemsCacheKey = Symbol();
-
 export function TemplateContainerEditorTreeComponent(props: { target: TemplateContainerTarget }) {
 
     const service = useInjector({
         platform: PlatformService
     });
+    service.platform.state.update(state => state.explorer.templateEditors[props.target.id], current => ({ collapsedItems: current?.collapsedItems ?? [] }));
 
-    const editor = useStore(useContext(TemplateContainerEditorContext));
+    const target = props.target;
+    const editor = useStore(service.platform.state).explorer.templateEditors[target.id];
     const drx = useStore(service.platform.drx.state);
-    const container = createMemo(() => props.target.type === 'component' ? drx.components[props.target.id] : drx.pages[props.target.id]);
+    const container = createMemo(() => target.type === 'component' ? drx.components[target.id] : drx.pages[target.id]);
 
-    const [collapsedItems, setCollapsedItems] = useCachedSignal(TemplateContainerEditorTreeCollapsedItemsCacheKey, []);
+    createEffect(() => {
+        const selected = editor.selectedTreeItem();
+        if (!selected) return;
+        const path = service.platform.drx.getTemplatePath(selected.id);
+        untrack(() => editor.collapsedItems(collapsed => collapsed.filter(id => !path.includes(id))));
+    });
+
     const items = createMemo(() => {
         const template = container()?.template();
         if (!Array.isArray(template)) return [];
@@ -108,7 +113,7 @@ export function TemplateContainerEditorTreeComponent(props: { target: TemplateCo
                         items.push({ key: item.id, content: () => <ComponentInstanceItem id={item.id} depth={depth} path={path} /> });
                         break;
                 }
-                if (collapsedItems().includes(item.id)) continue;
+                if (editor.collapsedItems().includes(item.id)) continue;
                 const childPath = [...path, item.id];
                 if (item.type === NodeType.Element) {
                     const template = drx.elements[item.id].template();
@@ -124,6 +129,7 @@ export function TemplateContainerEditorTreeComponent(props: { target: TemplateCo
         traverse(template);
         return items;
     });
+
     const TreeItem = (props: { id: string; type: NodeType; depth: number; path: string[]; expandable?: boolean; expanded?: boolean; onToggle?: () => void; label: JSX.Element; contextMenu?: ContextMenuItem[] }) => {
         const descendant = createMemo(() => {
             const selectedId = editor.selectedTreeItem.id();
@@ -139,7 +145,7 @@ export function TemplateContainerEditorTreeComponent(props: { target: TemplateCo
                 style={{ 'padding-left': `${10 + props.depth * 16}px` }}
                 onClick={event => {
                     event.stopPropagation();
-                    editor.selectedTreeItem({ type: props.type, id: props.id, path: props.path });
+                    editor.selectedTreeItem({ type: props.type, id: props.id });
                 }}
                 onMouseEnter={() => editor.hoveredTreeItem({ type: props.type, id: props.id })}
                 onMouseLeave={() => { if (editor.hoveredTreeItem.id() === props.id) editor.hoveredTreeItem(null); }}
@@ -154,9 +160,9 @@ export function TemplateContainerEditorTreeComponent(props: { target: TemplateCo
                                 return true;
                             },
                             accepting: ({ area }: { area: DropzoneAcceptArea }) => {
-                                if (area !== 'middle' || !collapsedItems().includes(props.id)) return;
-                                setCollapsedItems(items => $Array.toggle(items, props.id));
-                                return () => setCollapsedItems(items => $Array.toggle(items, props.id));
+                                if (area !== 'middle' || !editor.collapsedItems().includes(props.id)) return;
+                                editor.collapsedItems(items => $Array.toggle(items, props.id));
+                                return () => editor.collapsedItems(items => $Array.toggle(items, props.id));
                             },
                             dropped: ({ data, area }: { data: { id: string; type: NodeType }; area: DropzoneAcceptArea }) => {
                                 const getTemplate = (type: NodeType, id: string, state: DrxDocumentState): DrxTemplateItem[] => {
@@ -208,7 +214,7 @@ export function TemplateContainerEditorTreeComponent(props: { target: TemplateCo
             <Show when={node.id()}>
                 <TreeItem
                     id={node.id()} type={NodeType.Text} depth={props.depth} path={props.path}
-                    contextMenu={TextTreeItemContextMenu(node.id())}
+                    contextMenu={TextTreeItemContextMenu(target, node.id())}
                     label={<>
                         <span style={{ color: Theme().accent.color }}>text</span>
                         <span style={{ color: Theme().secondary.subText }}>"{ExpressionDisplay.mask(node.content())}"</span>
@@ -219,21 +225,21 @@ export function TemplateContainerEditorTreeComponent(props: { target: TemplateCo
 
     const ElementItem = (props: { id: string; depth: number; path: string[] }) => {
         const node = drx.elements[props.id];
-        const expanded = createMemo(() => !collapsedItems().includes(props.id));
+        const expanded = createMemo(() => !editor.collapsedItems().includes(props.id));
         const leaf = createMemo(() => {
             const template = node.template();
-            if (template.length === 1 && template[0].type === NodeType.Text) {
+            if (template?.length === 1 && template[0].type === NodeType.Text) {
                 return ExpressionDisplay.mask(drx.texts[template[0].id].content());
             }
         });
-        const expandable = createMemo(() => node.template().length > 0 && !leaf());
+        const expandable = createMemo(() => (node.template()?.length ?? 0) > 0 && !leaf());
         return (
             <Show when={node.id()}>
                 <TreeItem
                     id={node.id()} type={NodeType.Element} depth={props.depth} path={props.path}
                     expandable={expandable()} expanded={expanded()}
-                    onToggle={() => setCollapsedItems(items => $Array.toggle(items, props.id))}
-                    contextMenu={ElementTreeItemContextMenu(node.id())}
+                    onToggle={() => editor.collapsedItems(items => $Array.toggle(items, props.id))}
+                    contextMenu={ElementTreeItemContextMenu(target, node.id())}
                     label={<>
                         <span>
                             <span style={{ color: Theme().accent.color }}>{node.tag()}</span>
@@ -253,15 +259,15 @@ export function TemplateContainerEditorTreeComponent(props: { target: TemplateCo
 
     const IfItem = (props: { id: string; depth: number; path: string[] }) => {
         const node = drx.ifs[props.id];
-        const expanded = createMemo(() => !collapsedItems().includes(props.id));
-        const expandable = createMemo(() => node.template().length > 0);
+        const expanded = createMemo(() => !editor.collapsedItems().includes(props.id));
+        const expandable = createMemo(() => (node.template()?.length ?? 0) > 0);
         return (
             <Show when={node.id()}>
                 <TreeItem
                     id={node.id()} type={NodeType.If} depth={props.depth} path={props.path}
                     expandable={expandable()} expanded={expanded()}
-                    onToggle={() => setCollapsedItems(items => $Array.toggle(items, props.id))}
-                    contextMenu={IfTreeItemContextMenu(node.id())}
+                    onToggle={() => editor.collapsedItems(items => $Array.toggle(items, props.id))}
+                    contextMenu={IfTreeItemContextMenu(target, node.id())}
                     label={<>
                         <span>If</span>
                         <span style={{ color: Theme().secondary.subText }}>{ExpressionDisplay.mask(node.condition())}</span>
@@ -273,15 +279,15 @@ export function TemplateContainerEditorTreeComponent(props: { target: TemplateCo
 
     const ForItem = (props: { id: string; depth: number; path: string[] }) => {
         const node = drx.fors[props.id];
-        const expanded = createMemo(() => !collapsedItems().includes(props.id));
-        const expandable = createMemo(() => node.template().length > 0);
+        const expanded = createMemo(() => !editor.collapsedItems().includes(props.id));
+        const expandable = createMemo(() => (node.template()?.length ?? 0) > 0);
         return (
             <Show when={node.id()}>
                 <TreeItem
                     id={node.id()} type={NodeType.For} depth={props.depth} path={props.path}
                     expandable={expandable()} expanded={expanded()}
-                    onToggle={() => setCollapsedItems(items => $Array.toggle(items, props.id))}
-                    contextMenu={ForTreeItemContextMenu(node.id())}
+                    onToggle={() => editor.collapsedItems(items => $Array.toggle(items, props.id))}
+                    contextMenu={ForTreeItemContextMenu(target, node.id())}
                     label={<>
                         <span>For</span>
                         <span style={{ color: Theme().secondary.subText }}>{ExpressionDisplay.mask(node.each())}</span>
@@ -299,7 +305,7 @@ export function TemplateContainerEditorTreeComponent(props: { target: TemplateCo
             <Show when={node.id()}>
                 <TreeItem
                     id={node.id()} type={NodeType.PageContainer} depth={props.depth} path={props.path}
-                    contextMenu={PageContainerTreeItemContextMenu(node.id())}
+                    contextMenu={PageContainerTreeItemContextMenu(target, node.id())}
                     label={<>
                         <span>Page</span>
                         <span>{node.page()}</span>
@@ -314,7 +320,7 @@ export function TemplateContainerEditorTreeComponent(props: { target: TemplateCo
             <Show when={node.id()}>
                 <TreeItem
                     id={node.id()} type={NodeType.ComponentInstance} depth={props.depth} path={props.path}
-                    contextMenu={ComponentInstanceTreeItemContextMenu(node.id())}
+                    contextMenu={ComponentInstanceTreeItemContextMenu(target, node.id())}
                     label={<>
                         <span>Component</span>
                         <span>{node.component()}</span>
@@ -328,7 +334,7 @@ export function TemplateContainerEditorTreeComponent(props: { target: TemplateCo
             <div
                 style={{ height: '100%' }}
                 onClick={() => editor.selectedTreeItem(null)}
-                use:ContextMenuDirective={{ items: TemplateContainerTreeContextMenu(props.target.type === 'component' ? NodeType.Component : NodeType.Page, props.target.id) }}
+                use:ContextMenuDirective={{ items: TemplateContainerTreeContextMenu(target.type === 'component' ? NodeType.Component : NodeType.Page, target.id) }}
             >
                 <PanelComponent icon='list-tree' title='Nodes'>
                     <VirtualList items={items()} />

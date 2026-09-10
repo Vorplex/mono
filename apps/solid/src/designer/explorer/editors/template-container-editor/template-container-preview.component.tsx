@@ -1,11 +1,9 @@
 import { ExpressionDisplay, NodeType } from '@vorplex/drx';
 import { defineRemountingComponent, useInjector, useStore } from '@vorplex/solid';
-import { createResource, createSignal, onCleanup, onMount, useContext } from 'solid-js';
+import { createResource, createSignal, onCleanup, onMount } from 'solid-js';
 import { PanelComponent } from '../../../../components/panel.component';
 import { Theme } from '../../../../consts/theme';
-import { PlatformService } from '../../../../services/platform.service';
-import { TemplateContainerEditorContext, TemplateContainerTarget } from './template-container-editor-context';
-
+import { PlatformService, TemplateContainerTarget } from '../../../../services/platform.service';
 
 export const TemplateContainerPreviewComponent = defineRemountingComponent((props: { target: TemplateContainerTarget }) => {
 
@@ -13,7 +11,7 @@ export const TemplateContainerPreviewComponent = defineRemountingComponent((prop
         platform: PlatformService
     });
 
-    const editorState = useContext(TemplateContainerEditorContext);
+    const editorKey = props.target.id;
     const drx = useStore(service.platform.drx.state);
 
     let frame!: HTMLIFrameElement;
@@ -24,11 +22,10 @@ export const TemplateContainerPreviewComponent = defineRemountingComponent((prop
         frameDocument.body.style.margin = '0';
         frameDocument.addEventListener('click', event => {
             event.preventDefault();
-            const chain = event.composedPath().filter((node): node is HTMLElement => node instanceof HTMLElement && node.hasAttribute('data-drx-id'));
-            const target = chain[0];
+            const target = event.composedPath().find((node): node is HTMLElement => node instanceof HTMLElement && node.hasAttribute('data-drx-id'));
             if (!target) return;
-            const ids = chain.map(node => node.getAttribute('data-drx-id')!).reverse();
-            editorState.update({ selectedTreeItem: { type: NodeType.Element, id: ids[ids.length - 1], path: ids.slice(0, -1) } });
+            const id = target.getAttribute('data-drx-id')!;
+            service.platform.state.update(state => state.explorer.templateEditors[props.target.id], { selectedTreeItem: { type: NodeType.Element, id } });
         });
         frameDocument.addEventListener('dblclick', event => {
             const target = event.composedPath().find((node): node is HTMLElement => node instanceof HTMLElement && node.hasAttribute('data-drx-id'));
@@ -88,11 +85,11 @@ export const TemplateContainerPreviewComponent = defineRemountingComponent((prop
                 styleSheets: [
                     () => '[data-drx-id]:hover:not(:has([data-drx-id]:hover)) { outline: 2px solid #7d8cff; outline-offset: -1px; cursor: pointer; }',
                     () => {
-                        const hovered = editorState.signal.proxy.hoveredTreeItem();
+                        const hovered = service.platform.state.signal.proxy.explorer.templateEditors[editorKey].hoveredTreeItem();
                         return hovered?.type === NodeType.Element ? `[data-drx-id="${hovered.id}"] { outline: 2px solid #7d8cff; outline-offset: -1px; }` : '';
                     },
                     () => {
-                        const selected = editorState.signal.proxy.selectedTreeItem();
+                        const selected = service.platform.state.signal.proxy.explorer.templateEditors[editorKey].selectedTreeItem();
                         return selected?.type === NodeType.Element ? `[data-drx-id="${selected.id}"] { outline: 2px solid ${Theme().info.outline}; outline-offset: -1px; }` : '';
                     }
                 ]

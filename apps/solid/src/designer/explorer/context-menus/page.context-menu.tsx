@@ -4,8 +4,7 @@ import { useInjector } from '@vorplex/solid';
 import { TextFormGroup } from '../../../components/forms/form-input.component';
 import { ContextMenuItem } from '../../../directives/context-menu.directive';
 import { ModalService } from '../../../services/modal.service';
-import { PlatformService } from '../../../services/platform.service';
-import { ExplorerNode, ExplorerService } from '../explorer.service';
+import { ExplorerNode, PlatformService } from '../../../services/platform.service';
 
 export const PageContextMenu: ContextMenuItem[] = [
     {
@@ -14,7 +13,6 @@ export const PageContextMenu: ContextMenuItem[] = [
         onClick: async () => {
             const service = useInjector({
                 platform: PlatformService,
-                explorer: ExplorerService,
                 modal: ModalService
             });
             const result = await service.modal.showForm<{ name: TextFormGroup }>({
@@ -37,7 +35,7 @@ export const PageContextMenu: ContextMenuItem[] = [
                 reducer.pages.entity.create(page),
                 reducer.app.value.update(app => ({ pageIds: [...app.pageIds, page.id] }))
             ]);
-            service.explorer.selectItem({ type: ExplorerNode.Page, id: page.id });
+            service.platform.state.set(state => state.explorer.selectedItem, { type: ExplorerNode.Page, id: page.id });
         }
     }
 ];
@@ -74,7 +72,6 @@ export function createPageItemContextMenu(pageId: string, pageName: string): Con
             onClick: async () => {
                 const service = useInjector({
                     platform: PlatformService,
-                    explorer: ExplorerService,
                     modal: ModalService
                 });
                 const confirmed = await service.modal.showConfirm('Delete', `Are you sure you want to delete "${pageName}"?`);
@@ -83,10 +80,8 @@ export function createPageItemContextMenu(pageId: string, pageName: string): Con
                     reducer.pages.entity.delete(pageId),
                     reducer.app.value.update(app => ({ pageIds: app.pageIds.filter(id => id !== pageId) }))
                 ]);
-                const selected = service.explorer.state.value.selectedItem;
-                if (selected?.type === ExplorerNode.Page && selected.id === pageId) {
-                    service.explorer.state.update({ selectedItem: undefined });
-                }
+                const selected = service.platform.state.value.explorer.selectedItem;
+                if (selected?.type === ExplorerNode.Page && selected.id === pageId) service.platform.state.set(state => state.explorer.selectedItem, undefined);
             }
         }
     ];

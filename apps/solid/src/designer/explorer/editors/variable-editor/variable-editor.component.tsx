@@ -5,8 +5,7 @@ import { parse, stringify } from 'yaml';
 import { FormInputComponent } from '../../../../components/forms/form-input.component';
 import { DropdownOption } from '../../../../components/forms/inputs/dropdown.component';
 import { PanelComponent } from '../../../../components/panel.component';
-import { PlatformService } from '../../../../services/platform.service';
-import { VariableScope } from '../../explorer.service';
+import { PlatformService, VariableScope } from '../../../../services/platform.service';
 
 const classes = createStyle(() => ({
     properties: {

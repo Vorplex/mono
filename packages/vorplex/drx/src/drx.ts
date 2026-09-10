@@ -28,6 +28,7 @@ import { DrxVariable } from './node/variable';
 import { PreviewContext } from './preview-context';
 import { ScriptCompiler } from './script-compiler';
 import { StyleSheet } from './style-sheet';
+import { validators, type DrxProblem } from './validation';
 
 export type DrxScope =
     | { type: 'app' }
@@ -64,6 +65,21 @@ export class DrxDocument {
 
     constructor(state: DrxDocumentState) {
         this.state = new State<DrxDocumentState>(state);
+    }
+
+    public validate(): DrxProblem[] {
+        const state = this.state.value;
+        const problems: DrxProblem[] = [];
+        for (const group of Object.values(validators)) {
+            for (const validate of Object.values(group)) {
+                try {
+                    problems.push(...(validate as (state: DrxDocumentState) => DrxProblem[])(state));
+                } catch (error) {
+                    problems.push({ severity: 'error', code: 'DRX000', message: `Validator crashed: ${error instanceof Error ? error.message : String(error)}`, target: { type: NodeType.App, id: state.app.id } });
+                }
+            }
+        }
+        return problems;
     }
 
     public static async fetch(url: string): Promise<DrxDocument> {
@@ -204,6 +220,20 @@ export class DrxDocument {
         for (const item of Object.values(state.ifs)) if (references(item.template)) return { type: NodeType.If, id: item.id };
         for (const item of Object.values(state.fors)) if (references(item.template)) return { type: NodeType.For, id: item.id };
         return undefined;
+    }
+
+    public getTemplatePath(id: string): string[] {
+        const path: string[] = [];
+        const visited = new Set<string>([id]);
+        let parent = this.getNodeParent(id);
+        while (parent && !visited.has(parent.id)) {
+            if (parent.type === NodeType.Page || parent.type === NodeType.Component) return path.reverse();
+            if (parent.type === NodeType.App) return [];
+            visited.add(parent.id);
+            path.push(parent.id);
+            parent = this.getNodeParent(parent.id);
+        }
+        return [];
     }
 
     public getNodeParentOfType(id: string, type: NodeType): { type: NodeType; id: string } | undefined {

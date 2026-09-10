@@ -1,16 +1,17 @@
 import { NodeType } from '@vorplex/drx';
-import { useStore } from '@vorplex/solid';
-import { Match, Switch, useContext } from 'solid-js';
-import { TemplateContainerEditorContext } from '../template-container-editor-context';
+import { useInjector, useStore } from '@vorplex/solid';
+import { Match, Switch } from 'solid-js';
+import { PlatformService, TemplateContainerTarget } from '../../../../../services/platform.service';
 import { ElementPropertiesPanelComponent } from './properties-panels/element-properties-panel.component';
 import { ForPropertiesPanelComponent } from './properties-panels/for-properties-panel.component';
 import { IfPropertiesPanelComponent } from './properties-panels/if-properties-panel.component';
 import { PageContainerPropertiesPanelComponent } from './properties-panels/page-container.component';
 import { TextPropertiesPanelComponent } from './properties-panels/text-properties-panel.component';
 
-export function PropertiesPanelComponent() {
+export function PropertiesPanelComponent(props: { target: TemplateContainerTarget }) {
 
-    const editor = useStore(useContext(TemplateContainerEditorContext));
+    const service = useInjector({ platform: PlatformService });
+    const editor = useStore(service.platform.state).explorer.templateEditors[props.target.id];
 
     return (
         <Switch>

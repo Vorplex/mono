@@ -94,7 +94,7 @@ export const DrxTemplate = {
     },
     preview(container: Node, items: Getter<DrxTemplateItem[]>, context: PreviewContext): void {
         const entries = Signal.keyed(
-            items,
+            () => items() ?? [],
             entry => entry.value.id,
             entry => {
                 const { id, type } = entry().value;

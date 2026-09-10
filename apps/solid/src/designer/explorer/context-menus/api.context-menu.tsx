@@ -5,8 +5,7 @@ import { CodeFormGroup, DropdownFormGroup, TextFormGroup } from '../../../compon
 import { ContextMenuItem } from '../../../directives/context-menu.directive';
 import { convertOpenAPIToDrx, OpenAPISpec } from '../../../openapi-to-drx.function';
 import { ModalService } from '../../../services/modal.service';
-import { PlatformService } from '../../../services/platform.service';
-import { ExplorerNode, ExplorerService } from '../explorer.service';
+import { ExplorerNode, PlatformService } from '../../../services/platform.service';
 
 export const ApiContextMenu: ContextMenuItem[] = [
     {
@@ -15,7 +14,6 @@ export const ApiContextMenu: ContextMenuItem[] = [
         onClick: async () => {
             const service = useInjector({
                 platform: PlatformService,
-                explorer: ExplorerService,
                 modal: ModalService
             });
             const result = await service.modal.showForm<{ name: TextFormGroup; url: TextFormGroup }>({
@@ -45,7 +43,7 @@ export const ApiContextMenu: ContextMenuItem[] = [
                 reducer.apis.entity.create(api),
                 reducer.app.value.update(app => ({ apiIds: [...app.apiIds, api.id] }))
             ]);
-            service.explorer.selectItem({ type: ExplorerNode.Api, id: api.id });
+            service.platform.state.set(state => state.explorer.selectedItem, { type: ExplorerNode.Api, id: api.id });
         }
     },
     {
@@ -54,7 +52,6 @@ export const ApiContextMenu: ContextMenuItem[] = [
         onClick: async () => {
             const service = useInjector({
                 platform: PlatformService,
-                explorer: ExplorerService,
                 modal: ModalService
             });
             const form = new State<{ type: DropdownFormGroup; url: TextFormGroup; code: CodeFormGroup }>({
@@ -122,7 +119,7 @@ export const ApiContextMenu: ContextMenuItem[] = [
                 reducer.apis.entity.create(converted.api),
                 reducer.app.value.update(app => ({ apiIds: [...app.apiIds, converted.api.id] }))
             ]);
-            service.explorer.selectItem({ type: ExplorerNode.Api, id: converted.api.id });
+            service.platform.state.set(state => state.explorer.selectedItem, { type: ExplorerNode.Api, id: converted.api.id });
         }
     }
 ];
@@ -135,7 +132,6 @@ export function createApiItemContextMenu(apiId: string, apiName: string): Contex
             onClick: async () => {
                 const service = useInjector({
                     platform: PlatformService,
-                    explorer: ExplorerService,
                     modal: ModalService
                 });
                 const result = await service.modal.showForm<{ name: TextFormGroup }>({
@@ -160,7 +156,7 @@ export function createApiItemContextMenu(apiId: string, apiName: string): Contex
                     reducer.apiEndpoints.entity.create(endpoint),
                     reducer.apis.entity.updateById(apiId, api => ({ endpointIds: [...api.endpointIds, endpoint.id] }))
                 ]);
-                service.explorer.selectItem({ type: ExplorerNode.ApiEndpoint, id: endpoint.id, apiId });
+                service.platform.state.set(state => state.explorer.selectedItem, { type: ExplorerNode.ApiEndpoint, id: endpoint.id, apiId });
             }
         },
         {
@@ -193,7 +189,6 @@ export function createApiItemContextMenu(apiId: string, apiName: string): Contex
             onClick: async () => {
                 const service = useInjector({
                     platform: PlatformService,
-                    explorer: ExplorerService,
                     modal: ModalService
                 });
                 const confirmed = await service.modal.showConfirm('Delete', `Are you sure you want to delete "${apiName}"?`);
@@ -204,10 +199,8 @@ export function createApiItemContextMenu(apiId: string, apiName: string): Contex
                     reducer.types.entity.delete(...api.typeIds),
                     reducer.app.value.update(app => ({ apiIds: app.apiIds.filter(id => id !== apiId) }))
                 ]);
-                const selected = service.explorer.state.value.selectedItem;
-                if (selected?.type === ExplorerNode.Api && selected.id === apiId) {
-                    service.explorer.state.update({ selectedItem: undefined });
-                }
+                const selected = service.platform.state.value.explorer.selectedItem;
+                if (selected?.type === ExplorerNode.Api && selected.id === apiId) service.platform.state.set(state => state.explorer.selectedItem, null);
             }
         }
     ];
