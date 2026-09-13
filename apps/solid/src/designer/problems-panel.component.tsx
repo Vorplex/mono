@@ -52,7 +52,11 @@ const classes = createStyle(() => ({
         alignItems: 'center',
         gap: '8px',
         padding: '5px 10px',
-        borderTop: `1px solid ${Theme().outline.primary}`
+        borderTop: `1px solid ${Theme().outline.primary}`,
+        '&:hover': {
+            cursor: 'pointer',
+            boxShadow: Theme().hoverShadow
+        }
     },
     code: {
         color: Theme().primary.subText,

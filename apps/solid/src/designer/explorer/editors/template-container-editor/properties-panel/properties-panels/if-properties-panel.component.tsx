@@ -1,5 +1,5 @@
+import { $Tson } from '@vorplex/core';
 import { createStyle, defineRemountingComponent, useInjector, useStore } from '@vorplex/solid';
-import { $Tson } from '../../../../../../../../../packages/vorplex/core/src';
 import { FieldComponent } from '../../../../../../components/forms/form-input.component';
 import { PanelComponent } from '../../../../../../components/panel.component';
 import { PlatformService } from '../../../../../../services/platform.service';
