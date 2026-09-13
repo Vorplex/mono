@@ -113,15 +113,28 @@ export class State<T = any, TReducer extends Reducer = EmptyReducer> extends Sub
         else this.commit($Value.set(this.value, path, update as ValueSet<V>));
     }
 
-    private commit(value: T): void {
+    private commit: ((value: T) => void) & { emitting?: boolean } = value => {
         if (this.value === value) return;
-        const event = {
-            previousValue: this.value,
-            value: value,
-        };
+        const initialPreviousValue = this.value;
         this.signal(value);
-        this.emit(event);
-    }
+        if (this.commit.emitting) return;
+        this.commit.emitting = true;
+        try {
+            let previousValue = initialPreviousValue;
+            let valueBeforePass: T;
+            do {
+                valueBeforePass = this.value;
+                this.emitEach(() => {
+                    const currentValue = this.value;
+                    const event = { previousValue, value: currentValue };
+                    previousValue = currentValue;
+                    return event;
+                });
+            } while (valueBeforePass !== this.value);
+        } finally {
+            this.commit.emitting = false;
+        }
+    };
 
     public sync(config: State<T>): Subscription {
         let localValue: T;

@@ -5,8 +5,12 @@ export class Subscribable<T> {
     private listeners: ((event: T) => void)[] = [];
 
     protected emit(event: T) {
+        this.emitEach(() => event);
+    }
+
+    protected emitEach(factory: () => T) {
         for (const listener of this.listeners) {
-            listener(event);
+            listener(factory());
         }
     }
 
