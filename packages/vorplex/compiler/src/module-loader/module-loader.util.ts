@@ -38,15 +38,15 @@ export class ModuleLoader {
         if (ModuleLoader.resolver) {
             const module = ModuleLoader.resolver(namespace);
             if (module) {
-                ModuleLoader.registerModule(string.packageName, string.version ?? '<default>', module);
+                ModuleLoader.registerModule(string.name, string.version ?? '<default>', module);
                 return module;
             }
         }
-        const versions = ModuleLoader.registry[string.packageName];
+        const versions = ModuleLoader.registry[string.name];
         if (versions) {
             if (versions) {
                 const version = versions[string.version] ?? versions['latest'] ?? versions[maxSatisfying(Object.keys(versions), '*')] ?? versions['<default>'];
-                const subpath = string.subpath ? `${$String.toAlphanumeric(string.packageName, '_')}__${$String.toAlphanumeric(string.subpath, '_')}` : null;
+                const subpath = string.path ? `${$String.toAlphanumeric(string.name, '_')}__${$String.toAlphanumeric(string.path, '_')}` : null;
                 if (version) return subpath ? version[subpath] : version;
             }
         }
