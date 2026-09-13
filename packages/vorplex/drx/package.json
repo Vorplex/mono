@@ -26,7 +26,7 @@
     }
   },
   "scripts": {
-    "build": "tsc -b --force tsconfig.build.json && tsx bootstrap/build.mts",
+    "build": "tsc -b --force tsconfig.build.json && tsx standalone/build.mts",
     "test": "vitest run"
   },
   "dependencies": {

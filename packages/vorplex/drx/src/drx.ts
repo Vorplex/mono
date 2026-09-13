@@ -1,6 +1,6 @@
-import { $Array, Awaitable, EntityAdaptor, EntityMap, Getter, Scope, Signal, State, TsonDefinition } from '@vorplex/core';
+import { $Array, $Path, Awaitable, EntityAdaptor, EntityMap, Getter, Scope, Signal, State, TsonDefinition } from '@vorplex/core';
+import { DrxDom } from './drx-dom';
 import { IconSheet } from './icon-sheet';
-import { ImportResolver } from './import-resolver';
 import { DrxApi } from './node/api/api';
 import { DrxApiBody } from './node/api/body';
 import { DrxApiEndpoint } from './node/api/endpoint';
@@ -26,7 +26,7 @@ import { DrxText } from './node/text';
 import { DrxType } from './node/type';
 import { DrxVariable } from './node/variable';
 import { PreviewContext } from './preview-context';
-import { ScriptCompiler } from './script-compiler';
+import { DrxScriptBundler } from './script-bundler';
 import { StyleSheet } from './style-sheet';
 import { validators, type DrxProblem } from './validation';
 
@@ -83,14 +83,34 @@ export class DrxDocument {
     }
 
     public static async fetch(url: string): Promise<DrxDocument> {
-        const base = url.slice(0, url.lastIndexOf('/') + 1);
+        const base = new URL('.', url).href;
         const source = await fetch(url).then(response => response.text());
         return DrxDocument.load(source, { import: path => fetch(base + path).then(response => response.text()) });
     }
 
-    public static async load(drx: string, options: { import: (path: string) => Awaitable<string> }): Promise<DrxDocument> {
-        const dom = await ImportResolver.resolve(drx, options.import);
-        return DrxDocument.from(dom);
+    public static async load(drx: string, options: { import: (path: string) => Awaitable<string>, base?: string }): Promise<DrxDocument> {
+        const resolve = async (drx: string, base: string) => {
+            const dom = new DOMParser().parseFromString(drx, 'text/html');
+            for (const element of Array.from(dom.body.querySelectorAll('x-import'))) {
+                const src = DrxDom.getRequiredAttribute(element, 'src');
+                const path = $Path.join(base, src);
+                if (path.endsWith('.ts')) {
+                    const script = dom.createElement('script');
+                    script.setAttribute('type', 'application/typescript');
+                    script.textContent = await options.import(path);
+                    element.replaceWith(script);
+                } else if (path.endsWith('.css')) {
+                    const style = dom.createElement('style');
+                    style.textContent = await options.import(path);
+                    element.replaceWith(style);
+                } else {
+                    const nested = await resolve(await options.import(path), $Path.getDirectory(path));
+                    element.replaceWith(...Array.from(nested.body.childNodes));
+                }
+            }
+            return dom;
+        };
+        return DrxDocument.from(await resolve(drx, options.base ?? ''));
     }
 
     public static parse(drx: string): DrxDocument {
@@ -249,8 +269,8 @@ export class DrxDocument {
     public async mount(target: Element): Promise<Scope> {
         const state = this.state.value;
         IconSheet.load();
-        const compiled = await ScriptCompiler.compile(state);
-        return DrxApp.mount(target, state.app, state, compiled);
+        const bundle = await DrxScriptBundler.bundle(this.state.value);
+        return DrxApp.mount(target, state.app, state, bundle);
     }
 
     public async preview(container: Element, options: { target: { type: 'page' | 'component', id: string }, resolveAsset?: (asset: DrxAsset) => string, styleSheets?: Getter<string | undefined>[] }): Promise<{ dispose: () => void }> {

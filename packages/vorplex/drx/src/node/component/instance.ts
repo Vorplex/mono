@@ -1,10 +1,10 @@
 import { $Id, Scope, Signal, State } from '@vorplex/core';
+import { DrxDocumentState, DrxScope } from '../../drx';
+import { DrxDom } from '../../drx-dom';
 import { ExpressionParser } from '../../expression-parser';
 import { PreviewContext } from '../../preview-context';
 import { ComponentRenderContext, RenderContext, RenderContextType } from '../../render-context';
-import { ScriptCompiler } from '../../script-compiler';
-import { DrxDocumentState, DrxScope } from '../../drx';
-import { DrxDom } from '../../drx-dom';
+import { DrxScripting } from '../../scripting';
 import { StyleSheet } from '../../style-sheet';
 import { DrxApi } from '../api/api';
 import { DrxAsset } from '../asset';
@@ -99,7 +99,7 @@ export const DrxComponentInstance = {
                     nearest: {},
                     locals: {},
                     state,
-                    compiled: context.compiled,
+                    bundle: context.bundle,
                     component: definition,
                     variables: variableStates,
                     props,
@@ -117,15 +117,15 @@ export const DrxComponentInstance = {
                         events: eventsApi
                     },
                     apis: DrxApi.createApi(definition.apiIds, state, scope),
-                    services: ScriptCompiler.instantiateServices(definition.serviceIds, state, context.compiled, componentContext.serviceInstances)
+                    services: DrxScripting.instantiateServices(definition.serviceIds, state, context.bundle, componentContext.serviceInstances)
                 };
-                const ComponentClass = ScriptCompiler.instantiate(context.compiled, definition.id, componentDrx);
+                const ComponentClass = DrxScripting.instantiate(context.bundle, definition.id, componentDrx);
                 const instance = ComponentClass ? new ComponentClass() : undefined;
                 // No `router`/`modal` here, matching components' isolation from ambient app/page context -- both
                 // are page-rendering concerns a component never legitimately needs.
                 componentContext.locals = {
                     asset: DrxAsset.toLocal(definition.assetIds, state),
-                    ...ScriptCompiler.bindMethods(instance),
+                    ...DrxScripting.getFunctionLocals(instance),
                     ...variableLocals,
                     ...propLocals,
                     ...eventLocals

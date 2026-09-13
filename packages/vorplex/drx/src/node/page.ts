@@ -4,7 +4,7 @@ import { DrxDom } from '../drx-dom';
 import { modalApi, ModalManager } from '../modal-manager';
 import { PreviewContext } from '../preview-context';
 import { AppRenderContext, PageRenderContext, RenderContext, RenderContextType } from '../render-context';
-import { ScriptCompiler } from '../script-compiler';
+import { DrxScripting } from '../scripting';
 import { StyleSheet } from '../style-sheet';
 import { DrxApi } from './api/api';
 import { NodeType } from './node-type';
@@ -66,7 +66,7 @@ export const DrxPage = {
                 nearest: context.nearest,
                 locals: {},
                 state,
-                compiled: context.compiled,
+                bundle: context.bundle,
                 page,
                 variables: variableStates
             };
@@ -79,14 +79,19 @@ export const DrxPage = {
                 },
                 page: { variables: DrxVariable.createApi(variables, variableStates, { type: 'app' }, state) },
                 apis: DrxApi.createApi(appContext.app.apiIds, state, { type: 'app' }),
-                services: ScriptCompiler.instantiateServices(appContext.app.serviceIds, state, context.compiled, appContext.serviceInstances),
+                services: DrxScripting.instantiateServices(appContext.app.serviceIds, state, context.bundle, appContext.serviceInstances),
                 router: DrxRouter.createApi(container.ownerDocument.defaultView, appContext.routerState),
                 pages: DrxPage.createApi(appContext.app.pageIds, appContext),
                 modal: modalApi
             };
-            const PageClass = ScriptCompiler.instantiate(context.compiled, page.id, pageDrx);
+            const PageClass = DrxScripting.instantiate(context.bundle, page.id, pageDrx);
             const instance = PageClass ? new PageClass() : undefined;
-            pageContext.locals = { ...context.locals, modal: modalApi, ...ScriptCompiler.bindMethods(instance), ...variableLocals };
+            pageContext.locals = {
+                ...context.locals,
+                modal: modalApi,
+                ...DrxScripting.getFunctionLocals(instance),
+                ...variableLocals
+            };
             DrxTemplate.mount(shadow, page.template, pageContext);
             instance?.onMount?.();
             Signal.cleanup(() => {

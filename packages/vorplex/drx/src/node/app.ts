@@ -2,7 +2,7 @@ import { DependencyTree } from '@vorplex/compiler';
 import { $Id, Scope, Signal, State } from '@vorplex/core';
 import { modalApi } from '../modal-manager';
 import { AppRenderContext, RenderContextType, RouterState } from '../render-context';
-import { CompiledScripts, ScriptCompiler } from '../script-compiler';
+import { DrxScripting } from '../scripting';
 import { DrxDocumentState } from '../drx';
 import { DrxDom } from '../drx-dom';
 import { DrxApi } from './api/api';
@@ -84,7 +84,7 @@ export const DrxApp = {
         for (const id of app.pageIds) element.appendChild(DrxPage.to(state.pages[id], state));
         return element;
     },
-    mount(container: Node, app: DrxApp, state: DrxDocumentState, compiled: CompiledScripts): Scope {
+    mount(container: Node, app: DrxApp, state: DrxDocumentState, bundle: string): Scope {
         return Signal.root(() => {
             const variables = app.variableIds.map(id => state.variables[id]);
             const { locals: variableLocals, states: variableStates } = DrxVariable.instantiate(variables);
@@ -99,7 +99,7 @@ export const DrxApp = {
                     ...variableLocals
                 },
                 state,
-                compiled,
+                bundle,
                 app,
                 variableStates,
                 serviceInstances: new Map(),
@@ -114,12 +114,12 @@ export const DrxApp = {
                     get instance() { return appContext.instance; }
                 },
                 apis: DrxApi.createApi(app.apiIds, state, { type: 'app' }),
-                services: ScriptCompiler.instantiateServices(app.serviceIds, state, compiled, appContext.serviceInstances),
+                services: DrxScripting.instantiateServices(app.serviceIds, state, bundle, appContext.serviceInstances),
                 router: DrxRouter.createApi(container.ownerDocument.defaultView, routerState),
                 pages: DrxPage.createApi(app.pageIds, appContext),
                 modal: modalApi
             };
-            const AppClass = ScriptCompiler.instantiate(compiled, app.id, appDrx);
+            const AppClass = DrxScripting.instantiate(bundle, app.id, appDrx);
             const instance = AppClass ? new AppClass() : undefined;
             appContext.instance = instance;
 

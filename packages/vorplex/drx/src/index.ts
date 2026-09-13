@@ -1,14 +1,15 @@
 // **/*.ts
+export * from './compiler';
 export * from './drx-dom';
 export * from './drx';
 export * from './expression-display';
 export * from './expression-parser';
 export * from './icon-sheet';
-export * from './import-resolver';
 export * from './modal-manager';
 export * from './preview-context';
 export * from './render-context';
-export * from './script-compiler';
+export * from './script-bundler';
+export * from './scripting';
 export * from './style-sheet';
 export * from './validation';
 export * from './node/app';

@@ -2,7 +2,6 @@ import { Signal, State } from '@vorplex/core';
 import { DrxApp } from './node/app';
 import { DrxComponent } from './node/component/component';
 import { DrxPage } from './node/page';
-import { CompiledScripts } from './script-compiler';
 import { DrxDocumentState } from './drx';
 
 export enum RenderContextType {
@@ -28,7 +27,7 @@ export interface RenderContextBase {
     nearest: NearestRenderContext;
     locals: Record<string, any>;
     state: DrxDocumentState;
-    compiled: CompiledScripts;
+    bundle: string;
 }
 
 export interface AppRenderContext extends RenderContextBase {
