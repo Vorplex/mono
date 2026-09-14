@@ -32,7 +32,7 @@ No attributes.
 
 ## `<x-import>`
 
-Splices another file's content in at the tag's position — resolved before compilation, so it behaves like a literal paste. The `.drx` extension may be omitted; `.ts` and `.css` must be given explicitly.
+Splices another file's content in at the tag's position — resolved before compilation, so it behaves like a literal paste. Give the full path including its extension: `.drx` files splice in as markup; `.ts` and `.css` become inline TypeScript and styles.
 
 | Name  | Description                   |
 | ----- | ----------------------------- |
@@ -40,7 +40,7 @@ Splices another file's content in at the tag's position — resolved before comp
 
 ```html
 <x-app>
-  <x-import src="./header"></x-import>
+  <x-import src="./header.drx"></x-import>
   <!-- header.drx's markup, spliced here -->
   <x-import src="./script.ts"></x-import>
   <!-- becomes an inline TypeScript script -->

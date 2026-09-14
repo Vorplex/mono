@@ -292,6 +292,22 @@
                 overflow-wrap: anywhere;
             }
 
+            .snippet {
+                display: block;
+                margin: 0 0 16px;
+                padding: 12px 15px;
+                background: #f3f4f6;
+                border: 1px solid var(--border);
+                border-radius: 6px;
+                overflow-x: auto;
+            }
+
+            .snippet code {
+                background: none;
+                padding: 0;
+                color: #374151;
+            }
+
             tfoot .notation {
                 padding: 10px 13px;
                 background: #fafbfc;
@@ -487,23 +503,6 @@
                 background: white;
             }
 
-            .preview-status {
-                position: absolute;
-                inset: 0;
-                z-index: 1;
-                margin: 0;
-                padding: 20px;
-                background: white;
-                font-size: 12px;
-                color: var(--muted);
-                overflow: auto;
-                overflow-wrap: anywhere;
-            }
-
-            .preview-status.error {
-                color: #a43c35;
-            }
-
             @media (min-width: 1700px) {
                 main {
                     padding-left: 80px;
@@ -680,6 +679,7 @@
                         <a href="#asset">Assets</a>
                         <a href="#icon">Icons</a>
                         <a href="#modals">Modals</a>
+                        <a href="#pwa">PWA</a>
                     </div>
                 </details>
                 <details open="">
@@ -702,6 +702,9 @@
                 <h2>Quick Start</h2>
                 <p>Save this example as an HTML file and open it in a browser. The script loads DRX, <code>&lt;x-app&gt;</code> wraps the application, and <code>&lt;x-page&gt;</code> defines its first
                     view. No build configuration is needed.</p>
+                <p>The interactive previews on this page load DRX automatically, so the editable code below omits this line. Add it yourself when copying an example into a real
+                    HTML file:</p>
+                <pre class="snippet"><code>&lt;script src="https://cdn.jsdelivr.net/gh/Vorplex/mono@shtml/packages/vorplex/drx/standalone/cdn/drx.js"&gt;&lt;/script&gt;</code></pre>
                 <div class="example"
                      data-example="">
                     <div class="example-heading">
@@ -730,11 +733,9 @@
                                           autocomplete="off"
                                           data-file="index.html"
                                           id="example-2-0"
-                                          rows="11"
+                                          rows="9"
                                           spellcheck="false"
-                                          wrap="off">&lt;script src="https://cdn.jsdelivr.net/gh/Vorplex/mono@shtml/packages/vorplex/drx/standalone/cdn/drx.js"&gt;&lt;/script&gt;
-
-&lt;x-app&gt;
+                                          wrap="off">&lt;x-app&gt;
   &lt;x-page name="home"&gt;
     &lt;x-variable name="count"&gt;0&lt;/x-variable&gt;
     &lt;button onclick="count(count() + 1)"&gt;
@@ -747,8 +748,6 @@
                         <div class="preview-pane">
                             <div class="pane-label">Preview</div>
                             <div class="preview-output">
-                                <p class="preview-status"
-                                   role="status">Loading DRX...</p>
                                 <div class="preview-frame"></div>
                             </div>
                         </div>
@@ -756,8 +755,11 @@
                 </div>
                 <p><code>&lt;x-variable&gt;</code> holds the initial count. Read it with <code>count()</code> and write it with <code>count(count() + 1)</code>. The <code>{{count()}}</code> expression
                     updates the button text whenever the value changes.</p>
-                <p class="example-note">Examples run automatically as you edit. Use the reset icon to restore the original code. Previews need an internet connection. Other examples omit the bootstrap
-                    line; the preview adds it automatically.</p>
+                <p class="example-note">Examples run automatically as you edit. Use the reset icon to restore the original code. Previews need an internet connection.</p>
+                <h2>CDN URL</h2>
+                <p>Use <code>drx.js</code> to compile and run <code>&lt;x-app&gt;</code> markup directly in the browser; you'll see <code>runtime.js</code> instead inside a compiled app.</p>
+                <pre class="snippet"><code>&lt;script src="https://cdn.jsdelivr.net/gh/Vorplex/mono@shtml/packages/vorplex/drx/standalone/cdn/drx.js"&gt;&lt;/script&gt;</code></pre>
+                <pre class="snippet"><code>&lt;script src="https://cdn.jsdelivr.net/gh/Vorplex/mono@shtml/packages/vorplex/drx/standalone/cdn/runtime.js"&gt;&lt;/script&gt;</code></pre>
             </article>
             <article data-page="app"
                      hidden=""
@@ -809,8 +811,6 @@
                         <div class="preview-pane">
                             <div class="pane-label">Preview</div>
                             <div class="preview-output">
-                                <p class="preview-status"
-                                   role="status">Loading DRX...</p>
                                 <div class="preview-frame"></div>
                             </div>
                         </div>
@@ -897,8 +897,6 @@
                         <div class="preview-pane">
                             <div class="pane-label">Preview</div>
                             <div class="preview-output">
-                                <p class="preview-status"
-                                   role="status">Loading DRX...</p>
                                 <div class="preview-frame"></div>
                             </div>
                         </div>
@@ -992,8 +990,6 @@
                         <div class="preview-pane">
                             <div class="pane-label">Preview</div>
                             <div class="preview-output">
-                                <p class="preview-status"
-                                   role="status">Loading DRX...</p>
                                 <div class="preview-frame"></div>
                             </div>
                         </div>
@@ -1061,8 +1057,6 @@
                         <div class="preview-pane">
                             <div class="pane-label">Preview</div>
                             <div class="preview-output">
-                                <p class="preview-status"
-                                   role="status">Loading DRX...</p>
                                 <div class="preview-frame"></div>
                             </div>
                         </div>
@@ -1140,8 +1134,6 @@
                         <div class="preview-pane">
                             <div class="pane-label">Preview</div>
                             <div class="preview-output">
-                                <p class="preview-status"
-                                   role="status">Loading DRX...</p>
                                 <div class="preview-frame"></div>
                             </div>
                         </div>
@@ -1234,8 +1226,6 @@
                         <div class="preview-pane">
                             <div class="pane-label">Preview</div>
                             <div class="preview-output">
-                                <p class="preview-status"
-                                   role="status">Loading DRX...</p>
                                 <div class="preview-frame"></div>
                             </div>
                         </div>
@@ -1248,8 +1238,8 @@
                      id="page-import">
                 <h1 tabindex="-1">Imports</h1>
                 <p class="intro">Compose files before compilation.</p>
-                <p><code>&lt;x-import&gt;</code> inserts another file at its position, like a literal paste. Omit the <code>.drx</code> extension when convenient. Keep <code>.ts</code> and
-                    <code>.css</code> explicit: they become inline TypeScript and styles.
+                <p><code>&lt;x-import&gt;</code> inserts another file at its position, like a literal paste. Give the full path including its extension &#8212; <code>.drx</code> files splice in as
+                    markup, while <code>.ts</code> and <code>.css</code> become inline TypeScript and styles.
                 </p>
                 <h2><code>&lt;x-import&gt;</code></h2>
                 <div class="table-wrap">
@@ -1307,7 +1297,7 @@
                                           wrap="off">&lt;x-app&gt;
   &lt;x-page name="home"&gt;
     &lt;x-variable name="count"&gt;0&lt;/x-variable&gt;
-    &lt;x-import src="./header"&gt;&lt;/x-import&gt;
+    &lt;x-import src="./header.drx"&gt;&lt;/x-import&gt;
     &lt;x-import src="./actions.ts"&gt;&lt;/x-import&gt;
     &lt;x-import src="./style.css"&gt;&lt;/x-import&gt;
     &lt;button onclick="increment()"&gt;Count: {{count()}}&lt;/button&gt;
@@ -1353,8 +1343,6 @@
                         <div class="preview-pane">
                             <div class="pane-label">Preview</div>
                             <div class="preview-output">
-                                <p class="preview-status"
-                                   role="status">Loading DRX...</p>
                                 <div class="preview-frame"></div>
                             </div>
                         </div>
@@ -1453,8 +1441,6 @@
                         <div class="preview-pane">
                             <div class="pane-label">Preview</div>
                             <div class="preview-output">
-                                <p class="preview-status"
-                                   role="status">Loading DRX...</p>
                                 <div class="preview-frame"></div>
                             </div>
                         </div>
@@ -1509,8 +1495,6 @@
                         <div class="preview-pane">
                             <div class="pane-label">Preview</div>
                             <div class="preview-output">
-                                <p class="preview-status"
-                                   role="status">Loading DRX...</p>
                                 <div class="preview-frame"></div>
                             </div>
                         </div>
@@ -1601,8 +1585,6 @@
                         <div class="preview-pane">
                             <div class="pane-label">Preview</div>
                             <div class="preview-output">
-                                <p class="preview-status"
-                                   role="status">Loading DRX...</p>
                                 <div class="preview-frame"></div>
                             </div>
                         </div>
@@ -1685,8 +1667,6 @@
                         <div class="preview-pane">
                             <div class="pane-label">Preview</div>
                             <div class="preview-output">
-                                <p class="preview-status"
-                                   role="status">Loading DRX...</p>
                                 <div class="preview-frame"></div>
                             </div>
                         </div>
@@ -1767,8 +1747,6 @@
                         <div class="preview-pane">
                             <div class="pane-label">Preview</div>
                             <div class="preview-output">
-                                <p class="preview-status"
-                                   role="status">Loading DRX...</p>
                                 <div class="preview-frame"></div>
                             </div>
                         </div>
@@ -1840,8 +1818,6 @@
                         <div class="preview-pane">
                             <div class="pane-label">Preview</div>
                             <div class="preview-output">
-                                <p class="preview-status"
-                                   role="status">Loading DRX...</p>
                                 <div class="preview-frame"></div>
                             </div>
                         </div>
@@ -1930,8 +1906,6 @@
                         <div class="preview-pane">
                             <div class="pane-label">Preview</div>
                             <div class="preview-output">
-                                <p class="preview-status"
-                                   role="status">Loading DRX...</p>
                                 <div class="preview-frame"></div>
                             </div>
                         </div>
@@ -2026,8 +2000,6 @@
                         <div class="preview-pane">
                             <div class="pane-label">Preview</div>
                             <div class="preview-output">
-                                <p class="preview-status"
-                                   role="status">Loading DRX...</p>
                                 <div class="preview-frame"></div>
                             </div>
                         </div>
@@ -2108,8 +2080,6 @@
                         <div class="preview-pane">
                             <div class="pane-label">Preview</div>
                             <div class="preview-output">
-                                <p class="preview-status"
-                                   role="status">Loading DRX...</p>
                                 <div class="preview-frame"></div>
                             </div>
                         </div>
@@ -2188,8 +2158,6 @@
                         <div class="preview-pane">
                             <div class="pane-label">Preview</div>
                             <div class="preview-output">
-                                <p class="preview-status"
-                                   role="status">Loading DRX...</p>
                                 <div class="preview-frame"></div>
                             </div>
                         </div>
@@ -2290,8 +2258,6 @@
                         <div class="preview-pane">
                             <div class="pane-label">Preview</div>
                             <div class="preview-output">
-                                <p class="preview-status"
-                                   role="status">Loading DRX...</p>
                                 <div class="preview-frame"></div>
                             </div>
                         </div>
@@ -2347,8 +2313,6 @@
                         <div class="preview-pane">
                             <div class="pane-label">Preview</div>
                             <div class="preview-output">
-                                <p class="preview-status"
-                                   role="status">Loading DRX...</p>
                                 <div class="preview-frame"></div>
                             </div>
                         </div>
@@ -2481,8 +2445,6 @@
                         <div class="preview-pane">
                             <div class="pane-label">Preview</div>
                             <div class="preview-output">
-                                <p class="preview-status"
-                                   role="status">Loading DRX...</p>
                                 <div class="preview-frame"></div>
                             </div>
                         </div>
@@ -2606,8 +2568,6 @@
                         <div class="preview-pane">
                             <div class="pane-label">Preview</div>
                             <div class="preview-output">
-                                <p class="preview-status"
-                                   role="status">Loading DRX...</p>
                                 <div class="preview-frame"></div>
                             </div>
                         </div>
@@ -2723,8 +2683,6 @@
                         <div class="preview-pane">
                             <div class="pane-label">Preview</div>
                             <div class="preview-output">
-                                <p class="preview-status"
-                                   role="status">Loading DRX...</p>
                                 <div class="preview-frame"></div>
                             </div>
                         </div>
@@ -2813,9 +2771,8 @@
     &lt;script type="application/typescript"&gt;
       export default DRX.definePage(drx =&gt; class {
         onMount() {
-          drx.page.variables.message.set(
-            drx.services.greeter.greet('Ada')
-          );
+          const message = drx.services.greeter.greet('Ada');
+          drx.page.variables.message.set(message);
         }
       });
     &lt;/script&gt;
@@ -2827,8 +2784,6 @@
                         <div class="preview-pane">
                             <div class="pane-label">Preview</div>
                             <div class="preview-output">
-                                <p class="preview-status"
-                                   role="status">Loading DRX...</p>
                                 <div class="preview-frame"></div>
                             </div>
                         </div>
@@ -2895,8 +2850,6 @@
                         <div class="preview-pane">
                             <div class="pane-label">Preview</div>
                             <div class="preview-output">
-                                <p class="preview-status"
-                                   role="status">Loading DRX...</p>
                                 <div class="preview-frame"></div>
                             </div>
                         </div>
@@ -2988,8 +2941,6 @@
                         <div class="preview-pane">
                             <div class="pane-label">Preview</div>
                             <div class="preview-output">
-                                <p class="preview-status"
-                                   role="status">Loading DRX...</p>
                                 <div class="preview-frame"></div>
                             </div>
                         </div>
@@ -3077,8 +3028,6 @@
                         <div class="preview-pane">
                             <div class="pane-label">Preview</div>
                             <div class="preview-output">
-                                <p class="preview-status"
-                                   role="status">Loading DRX...</p>
                                 <div class="preview-frame"></div>
                             </div>
                         </div>
@@ -3162,14 +3111,83 @@
                         <div class="preview-pane">
                             <div class="pane-label">Preview</div>
                             <div class="preview-output">
-                                <p class="preview-status"
-                                   role="status">Loading DRX...</p>
                                 <div class="preview-frame"></div>
                             </div>
                         </div>
                     </div>
                 </div>
                 <p class="example-note">This example demonstrates the data/result contract. A production dialog also needs focus management and keyboard handling.</p>
+            </article>
+            <article data-page="pwa"
+                     hidden=""
+                     id="page-pwa">
+                <h1 tabindex="-1">PWA</h1>
+                <p class="intro">Make your app installable and available offline.</p>
+                <p>The body is a JSON object with the same fields as a <a href="https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/Manifest"
+                       target="_blank"
+                       rel="noopener">Web App Manifest</a>, written in camelCase &#8212; DRX converts each property to the manifest's standard snake_case (<code>shortName</code> &#8594;
+                    <code>short_name</code>, <code>themeColor</code> &#8594; <code>theme_color</code>, and so on) when the app is exported. Use at most one <code>&lt;x-pwa-metadata&gt;</code> per app.
+                </p>
+                <p class="example-note">This metadata has no effect in the previews on this page &#8212; it only takes effect once an app is exported and deployed, where it produces a real
+                    <code>manifest.json</code> and a service worker that precaches the app for offline use.
+                </p>
+                <h2><code>&lt;x-pwa-metadata&gt;</code></h2>
+                <div class="example"
+                     data-example="">
+                    <div class="example-heading">
+                        <span>Installable App Metadata</span><button class="reset"
+                                type="button"
+                                title="Reset example"
+                                aria-label="Reset example"><svg aria-hidden="true"
+                                 focusable="false"
+                                 width="16"
+                                 height="16"
+                                 viewBox="0 0 24 24"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 stroke-width="1.8"
+                                 stroke-linecap="round"
+                                 stroke-linejoin="round">
+                                <path d="M3 10a9 9 0 1 1 2.6 8.4" />
+                                <path d="M3 4v6h6" />
+                            </svg></button>
+                    </div>
+                    <div class="example-grid">
+                        <div class="source-pane">
+                            <div class="code-file">
+                                <label for="example-31-0">index.html<span>editable</span></label><textarea aria-label="Installable app metadata: index.html"
+                                          autocapitalize="off"
+                                          autocomplete="off"
+                                          data-file="index.html"
+                                          id="example-31-0"
+                                          rows="16"
+                                          spellcheck="false"
+                                          wrap="off">&lt;x-app&gt;
+  &lt;x-pwa-metadata&gt;{
+    "name": "Task Tracker",
+    "shortName": "Tasks",
+    "themeColor": "#2563eb",
+    "backgroundColor": "#ffffff",
+    "display": "standalone",
+    "icons": [
+      { "src": "icon-192.png", "sizes": "192x192" },
+      { "src": "icon-512.png", "sizes": "512x512" }
+    ]
+  }&lt;/x-pwa-metadata&gt;
+  &lt;x-page name="home"&gt;
+    &lt;p&gt;Installable as an app once deployed.&lt;/p&gt;
+  &lt;/x-page&gt;
+&lt;/x-app&gt;</textarea>
+                            </div>
+                        </div>
+                        <div class="preview-pane">
+                            <div class="pane-label">Preview</div>
+                            <div class="preview-output">
+                                <div class="preview-frame"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </article>
             <article data-page="tson"
                      hidden=""
@@ -3294,8 +3312,6 @@
                         <div class="preview-pane">
                             <div class="pane-label">Preview</div>
                             <div class="preview-output">
-                                <p class="preview-status"
-                                   role="status">Loading DRX...</p>
                                 <div class="preview-frame"></div>
                             </div>
                         </div>
@@ -3351,8 +3367,6 @@
                         <div class="preview-pane">
                             <div class="pane-label">Preview</div>
                             <div class="preview-output">
-                                <p class="preview-status"
-                                   role="status">Loading DRX...</p>
                                 <div class="preview-frame"></div>
                             </div>
                         </div>
@@ -3370,7 +3384,6 @@
             const sidebar = document.getElementById('sidebar');
             const menu = document.getElementById('menu-toggle');
             const backdrop = document.getElementById('nav-backdrop');
-            const sessions = new Map();
             const pendingRuns = new Map();
             let currentPage;
 
@@ -3491,11 +3504,7 @@
             function stopPreviews() {
                 for (const timer of pendingRuns.values()) clearTimeout(timer);
                 pendingRuns.clear();
-                for (const session of sessions.values()) {
-                    clearTimeout(session.timer);
-                    session.frame.remove();
-                }
-                sessions.clear();
+                for (const frame of document.querySelectorAll('.preview-frame iframe')) frame.remove();
             }
 
             function showPage(initial = false) {
@@ -3533,36 +3542,20 @@
             }
 
             // Runs inside the sandbox. This is preview infrastructure, not a DRX renderer.
+            // DRX itself shows its own loading spinner and pretty-prints its own errors inside
+            // the mounted page, so this bridge only needs to serve the editable in-memory files
+            // and, for the routing example, keep clicked links inside the iframe.
             function previewBridge(config) {
-                const report = (state, text = '') => parent.postMessage({ kind: 'drx-preview', state, text }, '*');
-                let loaded = false;
-                let failed = false;
-                function fail(text) { failed = true; report('error', String(text)); }
-                addEventListener('error', event => {
-                    if (event.target instanceof HTMLScriptElement && event.target.hasAttribute('data-drx-runtime')) {
-                        fail('The DRX runtime could not load. Check your connection, then edit the code to retry.');
-                    } else if (event.message) fail(event.message);
-                }, true);
-                addEventListener('unhandledrejection', event => fail(event.reason?.message || event.reason));
-                const originalError = console.error.bind(console);
-                console.error = (...args) => {
-                    originalError(...args);
-                    if (args.some(value => String(value).toLowerCase().includes('[drx] failed'))) {
-                        fail(args.map(value => value?.message || String(value)).join(' '));
-                    }
-                };
-
-                // Resolve editable imports from memory; external API requests use native fetch.
                 const originalFetch = window.fetch.bind(window);
                 window.fetch = (input, options) => {
                     const raw = input instanceof Request ? input.url : String(input);
                     const url = new URL(raw, config.base);
                     if (url.origin === new URL(config.base).origin) {
                         const path = decodeURIComponent(url.pathname).replace(/^\/+/, '');
-                        const file = [path, path + '.drx'].find(name => Object.hasOwn(config.files, name));
-                        return Promise.resolve(new Response(file ? config.files[file] : 'File not found', {
-                            status: file ? 200 : 404,
-                            headers: { 'Content-Type': file?.endsWith('.json') ? 'application/json' : 'text/plain' }
+                        const found = Object.hasOwn(config.files, path);
+                        return Promise.resolve(new Response(found ? config.files[path] : 'File not found', {
+                            status: found ? 200 : 404,
+                            headers: { 'Content-Type': path.endsWith('.json') ? 'application/json' : 'text/plain' }
                         }));
                     }
                     return originalFetch(input, options);
@@ -3575,21 +3568,6 @@
                         if (href?.startsWith('#')) { event.preventDefault(); location.hash = href; }
                     }, true);
                 }
-                function checkReady() {
-                    if (loaded && !failed && document.body && !document.querySelector('x-app') &&
-                        [...document.body.children].some(node => !['SCRIPT', 'STYLE'].includes(node.tagName))) {
-                        report('ready');
-                        observer.disconnect();
-                    }
-                }
-                const observer = new MutationObserver(checkReady);
-                observer.observe(document.documentElement, { childList: true, subtree: true });
-                document.addEventListener('load', event => {
-                    if (event.target instanceof HTMLScriptElement && event.target.hasAttribute('data-drx-runtime')) {
-                        loaded = true;
-                        checkReady();
-                    }
-                }, true);
             }
 
             function previewDocument(files) {
@@ -3608,7 +3586,6 @@
                 let runtime = [...doc.querySelectorAll('script[src]')].find(script => script.getAttribute('src') === RUNTIME);
                 if (!runtime) { runtime = doc.createElement('script'); runtime.src = RUNTIME; doc.head.append(runtime); }
                 runtime.defer = true;
-                runtime.setAttribute('data-drx-runtime', '');
                 return '<!doctype html>\n' + doc.documentElement.outerHTML;
             }
 
@@ -3632,46 +3609,16 @@
             function run(example) {
                 clearTimeout(pendingRuns.get(example));
                 pendingRuns.delete(example);
-                const oldFrame = example.querySelector('iframe');
-                if (oldFrame) {
-                    clearTimeout(sessions.get(oldFrame.contentWindow)?.timer);
-                    sessions.delete(oldFrame.contentWindow);
-                    oldFrame.remove();
-                }
+                example.querySelector('iframe')?.remove();
                 const files = Object.fromEntries([...example.querySelectorAll('textarea[data-file]')].map(editor => [editor.dataset.file, editor.value]));
-                const status = example.querySelector('.preview-status');
-                status.classList.remove('error');
-                status.textContent = 'Loading DRX...';
-                status.hidden = false;
                 const frame = document.createElement('iframe');
                 frame.title = example.querySelector('.example-heading span').textContent + ' preview';
                 frame.setAttribute('sandbox', 'allow-scripts');
                 frame.referrerPolicy = 'no-referrer';
+                frame.srcdoc = previewDocument(files);
                 example.querySelector('.preview-frame').append(frame);
-                const session = {
-                    frame, status, timer: setTimeout(() => {
-                        if (!status.hidden) status.textContent = 'DRX is still loading. Check your connection, then edit the code to retry.';
-                    }, 20000)
-                };
-                sessions.set(frame.contentWindow, session);
-                try { frame.srcdoc = previewDocument(files); }
-                catch (error) {
-                    clearTimeout(session.timer);
-                    status.textContent = error.message;
-                    status.classList.add('error');
-                }
             }
 
-            window.addEventListener('message', event => {
-                const session = sessions.get(event.source);
-                if (!session || event.data?.kind !== 'drx-preview') return;
-                clearTimeout(session.timer);
-                session.status.hidden = event.data.state === 'ready';
-                if (!session.status.hidden) {
-                    session.status.textContent = event.data.text;
-                    session.status.classList.add('error');
-                }
-            });
             for (const example of document.querySelectorAll('[data-example]')) {
                 example.querySelector('.reset').addEventListener('click', () => resetExample(example));
                 example.addEventListener('input', event => {
