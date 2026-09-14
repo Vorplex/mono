@@ -305,28 +305,71 @@ export class DrxDocument {
         return undefined;
     }
 
-    public async mount(target: Element): Promise<Scope> {
-        const state = this.state.value;
-        IconSheet.load();
-        const bundle = await DrxScriptBundler.bundle(this.state.value);
-        return DrxApp.mount(target, state.app, state, bundle);
+    public async mount(target: Element): Promise<Scope | undefined> {
+        return DrxDocument.bootstrap(target, async () => {
+            const state = this.state.value;
+            IconSheet.load();
+            const bundle = await DrxScriptBundler.bundle(state);
+            return DrxApp.mount(target, state.app, state, bundle);
+        });
+    }
+
+    public static async bootstrap<T>(target: Element, callback: () => Awaitable<T>): Promise<T | undefined> {
+        const container = document.createElement('div');
+        container.style.cssText = `
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width:100%;
+            height:100%;
+            box-sizing: border-box;
+            color: #1f2329;
+        `;
+        container.innerHTML = `
+            <style>@keyframes drx-spin { to { transform: rotate(360deg); } }</style>
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="animation: drx-spin 0.75s linear infinite;">
+                <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+            </svg>
+        `;
+        target.replaceChildren(container);
+        try { return await callback(); }
+        catch (error) {
+            console.error(error);
+            const pre = document.createElement('pre');
+            pre.style.cssText = `
+            white-space: pre-wrap;
+                color: #b00020;
+                font: 13px/1.5 ui-monospace, monospace;
+                padding: 16px;
+                margin:0;
+                overflow: auto;
+                width:100%;
+                height:100%;
+                box-sizing: border-box;
+                `;
+            pre.textContent = Error.isError(error) ? (error.stack ?? error.message) : String(error);
+            target.replaceChildren(pre);
+        }
+        finally { container.remove(); }
     }
 
     public async preview(container: Element, options: { target: { type: 'page' | 'component', id: string }, resolveAsset?: (asset: DrxAsset) => string, styleSheets?: Getter<string | undefined>[] }): Promise<{ dispose: () => void }> {
-        IconSheet.load();
-        const scope = Signal.root(() => {
-            const context: PreviewContext = {
-                root: this.state.signal,
-                resolveAsset: options.resolveAsset,
-                styleSheets: (options.styleSheets ?? []).map(css => StyleSheet.create(container.ownerDocument.defaultView, css))
-            };
-            if (options.target.type === 'component') {
-                DrxComponent.preview(container, options.target.id, context);
-            } else {
-                DrxPage.preview(container, options.target.id, context);
-            }
+        return DrxDocument.bootstrap(container, () => {
+            IconSheet.load();
+            const scope = Signal.root(() => {
+                const context: PreviewContext = {
+                    root: this.state.signal,
+                    resolveAsset: options.resolveAsset,
+                    styleSheets: (options.styleSheets ?? []).map(css => StyleSheet.create(container.ownerDocument.defaultView, css))
+                };
+                if (options.target.type === 'component') {
+                    DrxComponent.preview(container, options.target.id, context);
+                } else {
+                    DrxPage.preview(container, options.target.id, context);
+                }
+            });
+            return { dispose: () => scope.dispose() };
         });
-        return { dispose: () => scope.dispose() };
     }
 
     public getLocals(targetId: string): Record<string, TsonDefinition> {
