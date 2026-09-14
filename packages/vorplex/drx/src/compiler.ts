@@ -18,19 +18,14 @@ export const DrxCompiler = {
         ]);
         const assets = { ...state.assets };
         const text = (path: string, contentType: string, content: string): DrxCompiledFile => ({ path, contentType, data: new TextEncoder().encode(content) })
-        const head = ['<script src="drx.js"></script>'];
-        if (state.app.pwaMetadata) {
-            head.push(...[
-                '<link rel="manifest" href="manifest.json" />',
-                !$String.isNullOrEmpty(state.app.pwaMetadata.themeColor) && `<meta name="theme-color" content="${state.app.pwaMetadata.themeColor}" />`
-            ]);
-        }
         const files: DrxCompiledFile[] = [
             text('index.html', 'text/html', $String.dedent(`
                 <!doctype html>
                 <html>
                     <head>
-                        ${head.filter(Boolean)}
+                        <script src="drx.js"></script>
+                        ${state.app.pwaMetadata ? '<link rel="manifest" href="manifest.json" />' : ''}
+                        ${!$String.isNullOrEmpty(state.app.pwaMetadata?.themeColor) ? `<meta name="theme-color" content="${state.app.pwaMetadata.themeColor}" />` : ''}
                     </head>
                     <body></body>
                 </html>
