@@ -1,20 +1,21 @@
 import { DependencyTree } from '@vorplex/compiler';
 import { $Id, Scope, Signal, State } from '@vorplex/core';
+import { DrxDocumentState } from '../drx';
+import { DrxDom } from '../drx-dom';
 import { modalApi } from '../modal-manager';
 import { AppRenderContext, RenderContextType, RouterState } from '../render-context';
 import { DrxScripting } from '../scripting';
-import { DrxDocumentState } from '../drx';
-import { DrxDom } from '../drx-dom';
 import { DrxApi } from './api/api';
 import { DrxAsset } from './asset';
 import { DrxComponent } from './component/component';
-import { DrxType } from './type';
 import { DrxDependencyTree } from './dependency-tree';
 import { NodeType } from './node-type';
 import { DrxPackages } from './packages';
 import { DrxPage } from './page';
+import { DrxPwaMetadata } from './pwa-metadata';
 import { DrxRouter } from './router';
 import { DrxService } from './service';
+import { DrxType } from './type';
 import { DrxVariable } from './variable';
 
 export interface DrxApp {
@@ -24,6 +25,7 @@ export interface DrxApp {
     style?: string;
     packages?: Record<string, string>;
     dependencyTree?: DependencyTree;
+    pwaMetadata?: DrxPwaMetadata;
     pageIds: string[];
     variableIds: string[];
     serviceIds: string[];
@@ -36,8 +38,6 @@ export interface DrxApp {
 
 export const DrxApp = {
     from(document: HTMLDocument, state: DrxDocumentState): DrxApp {
-        // 'text/html' parsing always nests content under <body>, even for a bare <x-app>...</x-app> source
-        // with no explicit <html>/<body> wrapper -- so <x-app> is never a direct child of the document itself.
         const element = document.body.querySelector(`:scope > ${NodeType.App}`);
         return DrxApp.parse(element, state);
     },
@@ -56,6 +56,7 @@ export const DrxApp = {
             style: DrxDom.getStyle(element),
             packages: DrxPackages.from(element),
             dependencyTree: DrxDependencyTree.from(element),
+            pwaMetadata: DrxPwaMetadata.from(element),
             pageIds: pages.map(page => page.id),
             variableIds: variables.map(variable => variable.id),
             serviceIds: services.map(service => service.id),
@@ -72,6 +73,7 @@ export const DrxApp = {
         if (app.name) DrxDom.setAttribute(element, 'name', app.name);
         if (app.packages) element.appendChild(DrxPackages.to(app.packages));
         if (app.dependencyTree) element.appendChild(DrxDependencyTree.to(app.dependencyTree));
+        if (app.pwaMetadata) element.appendChild(DrxPwaMetadata.to(app.pwaMetadata));
         DrxDom.createScript(element, app.script);
         DrxDom.createStyle(element, app.style);
         if (app.router) element.appendChild(DrxRouter.to(app.router));

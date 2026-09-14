@@ -22,4 +22,15 @@ await build({
     sourcemap: false,
 });
 
-console.log("CDN bundles built: standalone/cdn/drx.js, standalone/cdn/runtime.js");
+await build({
+    entryPoints: ["./standalone/pwa-service-worker.ts"],
+    outfile: "./standalone/cdn/pwa-service-worker.js",
+    bundle: true,
+    platform: "browser",
+    format: "iife",
+    target: "es2020",
+    minify: true,
+    sourcemap: false,
+});
+
+console.log("CDN bundles built: standalone/cdn/drx.js, standalone/cdn/runtime.js, standalone/cdn/pwa-service-worker.js");

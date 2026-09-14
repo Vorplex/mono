@@ -10,6 +10,15 @@ async function run() {
             fetch('bundle.js').then(response => response.text())
         ]);
         DrxApp.mount(document.body, state.app, state, bundle);
+        if (state.app.pwaMetadata && 'serviceWorker' in navigator) {
+            navigator.serviceWorker
+                .register('pwa-service-worker.js', { updateViaCache: 'none' })
+                .then(registration => {
+                    registration.active?.postMessage({ type: 'SYNC_CACHE' });
+                    navigator.serviceWorker.addEventListener('controllerchange', () => location.reload());
+                })
+                .catch(() => { });
+        }
     } catch (error) {
         console.error(error);
         document.body.replaceChildren();

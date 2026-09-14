@@ -23,6 +23,7 @@ export * from './node/node-type';
 export * from './node/packages';
 export * from './node/page-container';
 export * from './node/page';
+export * from './node/pwa-metadata';
 export * from './node/router';
 export * from './node/service';
 export * from './node/template-item';

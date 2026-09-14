@@ -3,6 +3,7 @@ export enum NodeType {
     Page = 'X-PAGE',
     Packages = 'X-PACKAGES',
     DependencyTree = 'X-DEPENDENCY-TREE',
+    PwaMetadata = 'X-PWA-METADATA',
     Variable = 'X-VARIABLE',
     Router = 'X-ROUTER',
     Type = 'X-TYPE',

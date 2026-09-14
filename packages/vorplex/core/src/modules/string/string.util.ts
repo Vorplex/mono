@@ -55,6 +55,13 @@ export class $String {
             .join('-');
     }
 
+    public static snakeCase(string: string) {
+        return $String
+            .getWords(string)
+            .map((word) => word.toLowerCase())
+            .join('_');
+    }
+
     public static titleCase(string: string): string {
         return $String
             .getWords(string.replace(/[-_]/g, ' '))

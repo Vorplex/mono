@@ -1,4 +1,4 @@
-import { $String } from '@vorplex/core';
+import { $Id, $Object, $String } from '@vorplex/core';
 import { DrxDocumentState } from './drx';
 import { ICON_SHEET_URL } from './icon-sheet';
 import { DrxScriptBundler } from './script-bundler';
@@ -18,12 +18,19 @@ export const DrxCompiler = {
         ]);
         const assets = { ...state.assets };
         const text = (path: string, contentType: string, content: string): DrxCompiledFile => ({ path, contentType, data: new TextEncoder().encode(content) })
+        const head = ['<script src="drx.js"></script>'];
+        if (state.app.pwaMetadata) {
+            head.push(...[
+                '<link rel="manifest" href="manifest.json" />',
+                !$String.isNullOrEmpty(state.app.pwaMetadata.themeColor) && `<meta name="theme-color" content="${state.app.pwaMetadata.themeColor}" />`
+            ]);
+        }
         const files: DrxCompiledFile[] = [
             text('index.html', 'text/html', $String.dedent(`
                 <!doctype html>
                 <html>
                     <head>
-                        <script src="drx.js"></script>
+                        ${head.filter(Boolean)}
                     </head>
                     <body></body>
                 </html>
@@ -40,6 +47,21 @@ export const DrxCompiler = {
             assets[asset.id] = { ...asset, source: { type: 'external', url: path } };
         }));
         files.push(text('app.json', 'application/json', JSON.stringify({ ...state, assets })));
+        if (state.app.pwaMetadata) {
+            const serviceWorker = await fetch('https://cdn.jsdelivr.net/gh/Vorplex/mono@shtml/packages/vorplex/drx/standalone/cdn/pwa-service-worker.js').then(response => response.text());
+            const pwa = state.app.pwaMetadata;
+            const manifest = {
+                ...$Object.mapKeys(pwa, key => $String.snakeCase(key)),
+                short_name: pwa.shortName ?? pwa.name,
+                display: pwa.display ?? 'standalone',
+                start_url: '.',
+                scope: '.',
+                hash: $Id.guid(),
+                files: files.map(file => file.path)
+            };
+            files.push(text('manifest.json', 'application/json', JSON.stringify(manifest)));
+            files.push(text('pwa-service-worker.js', 'application/javascript', serviceWorker!));
+        }
         return files;
     }
 };
