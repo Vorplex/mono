@@ -2,6 +2,12 @@ import { ModuleLoader } from '@vorplex/compiler';
 import { DrxDocumentState } from './drx';
 
 export const DrxScripting = {
+    defaults: {
+        app: 'export default DRX.defineApp(drx => class {\n\n});\n',
+        page: 'export default DRX.definePage(drx => class {\n\n});\n',
+        component: 'export default DRX.defineComponent(drx => class {\n\n});\n',
+        service: 'export default DRX.defineService(drx => class {\n\n});\n'
+    } as const,
     instantiate(bundle: string, id: string, drx: any): any {
         if (!id || !bundle) return undefined;
         const module = ModuleLoader.evaluate(bundle, {
