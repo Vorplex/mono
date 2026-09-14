@@ -1,4 +1,4 @@
-import { $Array, $Path, Awaitable, EntityAdaptor, EntityMap, Getter, Scope, Signal, State, TsonDefinition } from '@vorplex/core';
+import { $Array, $Id, $Path, Awaitable, EntityAdaptor, EntityMap, Getter, Scope, Signal, State, TsonDefinition } from '@vorplex/core';
 import { DrxDom } from './drx-dom';
 import { IconSheet } from './icon-sheet';
 import { DrxApi } from './node/api/api';
@@ -58,6 +58,45 @@ export interface DrxDocumentState {
     apiBodies: EntityMap<DrxApiBody>;
     apiResponses: EntityMap<DrxApiResponse>;
 }
+
+export const DrxDocumentState = {
+    new(): DrxDocumentState {
+        return {
+            app: {
+                id: $Id.guid(),
+                name: 'App',
+                pageIds: [],
+                variableIds: [],
+                serviceIds: [],
+                assetIds: [],
+                componentIds: [],
+                typeIds: [],
+                apiIds: []
+            },
+            pages: {},
+            variables: {},
+            services: {},
+            assets: {},
+            components: {},
+            types: {},
+            elements: {},
+            texts: {},
+            ifs: {},
+            fors: {},
+            componentProperties: {},
+            componentEvents: {},
+            componentInstances: {},
+            pageContainers: {},
+            icons: {},
+            apis: {},
+            apiEndpoints: {},
+            apiParameters: {},
+            apiHeaders: {},
+            apiBodies: {},
+            apiResponses: {}
+        };
+    }
+};
 
 export class DrxDocument {
 
