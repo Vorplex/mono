@@ -517,7 +517,7 @@ export class DrxDocument {
             }
             const children: string[] = [];
             for (const child of element.childNodes) {
-                children.push(...formatNode(child, depth + 1));
+                for (const line of formatNode(child, depth + 1)) children.push(line);
             }
             if (children.length === 0) return [`${prefix}<${tag}${attributes}></${tag}>`];
             return [`${prefix}<${tag}${attributes}>`, ...children, `${prefix}</${tag}>`];
@@ -525,7 +525,7 @@ export class DrxDocument {
         const dom = new DOMParser().parseFromString(this.toString(), 'text/html');
         const lines: string[] = [];
         for (const node of dom.body.childNodes) {
-            lines.push(...formatNode(node, 0));
+            for (const line of formatNode(node, 0)) lines.push(line);
         }
         return lines.join('\n');
     }
