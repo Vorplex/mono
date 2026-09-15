@@ -12,25 +12,25 @@ export interface CompilerOptions {
 }
 
 const NODE_BUILTIN_POLYFILLS: Record<string, { name: string; version: string }> = {
-    util:              { name: 'util',              version: '0.12.5'  },
-    events:            { name: 'events',            version: '3.3.0'   },
-    stream:            { name: 'stream-browserify', version: '3.0.0'   },
-    buffer:            { name: 'buffer',            version: '6.0.3'   },
-    path:              { name: 'path-browserify',   version: '1.0.1'   },
-    assert:            { name: 'assert',            version: '2.1.0'   },
-    querystring:       { name: 'querystring-es3',   version: '0.2.1'   },
-    url:               { name: 'url',               version: '0.11.4'  },
-    string_decoder:    { name: 'string_decoder',    version: '1.3.0'   },
-    zlib:              { name: 'browserify-zlib',   version: '0.2.0'   },
-    http:              { name: 'stream-http',       version: '3.2.0'   },
-    https:             { name: 'https-browserify',  version: '1.0.0'   },
-    os:                { name: 'os-browserify',     version: '0.3.0'   },
-    crypto:            { name: 'crypto-browserify', version: '3.12.1'  },
-    vm:                { name: 'vm-browserify',     version: '1.1.2'   },
-    process:           { name: 'process',           version: '0.11.10' },
-    punycode:          { name: 'punycode',          version: '2.3.1'   },
-    tty:               { name: 'tty-browserify',    version: '0.0.1'   },
-    timers:            { name: 'timers-browserify', version: '2.0.12'  },
+    util: { name: 'util', version: '0.12.5' },
+    events: { name: 'events', version: '3.3.0' },
+    stream: { name: 'stream-browserify', version: '3.0.0' },
+    buffer: { name: 'buffer', version: '6.0.3' },
+    path: { name: 'path-browserify', version: '1.0.1' },
+    assert: { name: 'assert', version: '2.1.0' },
+    querystring: { name: 'querystring-es3', version: '0.2.1' },
+    url: { name: 'url', version: '0.11.4' },
+    string_decoder: { name: 'string_decoder', version: '1.3.0' },
+    zlib: { name: 'browserify-zlib', version: '0.2.0' },
+    http: { name: 'stream-http', version: '3.2.0' },
+    https: { name: 'https-browserify', version: '1.0.0' },
+    os: { name: 'os-browserify', version: '0.3.0' },
+    crypto: { name: 'crypto-browserify', version: '3.12.1' },
+    vm: { name: 'vm-browserify', version: '1.1.2' },
+    process: { name: 'process', version: '0.11.10' },
+    punycode: { name: 'punycode', version: '2.3.1' },
+    tty: { name: 'tty-browserify', version: '0.0.1' },
+    timers: { name: 'timers-browserify', version: '2.0.12' },
 };
 
 export class Compiler {
@@ -38,7 +38,7 @@ export class Compiler {
     public static async compile(options: CompilerOptions) {
         const task = options.task ?? new Task('Compile');
         try {
-            task.log(`Compiling $[files] using entry file path (${options.entryFilePath})`, { attachments: { files: { type: 'yaml', value: stringify(options.files) } } });
+            task.log(`Compiling $[files] using entry file path "${options.entryFilePath}"`, { attachments: { files: { type: 'yaml', value: stringify(options.files) } } });
             const importOrigin: Record<string, string> = {};
             return await Bundler.bundle({
                 path: options.entryFilePath,
@@ -69,7 +69,7 @@ export class Compiler {
                             } else {
                                 task.log('Fetching external file content');
                                 const response = await fetch(importPath);
-                                if (!response.ok) throw new Error(`Failed to resolve import (${importPath}). ${response.statusText}`);
+                                if (!response.ok) throw new Error(`Failed to resolve import "${importPath}". ${response.statusText}`);
                                 const content = await response.text();
                                 task.log('Returning external file $[content]', { attachments: { content: { type: 'text', value: content } } });
                                 return { content };
@@ -78,32 +78,32 @@ export class Compiler {
                         try {
                             const dependencyTree = options.files[origin]?.dependencyTree ?? options.files[importPath]?.dependencyTree ?? {};
                             const string = NPM.parseImportString(importPath);
-                            task.log(`Package ${string.packageName} subpath ${string.subpath} version ${string.version}`);
+                            task.log(`Package ${string.name} subpath ${string.path} version ${string.version}`);
                             if (!string.version) {
                                 if (importerPath in options.files) {
-                                    string.version = options.files[importerPath].dependencyTree[string.packageName]?.version;
+                                    string.version = options.files[importerPath].dependencyTree[string.name]?.version;
                                 } else {
                                     const importer = JsDelivr.parseUrl(importerPath);
-                                    string.version = importer.name !== string.packageName ? NPM.resolveDependencyVersion(dependencyTree, importer.name, importer.version, string.packageName) : importer.version;
+                                    string.version = importer.name !== string.name ? NPM.resolveDependencyVersion(dependencyTree, importer.name, importer.version, string.name) : importer.version;
                                 }
                                 if (!string.version) {
-                                    const polyfill = NODE_BUILTIN_POLYFILLS[string.packageName];
+                                    const polyfill = NODE_BUILTIN_POLYFILLS[string.name];
                                     if (polyfill) {
-                                        const version = dependencyTree[polyfill.name]?.version ?? dependencyTree[string.packageName]?.version ?? polyfill.version;
-                                        task.log(`Resolving Node.js built-in (${string.packageName}) via browser polyfill (${polyfill.name}@${version})`);
-                                        string.packageName = polyfill.name;
+                                        const version = dependencyTree[polyfill.name]?.version ?? dependencyTree[string.name]?.version ?? polyfill.version;
+                                        task.log(`Resolving Node.js built-in "${string.name}" via browser polyfill "${polyfill.name}@${version}"`);
+                                        string.name = polyfill.name;
                                         string.version = version;
                                     } else if (importerPath in options.files) {
-                                        throw new Error(`Unable to determine package (${string.packageName}) version.`);
+                                        throw new Error(`Unable to determine package "${string.name}" version.`);
                                     } else {
-                                        task.log(`Returning mock module for package (${string.packageName}) as import doesn't have it as a dependency.`, { level: 'warning' });
+                                        task.log(`Returning mock module for package "${string.name}" as import doesn't have it as a dependency.`, { level: 'warning' });
                                         return;
                                     }
                                 }
                             }
-                            const filePath = await JsDelivr.resolveImportFilePath(string.packageName, string.version, string.subpath);
-                            task.log(`Import resolved to file path (${filePath})`);
-                            const file = await JsDelivr.getFile(string.packageName, string.version, filePath);
+                            const filePath = await JsDelivr.resolveImportFilePath(string.name, string.version, string.path);
+                            task.log(`Import resolved to file path "${filePath}"`);
+                            const file = await JsDelivr.getFile(string.name, string.version, filePath);
                             task.log('Returning file $[content] from CDN', { attachments: { content: { type: 'text', value: file.content } } });
                             return { path: file.url, content: file.content };
                         } catch (error) {

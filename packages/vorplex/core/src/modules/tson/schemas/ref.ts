@@ -14,15 +14,15 @@ export class TsonRef extends TsonSchemaBase<any> {
     }
 
     public getDefault(): any {
-        throw new Error(`TSON ref with id (${this.definition.id}) must be resolved before it can be used`);
+        throw new Error(`TSON ref with id "${this.definition.id}" must be resolved before it can be used`);
     }
 
     public accepts(_definition: TsonDefinition | null | undefined): boolean {
-        throw new Error(`TSON ref with id (${this.definition.id}) must be resolved before it can be used`);
+        throw new Error(`TSON ref with id "${this.definition.id}" must be resolved before it can be used`);
     }
 
     public parse(value: any, _failFast = false): TsonResult<any> {
-        return [undefined, [new TsonError(`TSON ref with id (${this.definition.id}) must be resolved before it can be parsed`, value, this)]];
+        return [undefined, [new TsonError(`TSON ref with id "${this.definition.id}" must be resolved before it can be parsed`, value, this)]];
     }
 
 }

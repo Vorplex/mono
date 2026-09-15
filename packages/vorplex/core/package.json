@@ -1,6 +1,6 @@
 {
     "name": "@vorplex/core",
-    "version": "0.0.103",
+    "version": "1.0.0",
     "type": "module",
     "sideEffects": false,
     "files": [
@@ -26,8 +26,7 @@
     },
     "scripts": {
         "build": "tsc -b --force tsconfig.build.json",
-        "test": "vitest run",
-        "npm:publish": "pnpm publish --registry=https://registry.npmjs.org/"
+        "test": "vitest run"
     },
     "dependencies": {
         "tslib": "workspace:*"

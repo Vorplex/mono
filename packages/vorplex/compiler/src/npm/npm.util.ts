@@ -5,32 +5,39 @@ import type { PackageJson } from './package-json.type';
 
 export type DependencyTree = Record<string, DependencyNode>;
 
+export interface PackageImport {
+    name: string;
+    version?: string;
+    path?: string;
+}
+
 export interface DependencyNode {
     version: string;
     dependencies: Record<string, DependencyNode>;
 }
 
-export class NPM {
-    public static readonly url = 'https://registry.npmjs.org' as const;
+export const NPM = {
 
-    public static async getData(name: string) {
+    url: 'https://registry.npmjs.org' as const,
+
+    async getData(name: string) {
         const response = await fetch($Path.join(NPM.url, name));
-        if (!response.ok) throw new Error(`Failed to get package (${name}) data. ${response.statusText}`);
+        if (!response.ok) throw new Error(`Failed to get package "${name}" data. ${response.statusText}`);
         return await response.json();
-    }
+    },
 
-    public static async gePackageJson(name: string, version: string): Promise<PackageJson> {
+    async gePackageJson(name: string, version: string): Promise<PackageJson> {
         const response = await fetch($Path.join(NPM.url, name, version));
-        if (!response.ok) throw new Error(`Failed to get package (${name}) data. ${response.statusText}`);
+        if (!response.ok) throw new Error(`Failed to get package "${name}" data. ${response.statusText}`);
         return await response.json();
-    }
+    },
 
-    public static async resolveDependencyTree(packages: Record<string, string>, resolver: { getPackageJson: (name: string, version: string) => Promise<PackageJson>; resolveVersion: (name: string, semanticVersion: string) => Promise<string>; }, task: Task = new Task('Resolve Dependency Tree')): Promise<DependencyTree> {
+    async resolveDependencyTree(packages: Record<string, string>, resolver: { getPackageJson: (name: string, version: string) => Promise<PackageJson>; resolveVersion: (name: string, semanticVersion: string) => Promise<string>; }, task: Task = new Task('Resolve Dependency Tree')): Promise<DependencyTree> {
         try {
             const seen: DependencyTree = {};
 
             async function resolvePackage(name: string, range: string, ancestors: any[] = [], task: Task): Promise<DependencyNode> {
-                task.log(`Resolving package (${name}@${range})`);
+                task.log(`Resolving package "${name}@${range}"`);
 
                 task.log(`Searching for package in ancestors`);
                 for (const ancestor of ancestors) {
@@ -44,7 +51,7 @@ export class NPM {
 
                 task.log('Resolving package version');
                 const version = await resolver.resolveVersion(name, range);
-                task.log(`Version (${version}) was resolved for range (${range})`);
+                task.log(`Version "${version}" was resolved for range "${range}"`);
 
                 const key = `${name}@${version}`;
                 if (seen[key]) {
@@ -103,9 +110,9 @@ export class NPM {
         } finally {
             task.complete();
         }
-    }
+    },
 
-    public static flattenDependencyTree(tree: DependencyTree): Record<string, string[]> {
+    flattenDependencyTree(tree: DependencyTree): Record<string, string[]> {
         function flatten(tree: DependencyTree, visited: Set<string> = new Set()): Record<string, string[]> {
             const flattened: Record<string, string[]> = {};
             for (const [name, data] of Object.entries(tree)) {
@@ -122,9 +129,9 @@ export class NPM {
             return flattened;
         }
         return flatten(tree);
-    }
+    },
 
-    public static resolveDependencyVersion(tree: DependencyTree, parent: string, version: string, name: string): string {
+    resolveDependencyVersion(tree: DependencyTree, parent: string, version: string, name: string): string {
         const resolve = (tree: DependencyTree) => {
             for (const [packName, pack] of Object.entries(tree)) {
                 if (packName === parent && pack.version === version) return pack.dependencies[name]?.version;
@@ -133,9 +140,9 @@ export class NPM {
             }
         };
         return resolve(tree);
-    }
+    },
 
-    public static getPackageEntryPoint(packageJson: PackageJson, filePaths: string[], subpath?: string): string | null {
+    getPackageEntryPoint(packageJson: PackageJson, filePaths: string[], subpath?: string): string | null {
         if (packageJson.exports) {
             const resolveExports = (exports: PackageJson['exports']): Record<string, string> => {
                 const result: Record<string, string> = {};
@@ -187,20 +194,20 @@ export class NPM {
             return entryPoint;
         }
         return null;
-    }
+    },
 
-    public static getScriptImports(script: string): string[] {
+    getScriptImports(script: string): string[] {
         return Array.from(script.matchAll(/import\s+[\s\S]*?\s+from\s+['"]([^'"]+)['"]|require\(['"]([^'"]+)['"]\)/g)).map((match) => match[1] ?? match[2]);
-    }
+    },
 
-    public static parseImportString(string: string) {
+    parseImportString(string: string): PackageImport {
         string = string.replace(/\/$/, '');
-        const match = string.match(/^(?<packageName>(?:@[\w.-]+\/[\w.-]+|[\w.-]+))(?:\/(?<subpath>.+?))?(?:\/?@(?<version>\d+(?:\.\d+)*(?:-[\w.]+)?(?:\+[\w.]+)?))?$/);
-        if (!match) throw new Error(`Invalid import string (${string})`);
+        const match = string.match(/^(?<name>(?:@[\w.-]+\/[\w.-]+|[\w.-]+))(?:\/(?<path>.+?))?(?:\/?@(?<version>\d+(?:\.\d+)*(?:-[\w.]+)?(?:\+[\w.]+)?))?$/);
+        if (!match) throw new Error(`Invalid import string "${string}"`);
         return match?.groups as {
-            packageName: string;
-            subpath?: string;
+            name: string;
+            path?: string;
             version?: string;
         };
     }
-}
+};

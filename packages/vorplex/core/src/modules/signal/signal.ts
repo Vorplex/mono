@@ -120,7 +120,11 @@ export class Signal<T = any> {
                 const queue = [...Signal.pendingComputations].sort((a, b) => a.depth - b.depth);
                 Signal.pendingComputations.clear();
                 for (const computation of queue) {
-                    computation.run();
+                    try {
+                        computation.run();
+                    } catch (error) {
+                        console.error('Uncaught error in reactive computation during flush', error);
+                    }
                 }
             }
         } finally {
@@ -128,13 +132,13 @@ export class Signal<T = any> {
         }
     }
 
-    public static memo<T>(callback: () => T): Getter<T> {
+    public static memo<T>(callback: () => T, equals = (a: any, b: any) => $Value.equals(a, b)): Getter<T> {
         let initialized = false;
         let value!: T;
         const signal = Signal.create<T>(undefined as T);
         Signal.effect(() => {
             const next = callback();
-            if (initialized && $Value.equals(value, next)) return;
+            if (initialized && equals(value, next)) return;
             initialized = true;
             value = next;
             signal(next);
@@ -159,7 +163,7 @@ export class Signal<T = any> {
             const next = new Map<unknown, Entry>();
             for (const item of items) {
                 const id = key(item);
-                if (next.has(id)) throw new Error(`Duplicate keyed value (${String(id)})`);
+                if (next.has(id)) throw new Error(`Duplicate keyed value "${String(id)}"`);
                 let entry = entries.get(id);
                 if (entry) {
                     entries.delete(id);
@@ -176,7 +180,7 @@ export class Signal<T = any> {
             for (const stale of entries.values()) stale.root.dispose();
             entries = next;
             return result;
-        });
+        }, (a: U[], b: U[]) => a.length === b.length && a.every((item, index) => item === b[index]));
     }
 
     public static untrack<T>(callback: () => T): T {

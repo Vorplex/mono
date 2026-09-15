@@ -1,7 +1,21 @@
+import { fuzzySearch } from './string.util.fuzzy-search';
+
 export class $String {
+
+    public static fuzzySearch = fuzzySearch;
 
     public static indent(string: string, spaces: number) {
         return string?.replace(/^/gm, ' '.repeat(spaces));
+    }
+
+    public static dedent(string: string): string {
+        if (string == null) return string;
+        const lines = string.split('\n');
+        const indents = lines
+            .filter(line => line.trim().length > 0)
+            .map(line => line.match(/^[ \t]*/)[0].length);
+        const minIndent = indents.length ? Math.min(...indents) : 0;
+        return lines.map(line => line.slice(minIndent)).join('\n').trim();
     }
 
     public static toAlphanumeric(string: string, specialCharacterReplacement?: string): string {
@@ -41,6 +55,13 @@ export class $String {
             .join('-');
     }
 
+    public static snakeCase(string: string) {
+        return $String
+            .getWords(string)
+            .map((word) => word.toLowerCase())
+            .join('_');
+    }
+
     public static titleCase(string: string): string {
         return $String
             .getWords(string.replace(/[-_]/g, ' '))
@@ -57,6 +78,25 @@ export class $String {
     }
 
     public static matchDelimited(text: string, [open, close]: readonly [string, string]): { type: 'text' | 'match'; value: string }[] {
+        const maskedOpen = '\0\x01';
+        const maskedClose = '\0\x02';
+        const masked = text
+            .split(`\\${open}`)
+            .join(maskedOpen)
+            .split(`\\${close}`)
+            .join(maskedClose);
+        if (masked !== text) {
+            return $String
+                .matchDelimited(masked, [open, close])
+                .map(token => ({
+                    type: token.type,
+                    value: token.value
+                        .split(maskedOpen)
+                        .join(open)
+                        .split(maskedClose)
+                        .join(close)
+                }));
+        }
         if (!open || !close) throw new Error('Delimiters cannot be empty');
         const tokens: { type: 'text' | 'match'; value: string }[] = [];
         const characterMode = (() => {
@@ -110,15 +150,15 @@ export class $String {
                     index++;
                     continue;
                 }
-                if (text.startsWith(open, index)) {
-                    depth++;
-                    index += open.length;
-                } else if (text.startsWith(close, index)) {
+                if (text.startsWith(close, index)) {
                     if (--depth === 0) {
                         closingIndex = index;
                         break;
                     }
                     index += close.length;
+                } else if (text.startsWith(open, index)) {
+                    depth++;
+                    index += open.length;
                 } else {
                     index++;
                 }

@@ -1,0 +1,43 @@
+{
+    "name": "@vorplex/drx",
+    "version": "1.0.0",
+    "type": "module",
+    "sideEffects": false,
+    "files": [
+        "dist"
+    ],
+    "exports": {
+        ".": {
+            "types": "./src/index.ts",
+            "import": "./src/index.ts"
+        }
+    },
+    "types": "./src/index.ts",
+    "main": "./src/index.ts",
+    "publishConfig": {
+        "types": "./dist/index.d.ts",
+        "main": "./dist/index.js",
+        "exports": {
+            ".": {
+                "types": "./dist/index.d.ts",
+                "import": "./dist/index.js"
+            }
+        }
+    },
+    "scripts": {
+        "build": "tsc -b tsconfig.build.json && tsx standalone/build.mts",
+        "test": "vitest run"
+    },
+    "dependencies": {
+        "@vorplex/compiler": "workspace:*",
+        "@vorplex/core": "workspace:*",
+        "@vorplex/web": "workspace:*",
+        "tslib": "workspace:*",
+        "typescript": "workspace:*"
+    },
+    "devDependencies": {
+        "esbuild": "workspace:*",
+        "tsx": "workspace:*",
+        "vitest": "workspace:*"
+    }
+}

@@ -6,7 +6,7 @@ export * from './effects/use-store';
 export * from './effects/use-subscription';
 export * from './utils/style-sheet.util';
 // **/*.tsx
-export * from './components/define-component/define-component';
+export * from './components/define-remounting-component/define-remounting-component';
 export * from './components/for-in/for-in.component';
 export * from './components/injector/injector.component';
 export * from './components/shadow-dom/shadow-dom.component';

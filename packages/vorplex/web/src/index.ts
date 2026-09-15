@@ -8,4 +8,5 @@ export * from './utils/element.util';
 export * from './utils/file-manager.util';
 export * from './utils/file-system.util';
 export * from './utils/indexed-db.util';
+export * from './utils/service-worker.util';
 export * from './utils/window-share.util';

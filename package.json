@@ -1,7 +1,7 @@
 {
     "private": true,
     "name": "mono",
-    "version": "0.0.103",
+    "version": "1.0.0",
     "scripts": {
         "clean": "git clean -fdX",
         "build": "pnpm -r --filter \"./packages/vorplex/**\" build",
@@ -14,6 +14,7 @@
         "@vorplex/core": "workspace:*",
         "@vorplex/node": "workspace:*",
         "tsx": "workspace:*",
+        "typescript": "workspace:*",
         "vitest": "workspace:*",
         "yaml": "workspace:*"
     }

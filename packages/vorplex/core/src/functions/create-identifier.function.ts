@@ -19,15 +19,16 @@ export function createIdentifier<TSchema extends Record<string, IdentifierPartCo
     function id(value: Identifier<TShape>): TShape;
     function id(value: TShape): Identifier<TShape>;
     function id(value: TShape | Identifier<TShape>): Identifier<TShape> | TShape {
+        const separator = '¦';
         if (typeof value === 'string') {
-            const parts = value.split(':').map(decodeURIComponent);
+            const parts = value.split(separator);
             return keys.reduce((shape, key, index) => {
                 const ctor = schema[key];
                 shape[key] = (ctor === Boolean ? parts[index] === 'true' : ctor(parts[index])) as TShape[typeof key];
                 return shape;
             }, {} as TShape);
         }
-        return keys.map((key) => encodeURIComponent(String(value[key]))).join(':') as Identifier<TShape>;
+        return keys.map((key) => String(value[key])).join(separator) as Identifier<TShape>;
     }
     return id;
 }

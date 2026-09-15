@@ -55,4 +55,14 @@ export class $Object {
         return paths;
     }
 
+    public static mapKeys(value: any, map: (key: string) => string): any {
+        if (Array.isArray(value)) return value.map(item => $Object.mapKeys(item, map));
+        if (value !== null && typeof value === 'object') {
+            const result: Record<string, any> = {};
+            for (const key of Object.keys(value)) result[map(key)] = $Object.mapKeys(value[key], map);
+            return result;
+        }
+        return value;
+    }
+
 }
