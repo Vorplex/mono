@@ -1,9 +1,10 @@
-import { DrxDocument, type DrxDocumentState } from '../src/drx';
+import { type DrxDocumentState } from '../src/drx';
+import { DrxDom } from '../src/drx-dom';
 import { IconSheet } from '../src/icon-sheet';
 import { DrxApp } from '../src/node/app';
 
 export async function bootstrap(paths: { bundle: string, state: string, icons: string }) {
-    await DrxDocument.bootstrap(document.body, async () => {
+    await DrxDom.bootstrap(document.body, async () => {
         IconSheet.load(paths.icons);
         const [state, bundle]: [DrxDocumentState, string] = await Promise.all([
             fetch(paths.state).then(response => response.json()),

@@ -1,7 +1,45 @@
-import { $String } from '@vorplex/core';
+import { $String, Awaitable } from '@vorplex/core';
 import { NodeType } from './node/node-type';
 
 export const DrxDom = {
+    async bootstrap<T>(target: Element, callback: () => Awaitable<T>): Promise<T | undefined> {
+        const container = document.createElement('div');
+        container.style.cssText = `
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                width:100%;
+                height:100%;
+                box-sizing: border-box;
+                color: #1f2329;
+            `;
+        container.innerHTML = `
+                <style>@keyframes drx-spin { to { transform: rotate(360deg); } }</style>
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="animation: drx-spin 0.75s linear infinite;">
+                    <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                </svg>
+            `;
+        target.replaceChildren(container);
+        try { return await callback(); }
+        catch (error) {
+            console.error(error);
+            const pre = document.createElement('pre');
+            pre.style.cssText = `
+                white-space: pre-wrap;
+                    color: #b00020;
+                    font: 13px/1.5 ui-monospace, monospace;
+                    padding: 16px;
+                    margin:0;
+                    overflow: auto;
+                    width:100%;
+                    height:100%;
+                    box-sizing: border-box;
+                    `;
+            pre.textContent = Error.isError(error) ? (error.stack ?? error.message) : String(error);
+            target.replaceChildren(pre);
+        }
+        finally { container.remove(); }
+    },
     getAttribute(element: Element, attribute: string) {
         return element?.getAttribute(attribute);
     },
