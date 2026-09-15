@@ -26,8 +26,7 @@
     },
     "scripts": {
         "build": "tsc -b --force tsconfig.build.json",
-        "test": "vitest run",
-        "npm:publish": "pnpm publish --registry=https://registry.npmjs.org/"
+        "test": "vitest run"
     },
     "dependencies": {
         "tslib": "workspace:*"
