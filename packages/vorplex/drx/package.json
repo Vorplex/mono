@@ -1,6 +1,6 @@
 {
     "name": "@vorplex/drx",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "type": "module",
     "sideEffects": false,
     "files": [
@@ -25,7 +25,7 @@
         }
     },
     "scripts": {
-        "build": "tsc -b tsconfig.build.json && tsx standalone/build.mts",
+        "build": "tsx standalone/build.mts && tsc -b tsconfig.build.json",
         "test": "vitest run"
     },
     "dependencies": {

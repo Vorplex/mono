@@ -2,12 +2,12 @@ import { DrxDocument, type DrxDocumentState } from '../src/drx';
 import { IconSheet } from '../src/icon-sheet';
 import { DrxApp } from '../src/node/app';
 
-async function run() {
+export async function bootstrap(paths: { bundle: string, state: string, icons: string }) {
     await DrxDocument.bootstrap(document.body, async () => {
-        IconSheet.load('icons.svg');
+        IconSheet.load(paths.icons);
         const [state, bundle]: [DrxDocumentState, string] = await Promise.all([
-            fetch('app.json').then(response => response.json()),
-            fetch('bundle.js').then(response => response.text())
+            fetch(paths.state).then(response => response.json()),
+            fetch(paths.bundle).then(response => response.text())
         ]);
         if (state.app.pwaMetadata && 'serviceWorker' in navigator) {
             navigator.serviceWorker
@@ -20,10 +20,4 @@ async function run() {
         }
         return DrxApp.mount(document.body, state.app, state, bundle);
     });
-}
-
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', run, { once: true });
-} else {
-    run();
 }

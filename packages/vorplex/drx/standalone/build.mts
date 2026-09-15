@@ -1,4 +1,5 @@
 import { build } from "esbuild";
+import { mkdir, readFile, writeFile } from "fs/promises";
 
 await build({
     entryPoints: ["./standalone/drx.ts"],
@@ -16,7 +17,7 @@ await build({
     outfile: "./standalone/cdn/runtime.js",
     bundle: true,
     platform: "browser",
-    format: "iife",
+    format: "esm",
     target: "es2020",
     minify: true,
     sourcemap: false,
@@ -33,4 +34,7 @@ await build({
     sourcemap: false,
 });
 
-console.log("CDN bundles built: standalone/cdn/drx.js, standalone/cdn/runtime.js, standalone/cdn/pwa-service-worker.js");
+const runtime = await readFile("./standalone/cdn/runtime.js", "utf8");
+const serviceWorker = await readFile("./standalone/cdn/pwa-service-worker.js", "utf8");
+await mkdir("./src/out", { recursive: true });
+await writeFile("./src/out/assets.ts", `export const RUNTIME_JS = ${JSON.stringify(runtime)};\nexport const PWA_SERVICE_WORKER_JS = ${JSON.stringify(serviceWorker)};\n`);
