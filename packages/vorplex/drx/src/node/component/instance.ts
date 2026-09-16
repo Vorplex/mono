@@ -150,6 +150,7 @@ export const DrxComponentInstance = {
     preview(container: Node, id: string, context: PreviewContext): Node {
         const host = document.createElement(NodeType.ComponentInstance);
         host.style.display = 'contents';
+        host.setAttribute('data-drx-id', id);
         container.appendChild(host);
         const shadow = host.attachShadow({ mode: 'open' });
         Signal.effect(() => {

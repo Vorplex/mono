@@ -47,6 +47,7 @@ export const DrxPageContainer = {
     preview(container: Node, id: string, context: PreviewContext): Node {
         const host = document.createElement(NodeType.PageContainer);
         host.style.display = 'contents';
+        host.setAttribute('data-drx-id', id);
         container.appendChild(host);
         Signal.effect(() => {
             const name = context.root.proxy.pageContainers[id].page();

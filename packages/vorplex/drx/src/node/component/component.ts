@@ -91,6 +91,7 @@ export const DrxComponent = {
         return Signal.scope(() => {
             const host = document.createElement(NodeType.Component);
             host.style.display = 'contents';
+            host.setAttribute('data-drx-id', id);
             container.appendChild(host);
             const shadow = host.attachShadow({ mode: 'open' });
             StyleSheet.adopt(shadow, () => context.root.proxy.components[id].style(), ...context.styleSheets);

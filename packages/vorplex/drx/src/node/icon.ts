@@ -52,6 +52,7 @@ export const DrxIcon = {
     preview(container: Node, id: string, context: PreviewContext): Node {
         const host = document.createElement(NodeType.Icon);
         host.style.display = 'contents';
+        host.setAttribute('data-drx-id', id);
         container.appendChild(host);
         const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
         host.appendChild(svg);

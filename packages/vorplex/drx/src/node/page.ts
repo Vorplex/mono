@@ -104,6 +104,7 @@ export const DrxPage = {
         return Signal.scope(() => {
             const host = document.createElement(NodeType.Page);
             host.style.display = 'contents';
+            host.setAttribute('data-drx-id', id);
             container.appendChild(host);
             const shadow = host.attachShadow({ mode: 'open' });
             StyleSheet.adopt(shadow, () => context.root.proxy.app.style(), () => context.root.proxy.pages[id].style(), ...context.styleSheets);

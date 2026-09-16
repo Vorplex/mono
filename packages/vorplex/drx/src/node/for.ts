@@ -74,6 +74,7 @@ export const DrxFor = {
     preview(container: Node, id: string, context: PreviewContext): Node {
         const host = document.createElement(NodeType.For);
         host.style.display = 'contents';
+        host.setAttribute('data-drx-id', id);
         container.appendChild(host);
         DrxTemplate.preview(host, () => context.root.proxy.fors[id].template(), context);
         Signal.cleanup(() => host.remove());
