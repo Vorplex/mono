@@ -42,16 +42,21 @@ export const DrxElement = {
         Signal.cleanup(() => element.remove());
     },
     preview(container: Node, id: string, context: PreviewContext): Node {
-        const item = context.root.value.elements[id];
-        const element = document.createElement(item.tag);
-        container.appendChild(element);
+        const anchor = document.createComment(id);
+        container.appendChild(anchor);
         Signal.effect(() => {
-            const attributes = context.root.proxy.elements[id].attributes();
-            ExpressionParser.applyPreviewAttributes(element, { ...attributes, 'data-drx-id': id }, context);
+            const tag = context.root.proxy.elements[id].tag();
+            const element = document.createElement(tag);
+            anchor.after(element);
+            Signal.effect(() => {
+                const attributes = context.root.proxy.elements[id].attributes();
+                ExpressionParser.applyPreviewAttributes(element, { ...attributes, 'data-drx-id': id }, context);
+            });
+            DrxTemplate.preview(element, () => context.root.proxy.elements[id].template(), context);
+            Signal.cleanup(() => element.remove());
         });
-        DrxTemplate.preview(element, () => context.root.proxy.elements[id].template(), context);
-        Signal.cleanup(() => element.remove());
-        return element;
+        Signal.cleanup(() => anchor.remove());
+        return anchor;
     },
     getText(element: DrxElement, state: DrxDocumentState): string | undefined {
         if (element.template.length === 0) return '';
