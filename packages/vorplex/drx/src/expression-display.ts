@@ -73,7 +73,7 @@ function formatExpression(expression: string): string {
     return `{${reference.normalized}}`;
 }
 
-export const ExpressionDisplay = {
+export const DrxExpressionDisplay = {
     // Masks every {{ }} expression in a source string down to a short, non-evaluated preview -- this never
     // runs the expression, it only reformats its literal source text. Uses $String.matchDelimited (not a
     // regex split) so nested braces inside an expression, e.g. {{ { name: '' } }}, are matched as one segment

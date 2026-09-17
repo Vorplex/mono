@@ -1,9 +1,9 @@
 import { $Id, $Value, Signal } from '@vorplex/core';
-import { ExpressionParser } from '../expression-parser';
-import { PreviewContext } from '../preview-context';
-import { RenderContext } from '../render-context';
 import { DrxDocumentState } from '../drx';
 import { DrxDom } from '../drx-dom';
+import { DrxExpressionParser } from '../expression-parser';
+import { PreviewContext } from '../preview-context';
+import { RenderContext } from '../render-context';
 import { NodeType } from './node-type';
 import { DrxTemplate, DrxTemplateItem } from './template-item';
 
@@ -53,7 +53,7 @@ export const DrxFor = {
         host.style.display = 'contents';
         container.appendChild(host);
         const entries = Signal.keyed(
-            () => ExpressionParser.parse(item.each, context.locals),
+            () => DrxExpressionParser.parse(item.each, context.locals),
             entry => item.track ? $Value.get(entry.value, item.track) : entry.key,
             entry => {
                 const itemHost = document.createElement(NodeType.For);

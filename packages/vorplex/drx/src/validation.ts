@@ -1,6 +1,6 @@
 import { $Router, $Tson, TsonDefinition } from '@vorplex/core';
 import type { DrxDocumentState, DrxScope } from './drx';
-import { ExpressionParser } from './expression-parser';
+import { DrxExpressionParser } from './expression-parser';
 import { NodeType } from './node/node-type';
 
 export interface DrxProblemTarget {
@@ -796,7 +796,7 @@ export const validators = {
                 return undefined;
             };
             for (const instance of Object.values(state.componentInstances)) {
-                if (!instance.component || !ExpressionParser.isLiteral(instance.component)) continue;
+                if (!instance.component || !DrxExpressionParser.isLiteral(instance.component)) continue;
                 const parent = findParent(instance.id);
                 if (!parent) continue;
                 const visibleIds = parent.type === 'page' ? state.app.componentIds : state.components[parent.id]?.componentIds ?? [];
@@ -821,7 +821,7 @@ export const validators = {
                 return undefined;
             };
             for (const instance of Object.values(state.componentInstances)) {
-                if (!instance.component || !ExpressionParser.isLiteral(instance.component)) continue;
+                if (!instance.component || !DrxExpressionParser.isLiteral(instance.component)) continue;
                 const parent = findParent(instance.id);
                 if (!parent) continue;
                 const visibleIds = parent.type === 'page' ? state.app.componentIds : state.components[parent.id]?.componentIds ?? [];
@@ -845,7 +845,7 @@ export const validators = {
         validatePageExists: (state: DrxDocumentState): DrxProblem[] => {
             const pageNames = new Set(Object.values(state.pages).map(page => page.name));
             return Object.values(state.pageContainers)
-                .filter(container => container.page && ExpressionParser.isLiteral(container.page) && !pageNames.has(container.page))
+                .filter(container => container.page && DrxExpressionParser.isLiteral(container.page) && !pageNames.has(container.page))
                 .map(container => ({ severity: 'error' as const, code: 'DRX004', message: `Unknown page "${container.page}"`, target: { type: NodeType.PageContainer, id: container.id } }));
         }
     },

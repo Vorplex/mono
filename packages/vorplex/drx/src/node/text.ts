@@ -1,9 +1,9 @@
 import { $Id, Signal } from '@vorplex/core';
-import { ExpressionDisplay } from '../expression-display';
-import { ExpressionParser } from '../expression-parser';
+import { DrxDocumentState } from '../drx';
+import { DrxExpressionDisplay } from '../expression-display';
+import { DrxExpressionParser } from '../expression-parser';
 import { PreviewContext } from '../preview-context';
 import { RenderContext } from '../render-context';
-import { DrxDocumentState } from '../drx';
 import { NodeType } from './node-type';
 import { DrxTemplateItem } from './template-item';
 
@@ -34,7 +34,7 @@ export const DrxText = {
     mount(container: Node, item: DrxText, context: RenderContext): void {
         const node = document.createTextNode('');
         container.appendChild(node);
-        ExpressionParser.bind(item.content, context.locals, value => {
+        DrxExpressionParser.bind(item.content, context.locals, value => {
             node.textContent = value == null ? '' : String(value);
         });
         Signal.cleanup(() => node.remove());
@@ -44,7 +44,7 @@ export const DrxText = {
         container.appendChild(node);
         Signal.effect(() => {
             const content = context.root.proxy.texts[id].content();
-            node.textContent = ExpressionDisplay.mask(content);
+            node.textContent = DrxExpressionDisplay.mask(content);
         });
         Signal.cleanup(() => node.remove());
         return node;

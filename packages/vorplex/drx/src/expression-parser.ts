@@ -3,7 +3,7 @@ import { $Element } from '@vorplex/web';
 import { DrxAsset } from './node/asset';
 import { PreviewContext } from './preview-context';
 
-export const ExpressionParser = {
+export const DrxExpressionParser = {
     invoke(expression: string, locals: Record<string, any>) {
         try {
             const names = Object.keys(locals);
@@ -15,7 +15,7 @@ export const ExpressionParser = {
         }
     },
     evaluate(expression: string, locals: Record<string, any>) {
-        return ExpressionParser.invoke(`return (${expression})`, locals);
+        return DrxExpressionParser.invoke(`return (${expression})`, locals);
     },
     parse(source: string, locals: Record<string, any>): any {
         const values = [];
@@ -24,7 +24,7 @@ export const ExpressionParser = {
                 values.push(segment.value);
                 continue;
             }
-            const value = ExpressionParser.evaluate(segment.value, locals);
+            const value = DrxExpressionParser.evaluate(segment.value, locals);
             values.push(value);
         }
         if (values.length === 1) return values[0];
@@ -32,38 +32,40 @@ export const ExpressionParser = {
     },
     bind(source: string, locals: Record<string, any>, callback: (value: any) => void): void {
         Signal.effect(() => {
-            const value = ExpressionParser.parse(source, locals);
+            const value = DrxExpressionParser.parse(source, locals);
             callback(value);
         });
     },
-    isLiteral(source: string): boolean {
-        return $String.matchDelimited(source, ['{{', '}}']).every(segment => segment.type === 'text');
+    isLiteral(expression: string): boolean {
+        return expression != null && $String.matchDelimited(expression, ['{{', '}}']).every(segment => segment.type === 'text');
     },
-    isLocal(source: string): { name: string; path: string } | null {
-        const segments = $String.matchDelimited(source, ['{{', '}}']);
+    isLocal(expression: string): { name: string; path: string } | null {
+        if (expression == null) return;
+        const segments = $String.matchDelimited(expression, ['{{', '}}']);
         if (segments.length !== 1 || segments[0].type !== 'match') return null;
         const match = /^([A-Za-z_$][\w$]*)((?:\.[A-Za-z_$][\w$]*)*)\(\)$/.exec(segments[0].value.trim());
         if (!match) return null;
         return { name: match[1], path: match[2].replace(/^\./, '') };
     },
-    isAsset(source: string): string {
-        return /^\{\{\s*asset\.([A-Za-z_$][\w$]*)\s*\}\}$/.exec(source.trim())?.[1];
+    isAsset(expression: string): string {
+        if (expression == null) return null;
+        return /^\{\{\s*asset\.([A-Za-z_$][\w$]*)\s*\}\}$/.exec(expression.trim())?.[1];
     },
     bindAttributes(element: HTMLElement | SVGElement, attributes: Record<string, string>, locals: Record<string, any>): void {
         for (const [name, value] of Object.entries(attributes)) {
             if ($Element.isEventAttribute(element, name)) {
-                element.addEventListener(name.slice(2), event => ExpressionParser.invoke(value, { ...locals, event }));
+                element.addEventListener(name.slice(2), event => DrxExpressionParser.invoke(value, { ...locals, event }));
             } else if (name.startsWith('class.')) {
                 const className = name.slice('class.'.length);
-                ExpressionParser.bind(value, locals, active => element.classList.toggle(className, !!active));
+                DrxExpressionParser.bind(value, locals, active => element.classList.toggle(className, !!active));
             } else if (name.startsWith('style.')) {
                 const property = name.slice('style.'.length);
-                ExpressionParser.bind(value, locals, style => {
+                DrxExpressionParser.bind(value, locals, style => {
                     if (style == null || style === false) element.style.removeProperty(property);
                     else element.style.setProperty(property, String(style));
                 });
             } else {
-                ExpressionParser.bind(value, locals, resolved => {
+                DrxExpressionParser.bind(value, locals, resolved => {
                     if (resolved == null || resolved === false) element.removeAttribute(name);
                     else element.setAttribute(name, resolved === true ? '' : String(resolved));
                 });
@@ -75,7 +77,7 @@ export const ExpressionParser = {
             element.removeAttribute(attribute.name);
         }
         for (const [name, value] of Object.entries(attributes)) {
-            const assetReference = ExpressionParser.isAsset(value);
+            const assetReference = DrxExpressionParser.isAsset(value);
             if (assetReference) {
                 const assetIds = context.componentId ? context.root.proxy.components[context.componentId].assetIds() : context.root.proxy.app.assetIds();
                 const asset = assetIds
@@ -87,7 +89,7 @@ export const ExpressionParser = {
                 element.setAttribute(name, url);
                 continue;
             }
-            if (!ExpressionParser.isLiteral(value)) continue;
+            if (!DrxExpressionParser.isLiteral(value)) continue;
             if ($Element.isEventAttribute(element, name)) continue;
             if (name.startsWith('class.')) {
                 if (value) element.classList.add(name.slice('class.'.length));

@@ -1,10 +1,10 @@
 import { $Id, Signal } from '@vorplex/core';
-import { ExpressionParser } from '../expression-parser';
+import { DrxDocumentState } from '../drx';
+import { DrxDom } from '../drx-dom';
+import { DrxExpressionParser } from '../expression-parser';
 import { IconSheet } from '../icon-sheet';
 import { PreviewContext } from '../preview-context';
 import { RenderContext } from '../render-context';
-import { DrxDocumentState } from '../drx';
-import { DrxDom } from '../drx-dom';
 import { NodeType } from './node-type';
 import { DrxTemplateItem } from './template-item';
 
@@ -44,8 +44,8 @@ export const DrxIcon = {
         host.style.display = 'contents';
         container.appendChild(host);
         const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        ExpressionParser.bindAttributes(svg, item.attributes, context.locals);
-        ExpressionParser.bind(item.name, context.locals, name => IconSheet.apply(svg, name));
+        DrxExpressionParser.bindAttributes(svg, item.attributes, context.locals);
+        DrxExpressionParser.bind(item.name, context.locals, name => IconSheet.apply(svg, name));
         host.appendChild(svg);
         Signal.cleanup(() => host.remove());
     },
@@ -59,8 +59,8 @@ export const DrxIcon = {
         Signal.effect(() => {
             const name = context.root.proxy.icons[id].name();
             const attributes = context.root.proxy.icons[id].attributes();
-            ExpressionParser.applyPreviewAttributes(svg, attributes, context);
-            IconSheet.apply(svg, ExpressionParser.isLiteral(name) ? name : undefined);
+            DrxExpressionParser.applyPreviewAttributes(svg, attributes, context);
+            IconSheet.apply(svg, DrxExpressionParser.isLiteral(name) ? name : undefined);
         });
         Signal.cleanup(() => host.remove());
         return host;

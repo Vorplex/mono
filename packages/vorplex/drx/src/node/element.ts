@@ -1,9 +1,9 @@
 import { $Id, $Value, EntityAdaptor, Signal } from '@vorplex/core';
-import { ExpressionParser } from '../expression-parser';
-import { PreviewContext } from '../preview-context';
-import { RenderContext } from '../render-context';
 import { DrxDocumentState } from '../drx';
 import { DrxDom } from '../drx-dom';
+import { DrxExpressionParser } from '../expression-parser';
+import { PreviewContext } from '../preview-context';
+import { RenderContext } from '../render-context';
 import { NodeType } from './node-type';
 import { DrxTemplate, DrxTemplateItem } from './template-item';
 import { DrxText } from './text';
@@ -36,7 +36,7 @@ export const DrxElement = {
     },
     mount(container: Node, item: DrxElement, context: RenderContext): void {
         const element = document.createElement(item.tag);
-        ExpressionParser.bindAttributes(element, item.attributes, context.locals);
+        DrxExpressionParser.bindAttributes(element, item.attributes, context.locals);
         container.appendChild(element);
         DrxTemplate.mount(element, item.template, context);
         Signal.cleanup(() => element.remove());
@@ -50,7 +50,7 @@ export const DrxElement = {
             anchor.after(element);
             Signal.effect(() => {
                 const attributes = context.root.proxy.elements[id].attributes();
-                ExpressionParser.applyPreviewAttributes(element, { ...attributes, 'data-drx-id': id }, context);
+                DrxExpressionParser.applyPreviewAttributes(element, { ...attributes, 'data-drx-id': id }, context);
             });
             DrxTemplate.preview(element, () => context.root.proxy.elements[id].template(), context);
             Signal.cleanup(() => element.remove());

@@ -1,7 +1,7 @@
 import { $Id, Scope, Signal, State } from '@vorplex/core';
 import { DrxDocumentState, DrxScope } from '../../drx';
 import { DrxDom } from '../../drx-dom';
-import { ExpressionParser } from '../../expression-parser';
+import { DrxExpressionParser } from '../../expression-parser';
 import { PreviewContext } from '../../preview-context';
 import { ComponentRenderContext, RenderContext, RenderContextType } from '../../render-context';
 import { DrxScripting } from '../../scripting';
@@ -63,7 +63,7 @@ export const DrxComponentInstance = {
     mount(container: Node, item: DrxComponentInstance, context: RenderContext): Scope {
         return Signal.scope(() => {
             const state = context.state;
-            ExpressionParser.bind(item.component, context.locals, componentName => {
+            DrxExpressionParser.bind(item.component, context.locals, componentName => {
                 const definition = resolveComponent(context, componentName);
                 if (!definition) throw new Error(`Unknown component "${componentName}"`);
                 const host = document.createElement(NodeType.ComponentInstance);
@@ -83,13 +83,13 @@ export const DrxComponentInstance = {
                 // no assumed "on" prefix. An attribute matching a declared event wins over treating it as a prop.
                 for (const [attribute, value] of Object.entries(item.attributes)) {
                     if (events.some(event => event.name === attribute)) {
-                        eventsApi[attribute] = { emit: (payload?: any) => ExpressionParser.invoke(value, { ...context.locals, event: payload }) };
+                        eventsApi[attribute] = { emit: (payload?: any) => DrxExpressionParser.invoke(value, { ...context.locals, event: payload }) };
                         continue;
                     }
                     const propState = new State<any>(undefined);
                     props.set(attribute, propState);
                     propLocals[attribute] = propState.signal.proxy;
-                    ExpressionParser.bind(value, context.locals, value => propState.set(value));
+                    DrxExpressionParser.bind(value, context.locals, value => propState.set(value));
                 }
                 for (const event of events) eventsApi[event.name] ??= { emit: () => { } };
 
@@ -155,7 +155,7 @@ export const DrxComponentInstance = {
         const shadow = host.attachShadow({ mode: 'open' });
         Signal.effect(() => {
             const name = context.root.proxy.componentInstances[id].component();
-            if (!ExpressionParser.isLiteral(name)) {
+            if (!DrxExpressionParser.isLiteral(name)) {
                 host.setAttribute('data-drx-preview', 'unresolved');
                 return;
             }

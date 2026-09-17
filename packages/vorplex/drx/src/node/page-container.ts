@@ -1,9 +1,9 @@
 import { $Id, Scope, Signal } from '@vorplex/core';
-import { ExpressionParser } from '../expression-parser';
-import { PreviewContext } from '../preview-context';
-import { RenderContext } from '../render-context';
 import { DrxDocumentState } from '../drx';
 import { DrxDom } from '../drx-dom';
+import { DrxExpressionParser } from '../expression-parser';
+import { PreviewContext } from '../preview-context';
+import { RenderContext } from '../render-context';
 import { NodeType } from './node-type';
 import { DrxPage } from './page';
 import { DrxTemplateItem } from './template-item';
@@ -36,7 +36,7 @@ export const DrxPageContainer = {
     },
     mount(container: Node, item: DrxPageContainer, context: RenderContext): Scope {
         return Signal.scope(() => {
-            ExpressionParser.bind(item.page, context.locals, pageName => {
+            DrxExpressionParser.bind(item.page, context.locals, pageName => {
                 const appContext = context.nearest.app!;
                 const page = appContext.app.pageIds.map(id => appContext.state.pages[id]).find(page => page.name === pageName);
                 if (!page) throw new Error(`Unknown page "${pageName}"`);
