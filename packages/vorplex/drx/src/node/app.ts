@@ -134,6 +134,7 @@ export const DrxApp = {
         return Signal.scope(() => {
             const host = document.createElement(NodeType.App);
             host.style.display = 'contents';
+            host.setAttribute('data-drx-id', context.root.proxy.app.id());
             container.appendChild(host);
             StyleSheet.adopt(host.ownerDocument, () => context.root.proxy.app.style(), ...context.styleSheets);
             DrxTemplate.preview(host, () => context.root.proxy.app.template(), context);
