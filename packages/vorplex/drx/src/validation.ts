@@ -15,6 +15,22 @@ export interface DrxProblem {
     target: DrxProblemTarget;
 }
 
+function findTemplateParent(state: DrxDocumentState, id: string, visited: Set<string> = new Set()): { type: 'app' | 'page' | 'component'; id: string } | undefined {
+    if (visited.has(id)) return undefined;
+    visited.add(id);
+    const references = (template: { id: string }[]) => template.some(item => item.id === id);
+    if (references(state.app.template)) return { type: 'app', id: state.app.id };
+    for (const page of Object.values(state.pages)) if (references(page.template)) return { type: 'page', id: page.id };
+    for (const component of Object.values(state.components)) {
+        if (references(component.template) || component.componentIds.includes(id)) return { type: 'component', id: component.id };
+    }
+    for (const element of Object.values(state.elements)) if (references(element.template)) return findTemplateParent(state, element.id, visited);
+    for (const item of Object.values(state.ifs)) if (references(item.template)) return findTemplateParent(state, item.id, visited);
+    for (const item of Object.values(state.fors)) if (references(item.template)) return findTemplateParent(state, item.id, visited);
+    for (const item of Object.values(state.routerRoutes)) if (references(item.template)) return findTemplateParent(state, item.id, visited);
+    return undefined;
+}
+
 export const validators = {
     general: {
         validateTemplateReferencesExist: (state: DrxDocumentState): DrxProblem[] => {
@@ -26,7 +42,8 @@ export const validators = {
                 [NodeType.Element]: state.elements,
                 [NodeType.Icon]: state.icons,
                 [NodeType.ComponentInstance]: state.componentInstances,
-                [NodeType.PageContainer]: state.pageContainers
+                [NodeType.PageContainer]: state.pageContainers,
+                [NodeType.RouterRoute]: state.routerRoutes
             };
             const walk = (template: { id: string; type: NodeType }[]): void => {
                 for (const item of template) {
@@ -38,6 +55,7 @@ export const validators = {
                     if (node.template) walk(node.template);
                 }
             };
+            walk(state.app.template);
             for (const page of Object.values(state.pages)) walk(page.template);
             for (const component of Object.values(state.components)) walk(component.template);
             return problems;
@@ -87,8 +105,8 @@ export const validators = {
                 .map(id => ({ severity: 'error' as const, code: 'DRX001', message: `Api reference "${id}" does not exist`, target }));
         },
         validateHasMountTarget: (state: DrxDocumentState): DrxProblem[] => {
-            if (state.app.router || state.app.pageIds.length > 0) return [];
-            return [{ severity: 'error', code: 'DRX009', message: 'App has no pages and no router configured, so nothing can be mounted', target: { type: NodeType.App, id: state.app.id } }];
+            if (state.app.template.length > 0) return [];
+            return [{ severity: 'error', code: 'DRX009', message: 'App has no template content, so nothing can be mounted', target: { type: NodeType.App, id: state.app.id } }];
         }
     },
     page: {
@@ -782,24 +800,11 @@ export const validators = {
         },
         validateComponentExists: (state: DrxDocumentState): DrxProblem[] => {
             const problems: DrxProblem[] = [];
-            const findParent = (id: string, visited: Set<string> = new Set()): { type: 'page' | 'component'; id: string } | undefined => {
-                if (visited.has(id)) return undefined;
-                visited.add(id);
-                const references = (template: { id: string }[]) => template.some(item => item.id === id);
-                for (const page of Object.values(state.pages)) if (references(page.template)) return { type: 'page', id: page.id };
-                for (const component of Object.values(state.components)) {
-                    if (references(component.template) || component.componentIds.includes(id)) return { type: 'component', id: component.id };
-                }
-                for (const element of Object.values(state.elements)) if (references(element.template)) return findParent(element.id, visited);
-                for (const item of Object.values(state.ifs)) if (references(item.template)) return findParent(item.id, visited);
-                for (const item of Object.values(state.fors)) if (references(item.template)) return findParent(item.id, visited);
-                return undefined;
-            };
             for (const instance of Object.values(state.componentInstances)) {
                 if (!instance.component || !DrxExpressionParser.isLiteral(instance.component)) continue;
-                const parent = findParent(instance.id);
+                const parent = findTemplateParent(state, instance.id);
                 if (!parent) continue;
-                const visibleIds = parent.type === 'page' ? state.app.componentIds : state.components[parent.id]?.componentIds ?? [];
+                const visibleIds = parent.type === 'component' ? state.components[parent.id]?.componentIds ?? [] : state.app.componentIds;
                 const visibleNames = new Set(visibleIds.map(id => state.components[id]?.name));
                 if (!visibleNames.has(instance.component)) problems.push({ severity: 'error', code: 'DRX004', message: `Unknown component "${instance.component}"`, target: { type: NodeType.ComponentInstance, id: instance.id } });
             }
@@ -807,24 +812,11 @@ export const validators = {
         },
         validateAttributeNamesValidIdentifiers: (state: DrxDocumentState): DrxProblem[] => {
             const problems: DrxProblem[] = [];
-            const findParent = (id: string, visited: Set<string> = new Set()): { type: 'page' | 'component'; id: string } | undefined => {
-                if (visited.has(id)) return undefined;
-                visited.add(id);
-                const references = (template: { id: string }[]) => template.some(item => item.id === id);
-                for (const page of Object.values(state.pages)) if (references(page.template)) return { type: 'page', id: page.id };
-                for (const component of Object.values(state.components)) {
-                    if (references(component.template) || component.componentIds.includes(id)) return { type: 'component', id: component.id };
-                }
-                for (const element of Object.values(state.elements)) if (references(element.template)) return findParent(element.id, visited);
-                for (const item of Object.values(state.ifs)) if (references(item.template)) return findParent(item.id, visited);
-                for (const item of Object.values(state.fors)) if (references(item.template)) return findParent(item.id, visited);
-                return undefined;
-            };
             for (const instance of Object.values(state.componentInstances)) {
                 if (!instance.component || !DrxExpressionParser.isLiteral(instance.component)) continue;
-                const parent = findParent(instance.id);
+                const parent = findTemplateParent(state, instance.id);
                 if (!parent) continue;
-                const visibleIds = parent.type === 'page' ? state.app.componentIds : state.components[parent.id]?.componentIds ?? [];
+                const visibleIds = parent.type === 'component' ? state.components[parent.id]?.componentIds ?? [] : state.app.componentIds;
                 const definition = visibleIds.map(id => state.components[id]).find(component => component?.name === instance.component);
                 if (!definition) continue;
                 const eventNames = new Set(definition.eventIds.map(id => state.componentEvents[id]?.name));
@@ -851,34 +843,30 @@ export const validators = {
     },
     router: {
         validateRoutePatternRequired: (state: DrxDocumentState): DrxProblem[] => {
-            if (!state.app.router) return [];
-            if (!Object.keys(state.app.router.routes).some(route => !route.trim())) return [];
-            return [{ severity: 'error', code: 'DRX003', message: 'Router route pattern is required', target: { type: NodeType.Router, id: state.app.id } }];
+            return Object.values(state.routerRoutes)
+                .filter(route => !route.route?.trim())
+                .map(route => ({ severity: 'error' as const, code: 'DRX003', message: 'Route "route" is required', target: { type: NodeType.RouterRoute, id: route.id } }));
         },
         validateRoutePatternValid: (state: DrxDocumentState): DrxProblem[] => {
-            if (!state.app.router) return [];
             const problems: DrxProblem[] = [];
-            for (const route of Object.keys(state.app.router.routes)) {
-                if (!route) continue;
+            for (const route of Object.values(state.routerRoutes)) {
+                if (!route.route) continue;
                 try {
-                    $Router.getRouteRegex(route);
+                    $Router.getRouteRegex(route.route);
                 } catch {
-                    problems.push({ severity: 'error', code: 'DRX011', message: `Invalid router route pattern "${route}"`, target: { type: NodeType.Router, id: state.app.id } });
+                    problems.push({ severity: 'error', code: 'DRX011', message: `Invalid route pattern "${route.route}"`, target: { type: NodeType.RouterRoute, id: route.id } });
                 }
             }
             return problems;
         },
-        validateRoutePageRequired: (state: DrxDocumentState): DrxProblem[] => {
-            if (!state.app.router) return [];
-            if (!Object.values(state.app.router.routes).some(page => !page?.trim())) return [];
-            return [{ severity: 'error', code: 'DRX003', message: 'Router route "page" is required', target: { type: NodeType.Router, id: state.app.id } }];
-        },
-        validateRoutePagesExists: (state: DrxDocumentState): DrxProblem[] => {
-            if (!state.app.router) return [];
-            const pageNames = new Set(Object.values(state.pages).map(page => page.name));
-            return Object.values(state.app.router.routes)
-                .filter(pageName => pageName && !pageNames.has(pageName))
-                .map(pageName => ({ severity: 'error' as const, code: 'DRX004', message: `Unknown page "${pageName}" in router`, target: { type: NodeType.Router, id: state.app.id } }));
+        validateNotInsideComponent: (state: DrxDocumentState): DrxProblem[] => {
+            const problems: DrxProblem[] = [];
+            for (const route of Object.values(state.routerRoutes)) {
+                if (findTemplateParent(state, route.id)?.type === 'component') {
+                    problems.push({ severity: 'error', code: 'DRX019', message: 'A route can\'t be used inside a component -- components have no router to match against', target: { type: NodeType.RouterRoute, id: route.id } });
+                }
+            }
+            return problems;
         }
     }
 

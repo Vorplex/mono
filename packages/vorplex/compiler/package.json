@@ -1,6 +1,6 @@
 {
     "name": "@vorplex/compiler",
-    "version": "1.0.8",
+    "version": "1.0.9",
     "type": "module",
     "sideEffects": false,
     "files": [
@@ -30,6 +30,7 @@
     },
     "dependencies": {
         "@vorplex/core": "workspace:*",
+        "@vorplex/web": "workspace:*",
         "esbuild-wasm": "workspace:*",
         "semver": "workspace:*",
         "tslib": "workspace:*",

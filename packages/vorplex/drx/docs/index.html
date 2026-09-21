@@ -503,6 +503,39 @@
                 background: white;
             }
 
+            .preview-address {
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                padding: 6px 15px;
+                border-bottom: 1px solid #eef0f2;
+                background: #fafbfc;
+            }
+
+            .preview-address-prefix {
+                font-family: var(--mono);
+                font-size: 11px;
+                color: var(--muted);
+                user-select: none;
+            }
+
+            .preview-address-input {
+                flex: 1;
+                min-width: 0;
+                border: 1px solid var(--border);
+                border-radius: 5px;
+                padding: 3px 8px;
+                font-family: var(--mono);
+                font-size: 12px;
+                color: #374151;
+                background: white;
+            }
+
+            .preview-address-input:focus-visible {
+                outline: 2px solid var(--accent);
+                outline-offset: 1px;
+            }
+
             @media (min-width: 1700px) {
                 main {
                     padding-left: 80px;
@@ -640,6 +673,16 @@
                             </div>
                         </details>
                         <details open="">
+                            <summary>Scripting</summary>
+                            <div class="nav-branch">
+                                <a href="#scripting">Overview</a>
+                                <a href="#scripting/app">App</a>
+                                <a href="#scripting/page">Page</a>
+                                <a href="#scripting/component">Component</a>
+                                <a href="#scripting/service">Service</a>
+                            </div>
+                        </details>
+                        <details open="">
                             <summary>Reactivity</summary>
                             <div class="nav-branch">
                                 <a href="#variable">Variables</a>
@@ -700,11 +743,11 @@
                 <p class="intro">Reactive web apps, written in markup.</p>
                 <p>DRX (Declarative Reactive X) is a declarative markup language powered by Vorplex. Compose your app with <code>&lt;x-*&gt;</code> tags, then use ordinary HTML for its interface.</p>
                 <h2>Quick Start</h2>
-                <p>Save this example as an HTML file and open it in a browser. The script loads DRX, <code>&lt;x-app&gt;</code> wraps the application, and <code>&lt;x-page&gt;</code> defines its first
-                    view. No build configuration is needed.</p>
+                <p>Save this example as an HTML file and open it in a browser. The script loads DRX, and <code>&lt;x-app&gt;</code> wraps the application — its own content always renders, and
+                    <code>&lt;x-page&gt;</code> is for named views you show through routing, a page container, or a modal. No build configuration is needed.</p>
                 <p>The interactive previews on this page load DRX automatically, so the editable code below omits this line. Add it yourself when copying an example into a real
                     HTML file:</p>
-                <pre class="snippet"><code>&lt;script src="https://cdn.jsdelivr.net/gh/Vorplex/mono/packages/vorplex/drx/standalone/cdn/drx.js"&gt;&lt;/script&gt;</code></pre>
+                <pre class="snippet"><code>&lt;script src="https://cdn.jsdelivr.net/npm/@vorplex/drx@latest/dist/standalone/drx.js"&gt;&lt;/script&gt;</code></pre>
                 <div class="example"
                      data-example="">
                     <div class="example-heading">
@@ -733,15 +776,13 @@
                                           autocomplete="off"
                                           data-file="index.html"
                                           id="example-2-0"
-                                          rows="9"
+                                          rows="7"
                                           spellcheck="false"
                                           wrap="off">&lt;x-app&gt;
-  &lt;x-page name="home"&gt;
-    &lt;x-variable name="count"&gt;0&lt;/x-variable&gt;
-    &lt;button onclick="count(count() + 1)"&gt;
-      Clicked {{count()}} times
-    &lt;/button&gt;
-  &lt;/x-page&gt;
+  &lt;x-variable name="count"&gt;0&lt;/x-variable&gt;
+  &lt;button onclick="count(count() + 1)"&gt;
+    Clicked {{count()}} times
+  &lt;/button&gt;
 &lt;/x-app&gt;</textarea>
                             </div>
                         </div>
@@ -757,9 +798,14 @@
                     updates the button text whenever the value changes.</p>
                 <p class="example-note">Examples run automatically as you edit. Use the reset icon to restore the original code. Previews need an internet connection.</p>
                 <h2>CDN URL</h2>
-                <p>Use <code>drx.js</code> to compile and run <code>&lt;x-app&gt;</code> markup directly in the browser; you'll see <code>runtime.js</code> instead inside a compiled app.</p>
-                <pre class="snippet"><code>&lt;script src="https://cdn.jsdelivr.net/gh/Vorplex/mono/packages/vorplex/drx/standalone/cdn/drx.js"&gt;&lt;/script&gt;</code></pre>
-                <pre class="snippet"><code>&lt;script src="https://cdn.jsdelivr.net/gh/Vorplex/mono/packages/vorplex/drx/standalone/cdn/runtime.js"&gt;&lt;/script&gt;</code></pre>
+                <p>Use <code>drx.js</code> to compile and run <code>&lt;x-app&gt;</code> markup directly in the browser, as a plain script (as in Quick Start above):</p>
+                <pre class="snippet"><code>&lt;script src="https://cdn.jsdelivr.net/npm/@vorplex/drx@latest/dist/standalone/drx.js"&gt;&lt;/script&gt;</code></pre>
+                <p>A compiled/exported app instead loads <code>runtime.js</code> — an ES module, imported and started explicitly with <code>bootstrap(...)</code>, not just dropped in as a plain
+                    <code>&lt;script src&gt;</code>:</p>
+                <pre class="snippet"><code>&lt;script type="module"&gt;
+  import { bootstrap } from "https://cdn.jsdelivr.net/npm/@vorplex/drx@latest/dist/standalone/runtime.js";
+  bootstrap({ state: "state.json", bundle: "bundle.js", icons: "icons.svg" });
+&lt;/script&gt;</code></pre>
             </article>
             <article data-page="app"
                      hidden=""
@@ -805,6 +851,8 @@
     &lt;p&gt;{{workspace()}}&lt;/p&gt;
     &lt;button onclick="workspace('Workshop')"&gt;Rename&lt;/button&gt;
   &lt;/x-page&gt;
+
+  &lt;x-page-container page="home"&gt;&lt;/x-page-container&gt;
 &lt;/x-app&gt;</textarea>
                             </div>
                         </div>
@@ -816,100 +864,15 @@
                         </div>
                     </div>
                 </div>
-                <h2 id="app-scripting"
-                    tabindex="-1">Scripting</h2>
-                <p>Place an inline TypeScript script inside <code>&lt;x-app&gt;</code> and export <code>DRX.defineApp(drx =&gt; class { ... })</code>. The callback receives <code>drx</code> and
-                    returns a class. An imported <code>.ts</code> file uses the same export without the script tag.</p>
-                <h3><code>&lt;script&gt;</code></h3>
-                <div class="table-wrap">
-                    <table data-tag="script">
-                        <thead>
-                            <tr>
-                                <th scope="col">Attribute</th>
-                                <th scope="col">Description</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td><code>type</code></td>
-                                <td>Use <code>application/typescript</code> for an inline DRX script.</td>
-                            </tr>
-                        </tbody>
-                        <tfoot>
-                            <tr>
-                                <td class="notation"
-                                    colspan="2"><code>property<strong>?</strong></code> is optional. <code><strong>*</strong>property</code> supports <code>{{ }}</code> expressions;</td>
-                            </tr>
-                        </tfoot>
-                    </table>
-                </div>
-                <p>App variables expose <code>get()</code>, <code>set(value)</code>, <code>reset()</code>, and <code>validate()</code> through <code>drx.app.variables.&lt;name&gt;</code>. A page calls
-                    App methods through <code>drx.app.instance.&lt;method&gt;(...)</code>.</p>
-                <div class="example"
-                     data-example="">
-                    <div class="example-heading">
-                        <span>Call App Behavior from a Page</span><button class="reset"
-                                type="button"
-                                title="Reset example"
-                                aria-label="Reset example"><svg aria-hidden="true"
-                                 focusable="false"
-                                 width="16"
-                                 height="16"
-                                 viewBox="0 0 24 24"
-                                 fill="none"
-                                 stroke="currentColor"
-                                 stroke-width="1.8"
-                                 stroke-linecap="round"
-                                 stroke-linejoin="round">
-                                <path d="M3 10a9 9 0 1 1 2.6 8.4" />
-                                <path d="M3 4v6h6" />
-                            </svg></button>
-                    </div>
-                    <div class="example-grid">
-                        <div class="source-pane">
-                            <div class="code-file">
-                                <label for="example-19-0">index.html<span>editable</span></label><textarea aria-label="Call App Behavior from a Page: index.html"
-                                          autocapitalize="off"
-                                          autocomplete="off"
-                                          data-file="index.html"
-                                          id="example-19-0"
-                                          rows="17"
-                                          spellcheck="false"
-                                          wrap="off">&lt;x-app&gt;
-  &lt;x-variable name="message"&gt;"Ready"&lt;/x-variable&gt;
-  &lt;script type="application/typescript"&gt;
-    export default DRX.defineApp(drx =&gt; class {
-      greet() { drx.app.variables.message.set('Hello'); }
-    });
-  &lt;/script&gt;
-  &lt;x-page name="home"&gt;
-    &lt;script type="application/typescript"&gt;
-      export default DRX.definePage(drx =&gt; class {
-        greet() { drx.app.instance.greet(); }
-      });
-    &lt;/script&gt;
-    &lt;p&gt;{{message()}}&lt;/p&gt;
-    &lt;button onclick="greet()"&gt;Greet&lt;/button&gt;
-  &lt;/x-page&gt;
-&lt;/x-app&gt;</textarea>
-                            </div>
-                        </div>
-                        <div class="preview-pane">
-                            <div class="pane-label">Preview</div>
-                            <div class="preview-output">
-                                <div class="preview-frame"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                <p>The app itself has a script too — same shape as a page's or component's. See <a href="#scripting/app">Scripting: App</a> for its <code>drx</code> shape and an example.</p>
             </article>
             <article data-page="page"
                      hidden=""
                      id="page-page">
                 <h1 tabindex="-1">Pages</h1>
                 <p class="intro">Define a named view, then choose how it is displayed.</p>
-                <p>Reference a page from <code>&lt;x-route&gt;</code>, embed it with <code>&lt;x-page-container&gt;</code>, or access it through <code>drx.pages.&lt;name&gt;</code>. Without a router,
-                    <code>.show()</code> switches the displayed page.
+                <p>Embed a page with <code>&lt;x-page-container&gt;</code> — inside your app's own template directly for a default view, or inside an <code>&lt;x-route&gt;</code> for routed content —
+                    or open it as a modal through <code>drx.pages.&lt;name&gt;.showModal(...)</code>.
                 </p>
                 <p>A page can access its own variables and App variables. Declare page variables as direct children of <code>&lt;x-page&gt;</code>.</p>
                 <h2><code>&lt;x-page&gt;</code></h2>
@@ -963,13 +926,14 @@
                                           autocomplete="off"
                                           data-file="index.html"
                                           id="example-4-0"
-                                          rows="20"
+                                          rows="24"
                                           spellcheck="false"
                                           wrap="off">&lt;x-app&gt;
+  &lt;x-variable name="current" type="string"&gt;"home"&lt;/x-variable&gt;
   &lt;x-page name="home"&gt;
     &lt;script type="application/typescript"&gt;
       export default DRX.definePage(drx =&gt; class {
-        about() { drx.pages.about.show(); }
+        about() { drx.app.variables.current.set('about'); }
       });
     &lt;/script&gt;
     &lt;p&gt;Home page&lt;/p&gt;
@@ -978,12 +942,14 @@
   &lt;x-page name="about"&gt;
     &lt;script type="application/typescript"&gt;
       export default DRX.definePage(drx =&gt; class {
-        home() { drx.pages.home.show(); }
+        home() { drx.app.variables.current.set('home'); }
       });
     &lt;/script&gt;
     &lt;p&gt;About page&lt;/p&gt;
     &lt;button onclick="home()"&gt;Home&lt;/button&gt;
   &lt;/x-page&gt;
+
+  &lt;x-page-container page="{{current()}}"&gt;&lt;/x-page-container&gt;
 &lt;/x-app&gt;</textarea>
                             </div>
                         </div>
@@ -996,72 +962,7 @@
                     </div>
                 </div>
 
-                <h2 id="page-scripting"
-                    tabindex="-1">Scripting</h2>
-                <p>Place an inline <code>&lt;script type="application/typescript"&gt;</code> inside <code>&lt;x-page&gt;</code> and export <code>DRX.definePage(drx =&gt; class { ... })</code>. An
-                    imported <code>.ts</code> file uses the same export without the script tag.</p>
-                <p>Access the page's own variables through <code>drx.page.variables.&lt;name&gt;</code> and App variables through <code>drx.app.variables.&lt;name&gt;</code>. Both expose
-                    <code>get()</code>, <code>set(value)</code>, <code>reset()</code>, and <code>validate()</code>. To call shared App methods, use <code>drx.app.instance.&lt;method&gt;(...)</code>,
-                    as shown in <a href="#app/scripting">App Scripting</a>.
-                </p>
-                <div class="example"
-                     data-example="">
-                    <div class="example-heading">
-                        <span>Read App and Page Variables</span><button class="reset"
-                                type="button"
-                                title="Reset example"
-                                aria-label="Reset example"><svg aria-hidden="true"
-                                 focusable="false"
-                                 width="16"
-                                 height="16"
-                                 viewBox="0 0 24 24"
-                                 fill="none"
-                                 stroke="currentColor"
-                                 stroke-width="1.8"
-                                 stroke-linecap="round"
-                                 stroke-linejoin="round">
-                                <path d="M3 10a9 9 0 1 1 2.6 8.4" />
-                                <path d="M3 4v6h6" />
-                            </svg></button>
-                    </div>
-                    <div class="example-grid">
-                        <div class="source-pane">
-                            <div class="code-file">
-                                <label for="example-18-0">index.html<span>editable</span></label><textarea aria-label="Read App and Page Variables: index.html"
-                                          autocapitalize="off"
-                                          autocomplete="off"
-                                          data-file="index.html"
-                                          id="example-18-0"
-                                          rows="18"
-                                          spellcheck="false"
-                                          wrap="off">&lt;x-app&gt;
-  &lt;x-variable name="step" type="number"&gt;2&lt;/x-variable&gt;
-  &lt;x-page name="counter"&gt;
-    &lt;x-variable name="count" type="number"&gt;3&lt;/x-variable&gt;
-    &lt;script type="application/typescript"&gt;
-      export default DRX.definePage(drx =&gt; class {
-        increment() {
-          const count = drx.page.variables.count;
-          count.set(count.get() + drx.app.variables.step.get());
-        }
-        reset() { drx.page.variables.count.reset(); }
-      });
-    &lt;/script&gt;
-    &lt;p&gt;Count: {{count()}}&lt;/p&gt;
-    &lt;button onclick="increment()"&gt;Add {{step()}}&lt;/button&gt;
-    &lt;button onclick="reset()"&gt;Reset&lt;/button&gt;
-  &lt;/x-page&gt;
-&lt;/x-app&gt;</textarea>
-                            </div>
-                        </div>
-                        <div class="preview-pane">
-                            <div class="pane-label">Preview</div>
-                            <div class="preview-output">
-                                <div class="preview-frame"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                <p>A page's script has its own shape — its own variables, plus everything it inherits from the app. See <a href="#scripting/page">Scripting: Page</a> for its <code>drx</code> shape and an example.</p>
                 <h2 id="page-page-containers"
                     tabindex="-1">Page Containers</h2>
                 <p>Embed a page as a layout slot.</p>
@@ -1117,7 +1018,7 @@
                                           autocomplete="off"
                                           data-file="index.html"
                                           id="example-5-0"
-                                          rows="11"
+                                          rows="13"
                                           spellcheck="false"
                                           wrap="off">&lt;x-app&gt;
   &lt;x-page name="shell"&gt;
@@ -1128,6 +1029,8 @@
   &lt;/x-page&gt;
   &lt;x-page name="profile"&gt;&lt;p&gt;Profile details&lt;/p&gt;&lt;/x-page&gt;
   &lt;x-page name="activity"&gt;&lt;p&gt;Recent activity&lt;/p&gt;&lt;/x-page&gt;
+
+  &lt;x-page-container page="shell"&gt;&lt;/x-page-container&gt;
 &lt;/x-app&gt;</textarea>
                             </div>
                         </div>
@@ -1144,11 +1047,16 @@
                      hidden=""
                      id="page-router">
                 <h1 tabindex="-1">Routing</h1>
-                <p class="intro">Map paths to pages and read the current match.</p>
-                <p>Templates read <code>router.route()</code> and <code>router.params.&lt;name&gt;()</code> reactively. Scripts read <code>drx.router.route</code> and <code>drx.router.params</code> as
-                    plain values, and navigate with <code>drx.router.navigate(path)</code>.</p>
-                <h2><code>&lt;x-router&gt;</code></h2>
-                <p>Holds the route declarations. Once mounted, the current match is available to rendered pages.</p>
+                <p class="intro">Every app is router-aware — match paths anywhere in a template and render what's inside.</p>
+                <p>There's no separate router node to declare: <code>&lt;x-route&gt;</code> can appear directly in your app's template (or anywhere inside it), and its children render whenever its
+                    <code>route</code> pattern matches. Matching is <strong>partial</strong> by default — a route only needs to match a leading part of the path, so <code>/</code> matches
+                    everything and <code>/posts</code> stays matched under <code>/posts/anything</code>. Check for an exact path yourself (e.g. <code>router.route() === '/'</code>, in an
+                    <code>&lt;x-if&gt;</code>) when a route should render only at that one path and nowhere beneath it. Sibling routes also match <strong>independently</strong>, not
+                    exclusively — several can be active at once, which is useful for things like highlighting a nav link off the same path a page route also matches.</p>
+                <p>Templates read <code>router.route()</code> and <code>router.params.&lt;name&gt;()</code> reactively, and call <code>router.active(path)</code> to check whether the current path
+                    partial-matches a given one — the same matching a <code>&lt;x-route&gt;</code> uses, so it's the right way to highlight a nav link that should stay lit anywhere under a section,
+                    not just on its exact path. Scripts read <code>drx.router.route</code> and <code>drx.router.params</code> as plain values, call <code>drx.router.active(path)</code>, and
+                    navigate with <code>drx.router.navigate(path)</code>.</p>
                 <h2><code>&lt;x-route&gt;</code></h2>
                 <div class="table-wrap">
                     <table data-tag="x-route">
@@ -1163,10 +1071,6 @@
                                 <td><code>route</code></td>
                                 <td>The path to match, such as <code>/posts/{id}</code>.</td>
                             </tr>
-                            <tr>
-                                <td><code>page</code></td>
-                                <td>The name of the page to render.</td>
-                            </tr>
                         </tbody>
                         <tfoot>
                             <tr>
@@ -1176,6 +1080,11 @@
                         </tfoot>
                     </table>
                 </div>
+                <p>Nest <code>&lt;x-route&gt;</code> to compose both the path and the params. A nested route's pattern matches only whatever's left of the path after its parent's own match — so
+                    <code>/edit/{id}</code> nested under <code>/posts</code> effectively means <code>/posts/edit/{id}</code>, without repeating <code>/posts</code>. Captured params extend the same
+                    way: a nested route's params add to whatever its parent already carried, and a nested param shadows an outer one of the same name, but only within its own rendered content,
+                    never globally. Use <code>&lt;x-page-container&gt;</code> inside a route to render a named page for that match, or put content straight in the route for something
+                    route-specific.</p>
                 <div class="example"
                      data-example="">
                     <div class="example-heading">
@@ -1204,14 +1113,9 @@
                                           autocomplete="off"
                                           data-file="index.html"
                                           id="example-6-0"
-                                          rows="16"
+                                          rows="20"
                                           spellcheck="false"
                                           wrap="off">&lt;x-app&gt;
-  &lt;x-router&gt;
-    &lt;x-route route="/" page="home"&gt;&lt;/x-route&gt;
-    &lt;x-route route="/posts/{id}" page="post"&gt;&lt;/x-route&gt;
-    &lt;x-route route="/404" page="not-found"&gt;&lt;/x-route&gt;
-  &lt;/x-router&gt;
   &lt;x-page name="home"&gt;
     &lt;a href="#/posts/42"&gt;Read post 42&lt;/a&gt;
   &lt;/x-page&gt;
@@ -1220,6 +1124,16 @@
     &lt;a href="#/"&gt;Home&lt;/a&gt;
   &lt;/x-page&gt;
   &lt;x-page name="not-found"&gt;&lt;p&gt;Page not found.&lt;/p&gt;&lt;/x-page&gt;
+
+  &lt;x-route route="/posts/{id}"&gt;
+    &lt;x-page-container page="post"&gt;&lt;/x-page-container&gt;
+  &lt;/x-route&gt;
+  &lt;x-route route="/404"&gt;
+    &lt;x-page-container page="not-found"&gt;&lt;/x-page-container&gt;
+  &lt;/x-route&gt;
+  &lt;x-if condition="{{router.route() === '/'}}"&gt;
+    &lt;x-page-container page="home"&gt;&lt;/x-page-container&gt;
+  &lt;/x-if&gt;
 &lt;/x-app&gt;</textarea>
                             </div>
                         </div>
@@ -1231,7 +1145,79 @@
                         </div>
                     </div>
                 </div>
-                <p class="example-note">Navigation stays inside this preview.</p>
+                <p class="example-note"><code>home</code> uses <code>&lt;x-if&gt;</code>, not <code>&lt;x-route&gt;</code>, because <code>/</code> would otherwise match every path here too and
+                    stay visible alongside <code>post</code>/<code>not-found</code> — partial matching is exactly what the next section builds on, but this example wants an exact swap. Navigation
+                    stays inside this preview.</p>
+                <h2 id="router-nesting"
+                    tabindex="-1">Nesting</h2>
+                <p>Because matching is partial, a nested route's pattern is really just the part of the path its parent hasn't already accounted for — <code>&lt;x-route route="/edit/{id}"&gt;</code>
+                    nested under <code>&lt;x-route route="/posts"&gt;</code> effectively matches <code>/posts/edit/{id}</code>. An outer route with no pattern of its own beyond
+                    <code>/</code> matches unconditionally, which makes it a natural place for a shell that's always visible — nav links, a header, anything that shouldn't disappear as you
+                    navigate deeper.</p>
+                <div class="example"
+                     data-example="">
+                    <div class="example-heading">
+                        <span>Nested Routes</span><button class="reset"
+                                type="button"
+                                title="Reset example"
+                                aria-label="Reset example"><svg aria-hidden="true"
+                                 focusable="false"
+                                 width="16"
+                                 height="16"
+                                 viewBox="0 0 24 24"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 stroke-width="1.8"
+                                 stroke-linecap="round"
+                                 stroke-linejoin="round">
+                                <path d="M3 10a9 9 0 1 1 2.6 8.4" />
+                                <path d="M3 4v6h6" />
+                            </svg></button>
+                    </div>
+                    <div class="example-grid">
+                        <div class="source-pane">
+                            <div class="code-file">
+                                <label for="example-32-0">index.html<span>editable</span></label><textarea aria-label="Nested routes: index.html"
+                                          autocapitalize="off"
+                                          autocomplete="off"
+                                          data-file="index.html"
+                                          id="example-32-0"
+                                          rows="19"
+                                          spellcheck="false"
+                                          wrap="off">&lt;x-app&gt;
+  &lt;style&gt;.active { font-weight: bold; text-decoration: underline; }&lt;/style&gt;
+  &lt;x-route route="/"&gt;
+    &lt;nav&gt;
+      &lt;a href="#/home" class.active="{{router.active('/home')}}"&gt;Home&lt;/a&gt;
+      &lt;a href="#/posts" class.active="{{router.active('/posts')}}"&gt;Posts&lt;/a&gt;
+    &lt;/nav&gt;
+
+    &lt;x-route route="/home"&gt;&lt;p&gt;Welcome home.&lt;/p&gt;&lt;/x-route&gt;
+
+    &lt;x-route route="/posts"&gt;
+      &lt;p&gt;All posts&lt;/p&gt;
+      &lt;a href="#/posts/edit/7"&gt;Edit post 7&lt;/a&gt;
+
+      &lt;x-route route="/edit/{id}"&gt;
+        &lt;p&gt;Editing post {{router.params.id()}}&lt;/p&gt;
+      &lt;/x-route&gt;
+    &lt;/x-route&gt;
+  &lt;/x-route&gt;
+&lt;/x-app&gt;</textarea>
+                            </div>
+                        </div>
+                        <div class="preview-pane">
+                            <div class="pane-label">Preview</div>
+                            <div class="preview-output">
+                                <div class="preview-frame"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <p class="example-note">The nav stays visible everywhere, since the outer <code>/</code> matches every path. <code>/edit/{id}</code> is written relative to <code>/posts</code> — its
+                    effective path is <code>/posts/edit/{id}</code>, and it never matches unless <code>/posts</code> already did. The nav links use <code>router.active(path)</code> to stay
+                    highlighted while anywhere under that path — <code>router.route() === path</code> would go dark the moment you're on <code>/posts/edit/7</code> instead of exactly
+                    <code>/posts</code>.</p>
             </article>
             <article data-page="import"
                      hidden=""
@@ -1287,25 +1273,23 @@
                     <div class="example-grid">
                         <div class="source-pane">
                             <div class="code-file">
-                                <label for="example-7-0">index.html<span>editable</span></label><textarea aria-label="A page composed from files: index.html"
+                                <label for="example-7-0">index.html<span>editable</span></label><textarea aria-label="An app composed from files: index.html"
                                           autocapitalize="off"
                                           autocomplete="off"
                                           data-file="index.html"
                                           id="example-7-0"
-                                          rows="10"
+                                          rows="8"
                                           spellcheck="false"
                                           wrap="off">&lt;x-app&gt;
-  &lt;x-page name="home"&gt;
-    &lt;x-variable name="count"&gt;0&lt;/x-variable&gt;
-    &lt;x-import src="./header.drx"&gt;&lt;/x-import&gt;
-    &lt;x-import src="./actions.ts"&gt;&lt;/x-import&gt;
-    &lt;x-import src="./style.css"&gt;&lt;/x-import&gt;
-    &lt;button onclick="increment()"&gt;Count: {{count()}}&lt;/button&gt;
-  &lt;/x-page&gt;
+  &lt;x-variable name="count"&gt;0&lt;/x-variable&gt;
+  &lt;x-import src="./header.drx"&gt;&lt;/x-import&gt;
+  &lt;x-import src="./actions.ts"&gt;&lt;/x-import&gt;
+  &lt;x-import src="./style.css"&gt;&lt;/x-import&gt;
+  &lt;button onclick="increment()"&gt;Count: {{count()}}&lt;/button&gt;
 &lt;/x-app&gt;</textarea>
                             </div>
                             <div class="code-file">
-                                <label for="example-7-1">header.drx<span>editable</span></label><textarea aria-label="A page composed from files: header.drx"
+                                <label for="example-7-1">header.drx<span>editable</span></label><textarea aria-label="An app composed from files: header.drx"
                                           autocapitalize="off"
                                           autocomplete="off"
                                           data-file="header.drx"
@@ -1315,22 +1299,22 @@
                                           wrap="off">&lt;h2&gt;Imported heading&lt;/h2&gt;</textarea>
                             </div>
                             <div class="code-file">
-                                <label for="example-7-2">actions.ts<span>editable</span></label><textarea aria-label="A page composed from files: actions.ts"
+                                <label for="example-7-2">actions.ts<span>editable</span></label><textarea aria-label="An app composed from files: actions.ts"
                                           autocapitalize="off"
                                           autocomplete="off"
                                           data-file="actions.ts"
                                           id="example-7-2"
                                           rows="7"
                                           spellcheck="false"
-                                          wrap="off">export default DRX.definePage(drx =&gt; class {
+                                          wrap="off">export default DRX.defineApp(drx =&gt; class {
   increment() {
-    const count = drx.page.variables.count;
+    const count = drx.app.variables.count;
     count.set(count.get() + 1);
   }
 });</textarea>
                             </div>
                             <div class="code-file">
-                                <label for="example-7-3">style.css<span>editable</span></label><textarea aria-label="A page composed from files: style.css"
+                                <label for="example-7-3">style.css<span>editable</span></label><textarea aria-label="An app composed from files: style.css"
                                           autocapitalize="off"
                                           autocomplete="off"
                                           data-file="style.css"
@@ -1349,6 +1333,491 @@
                     </div>
                 </div>
                 <p class="example-note">These files are editable. The preview serves them from memory; a real project keeps them as separate files.</p>
+            </article>
+            <article data-page="scripting"
+                     hidden=""
+                     id="page-scripting">
+                <h1 tabindex="-1">Scripting</h1>
+                <p class="intro">App, page, and component all script the same way; a service scripts almost the same way too, minus a template and lifecycle hooks.</p>
+                <p>Place an inline <code>&lt;script type="application/typescript"&gt;</code> inside the node and export <code>DRX.defineApp</code>/<code>DRX.definePage</code>/<code>DRX.defineComponent</code>/<code>DRX.defineService(drx =&gt; class { ... })</code> — whichever matches the enclosing node. The callback receives a <code>drx</code> object shaped for that node (see the App/Page/Component/Service pages in this section) and returns a class; DRX instantiates it once, on mount. An imported <code>.ts</code> file uses the same <code>export default</code> line, without the script tag.</p>
+                <h2><code>&lt;script&gt;</code></h2>
+                <div class="table-wrap">
+                    <table data-tag="script">
+                        <thead>
+                            <tr>
+                                <th scope="col">Attribute</th>
+                                <th scope="col">Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>type</code></td>
+                                <td>Use <code>application/typescript</code> for an inline DRX script.</td>
+                            </tr>
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td class="notation"
+                                    colspan="2"><code>property<strong>?</strong></code> is optional. <code><strong>*</strong>property</code> supports <code>{{ }}</code> expressions;</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                <h2>Calling a class method</h2>
+                <p>Any public method on the class becomes callable from the template as a bare function — this is how event handler attributes (<code>onclick</code>, etc.) reach your code. The call is
+                    plain, evaluated fresh each time, never wrapped in <code>{{ }}</code>.</p>
+                <div class="example"
+                     data-example="">
+                    <div class="example-heading">
+                        <span>Calling a Class Method</span><button class="reset"
+                                type="button"
+                                title="Reset example"
+                                aria-label="Reset example"><svg aria-hidden="true"
+                                 focusable="false"
+                                 width="16"
+                                 height="16"
+                                 viewBox="0 0 24 24"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 stroke-width="1.8"
+                                 stroke-linecap="round"
+                                 stroke-linejoin="round">
+                                <path d="M3 10a9 9 0 1 1 2.6 8.4" />
+                                <path d="M3 4v6h6" />
+                            </svg></button>
+                    </div>
+                    <div class="example-grid">
+                        <div class="source-pane">
+                            <div class="code-file">
+                                <label for="example-33-0">index.html<span>editable</span></label><textarea aria-label="Calling a Class Method: index.html"
+                                          autocapitalize="off"
+                                          autocomplete="off"
+                                          data-file="index.html"
+                                          id="example-33-0"
+                                          rows="14"
+                                          spellcheck="false"
+                                          wrap="off">&lt;x-app&gt;
+  &lt;x-page name="home"&gt;
+    &lt;x-variable name="greeting"&gt;"Say hello"&lt;/x-variable&gt;
+    &lt;script type="application/typescript"&gt;
+      export default DRX.definePage(drx =&gt; class {
+        sayHello() {
+          drx.page.variables.greeting.set('Hello!');
+        }
+      });
+    &lt;/script&gt;
+    &lt;p&gt;{{greeting()}}&lt;/p&gt;
+    &lt;button onclick="sayHello()"&gt;Click me&lt;/button&gt;
+  &lt;/x-page&gt;
+
+  &lt;x-page-container page="home"&gt;&lt;/x-page-container&gt;
+&lt;/x-app&gt;</textarea>
+                            </div>
+                        </div>
+                        <div class="preview-pane">
+                            <div class="pane-label">Preview</div>
+                            <div class="preview-output">
+                                <div class="preview-frame"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <h2>Lifecycle hooks</h2>
+                <p>An <code>onMount()</code> method runs once the node has mounted; an <code>onUnmount()</code> method runs just before it's removed. Both are optional. App, page, and component all
+                    support them; a service does not (it has no mount/unmount of its own).</p>
+                <div class="example"
+                     data-example="">
+                    <div class="example-heading">
+                        <span>Lifecycle Hooks</span><button class="reset"
+                                type="button"
+                                title="Reset example"
+                                aria-label="Reset example"><svg aria-hidden="true"
+                                 focusable="false"
+                                 width="16"
+                                 height="16"
+                                 viewBox="0 0 24 24"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 stroke-width="1.8"
+                                 stroke-linecap="round"
+                                 stroke-linejoin="round">
+                                <path d="M3 10a9 9 0 1 1 2.6 8.4" />
+                                <path d="M3 4v6h6" />
+                            </svg></button>
+                    </div>
+                    <div class="example-grid">
+                        <div class="source-pane">
+                            <div class="code-file">
+                                <label for="example-34-0">index.html<span>editable</span></label><textarea aria-label="Lifecycle Hooks: index.html"
+                                          autocapitalize="off"
+                                          autocomplete="off"
+                                          data-file="index.html"
+                                          id="example-34-0"
+                                          rows="20"
+                                          spellcheck="false"
+                                          wrap="off">&lt;x-app&gt;
+  &lt;x-variable name="visible" type="boolean"&gt;true&lt;/x-variable&gt;
+
+  &lt;x-page name="tracked"&gt;
+    &lt;x-variable name="status"&gt;"not mounted"&lt;/x-variable&gt;
+    &lt;script type="application/typescript"&gt;
+      export default DRX.definePage(drx =&gt; class {
+        onMount() { drx.page.variables.status.set('mounted'); }
+        onUnmount() { console.log('tracked page unmounted'); }
+      });
+    &lt;/script&gt;
+    &lt;p&gt;Status: {{status()}}&lt;/p&gt;
+  &lt;/x-page&gt;
+
+  &lt;button onclick="visible(!visible())"&gt;Toggle&lt;/button&gt;
+  &lt;x-if condition="{{visible()}}"&gt;
+    &lt;x-page-container page="tracked"&gt;&lt;/x-page-container&gt;
+  &lt;/x-if&gt;
+&lt;/x-app&gt;</textarea>
+                            </div>
+                        </div>
+                        <div class="preview-pane">
+                            <div class="pane-label">Preview</div>
+                            <div class="preview-output">
+                                <div class="preview-frame"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <p class="example-note">Toggling hides the page container entirely, which unmounts <code>tracked</code>; toggling back mounts a fresh instance, so <code>status</code> resets and
+                    <code>onMount()</code> runs again — open the browser console to see <code>onUnmount()</code> fire on the way out.</p>
+                <h2 id="scripting-app">App</h2>
+                <p><code>drx</code> shape in an app script:</p>
+                <pre class="snippet"><code>drx = {
+  app: {
+    variables: {
+      [name]: {
+        get(),       // current value
+        set(value),  // write a new value
+        reset(),     // revert to the declared initial value
+        validate()   // check the current value against the declared type
+      }
+    }
+  },
+  apis: {
+    [name]: {
+      [endpoint]: {
+        request(options)  // send the request
+      }
+    }
+  },
+  services: {
+    [name]: { }  // whatever that service's own class exposes
+  },
+  router: {
+    route,             // current path
+    params,            // captured route parameters
+    navigate(path),    // change the current path
+    active(path)       // whether this path (or beneath it) is currently matched
+  },
+  pages: {
+    [name]: {
+      show(),              // switch to this page
+      showModal(options)   // open this page as a modal, resolves when it closes
+    }
+  }
+}</code></pre>
+                <p>Any public method on the app's class is reachable both from the app's own template (as a bare call) and, from any page, via <code>drx.app.instance.&lt;method&gt;(...)</code> — see
+                    <a href="#scripting/page">Page</a>. That's a page-side API only; the app script has no <code>drx.app.instance</code> of its own to call — it already has <code>this</code>.
+                </p>
+                <div class="example"
+                     data-example="">
+                    <div class="example-heading">
+                        <span>App-level State and Methods</span><button class="reset"
+                                type="button"
+                                title="Reset example"
+                                aria-label="Reset example"><svg aria-hidden="true"
+                                 focusable="false"
+                                 width="16"
+                                 height="16"
+                                 viewBox="0 0 24 24"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 stroke-width="1.8"
+                                 stroke-linecap="round"
+                                 stroke-linejoin="round">
+                                <path d="M3 10a9 9 0 1 1 2.6 8.4" />
+                                <path d="M3 4v6h6" />
+                            </svg></button>
+                    </div>
+                    <div class="example-grid">
+                        <div class="source-pane">
+                            <div class="code-file">
+                                <label for="example-35-0">index.html<span>editable</span></label><textarea aria-label="App-level State and Methods: index.html"
+                                          autocapitalize="off"
+                                          autocomplete="off"
+                                          data-file="index.html"
+                                          id="example-35-0"
+                                          rows="16"
+                                          spellcheck="false"
+                                          wrap="off">&lt;x-app&gt;
+  &lt;x-variable name="theme"&gt;"light"&lt;/x-variable&gt;
+  &lt;script type="application/typescript"&gt;
+    export default DRX.defineApp(drx =&gt; class {
+      toggleTheme() {
+        const theme = drx.app.variables.theme;
+        theme.set(theme.get() === 'light' ? 'dark' : 'light');
+      }
+    });
+  &lt;/script&gt;
+
+  &lt;button onclick="toggleTheme()"&gt;Toggle theme ({{theme()}})&lt;/button&gt;
+  &lt;x-page name="home"&gt;
+    &lt;p&gt;Current theme: {{theme()}}&lt;/p&gt;
+  &lt;/x-page&gt;
+  &lt;x-page-container page="home"&gt;&lt;/x-page-container&gt;
+&lt;/x-app&gt;</textarea>
+                            </div>
+                        </div>
+                        <div class="preview-pane">
+                            <div class="pane-label">Preview</div>
+                            <div class="preview-output">
+                                <div class="preview-frame"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <p>The button lives directly in the app's own template, so <code>toggleTheme()</code> and <code>{{theme()}}</code> resolve as bare calls — the same way they would inside any page,
+                    since every page inherits the app's locals.</p>
+                <h2 id="scripting-page">Page</h2>
+                <p><code>drx</code> shape in a page script — a page is never isolated the way a component is, so it inherits everything the app exposes:</p>
+                <pre class="snippet"><code>drx = {
+  page: {
+    variables: {
+      [name]: {
+        get(),       // current value
+        set(value),  // write a new value
+        reset(),     // revert to the declared initial value
+        validate()   // check the current value against the declared type
+      }
+    },
+    root  // the page's own shadow root -- last resort, see below
+  },
+  app: {
+    variables: {
+      [name]: {
+        get(), set(value), reset(), validate()  // same shape as page.variables above
+      }
+    },
+    instance: {
+      [method](...)  // calls straight into the app's own class
+    }
+  },
+  apis: {
+    [name]: {
+      [endpoint]: {
+        request(options)  // send the request
+      }
+    }
+  },
+  services: {
+    [name]: { }  // whatever that service's own class exposes
+  },
+  router: {
+    route,             // current path
+    params,            // captured route parameters
+    navigate(path),    // change the current path
+    active(path)       // whether this path (or beneath it) is currently matched
+  },
+  pages: {
+    [name]: {
+      show(),              // switch to this page
+      showModal(options)   // open this page as a modal, resolves when it closes
+    }
+  },
+  modal: {
+    data(),        // set only when this page was opened via showModal()
+    close(result)  // resolves the promise showModal() returned
+  }
+}</code></pre>
+                <p><code>drx.page.root</code> is a last-resort escape hatch for when nothing declarative can express what's needed; reach for <code>&lt;x-variable&gt;</code>/<code>{{ }}</code>/<code>x-if</code>/<code>x-for</code>
+                    first, always.</p>
+                <div class="example"
+                     data-example="">
+                    <div class="example-heading">
+                        <span>A Page Inherits the App</span><button class="reset"
+                                type="button"
+                                title="Reset example"
+                                aria-label="Reset example"><svg aria-hidden="true"
+                                 focusable="false"
+                                 width="16"
+                                 height="16"
+                                 viewBox="0 0 24 24"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 stroke-width="1.8"
+                                 stroke-linecap="round"
+                                 stroke-linejoin="round">
+                                <path d="M3 10a9 9 0 1 1 2.6 8.4" />
+                                <path d="M3 4v6h6" />
+                            </svg></button>
+                    </div>
+                    <div class="example-grid">
+                        <div class="source-pane">
+                            <div class="code-file">
+                                <label for="example-36-0">index.html<span>editable</span></label><textarea aria-label="A Page Inherits the App: index.html"
+                                          autocapitalize="off"
+                                          autocomplete="off"
+                                          data-file="index.html"
+                                          id="example-36-0"
+                                          rows="21"
+                                          spellcheck="false"
+                                          wrap="off">&lt;x-app&gt;
+  &lt;x-variable name="clicks" type="number"&gt;0&lt;/x-variable&gt;
+  &lt;script type="application/typescript"&gt;
+    export default DRX.defineApp(drx =&gt; class {
+      recordClick() {
+        const clicks = drx.app.variables.clicks;
+        clicks.set(clicks.get() + 1);
+      }
+    });
+  &lt;/script&gt;
+
+  &lt;x-page name="home"&gt;
+    &lt;x-variable name="label"&gt;"Click"&lt;/x-variable&gt;
+    &lt;script type="application/typescript"&gt;
+      export default DRX.definePage(drx =&gt; class {
+        onClick() {
+          drx.app.instance.recordClick();
+          drx.page.variables.label.set('Clicked!');
+        }
+      });
+    &lt;/script&gt;
+    &lt;p&gt;{{label()}} — {{clicks()}} total clicks&lt;/p&gt;
+    &lt;button onclick="onClick()"&gt;{{label()}}&lt;/button&gt;
+  &lt;/x-page&gt;
+
+  &lt;x-page-container page="home"&gt;&lt;/x-page-container&gt;
+&lt;/x-app&gt;</textarea>
+                            </div>
+                        </div>
+                        <div class="preview-pane">
+                            <div class="pane-label">Preview</div>
+                            <div class="preview-output">
+                                <div class="preview-frame"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <p>The page keeps <code>label</code> as its own state, but reads the app's <code>clicks</code> directly (<code>{{clicks()}}</code>, no prefix needed) and drives it only through the
+                    app's own method, <code>drx.app.instance.recordClick()</code> — the page never writes <code>drx.app.variables.clicks</code> directly here, though it's just as able to.</p>
+                <h2 id="scripting-component">Component</h2>
+                <p><code>drx</code> shape in a component script — no <code>app</code>, no <code>page</code>, no <code>router</code>, no <code>modal</code>. A component's isolation is total: its script
+                    only ever sees what the component itself declares:</p>
+                <pre class="snippet"><code>drx = {
+  component: {
+    variables: {
+      [name]: {
+        get(), set(value), reset(), validate()  // same shape as a page's variables
+      }
+    },
+    props: {
+      [name]()  // read-only -- set by whoever placed the &lt;x-component-instance&gt;
+    },
+    events: {
+      [name]: {
+        emit(value)  // fire the event out to whoever is listening
+      }
+    },
+    root  // the component's own shadow root -- last resort, see Page above
+  },
+  apis: {
+    [name]: {
+      [endpoint]: {
+        request(options)  // send the request -- only what this component itself declares
+      }
+    }
+  },
+  services: {
+    [name]: { }  // whatever that service's own class exposes -- only what this component itself declares
+  }
+}</code></pre>
+                <div class="example"
+                     data-example="">
+                    <div class="example-heading">
+                        <span>Read a Property and Emit an Event</span><button class="reset"
+                                type="button"
+                                title="Reset example"
+                                aria-label="Reset example"><svg aria-hidden="true"
+                                 focusable="false"
+                                 width="16"
+                                 height="16"
+                                 viewBox="0 0 24 24"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 stroke-width="1.8"
+                                 stroke-linecap="round"
+                                 stroke-linejoin="round">
+                                <path d="M3 10a9 9 0 1 1 2.6 8.4" />
+                                <path d="M3 4v6h6" />
+                            </svg></button>
+                    </div>
+                    <div class="example-grid">
+                        <div class="source-pane">
+                            <div class="code-file">
+                                <label for="example-component-script-0">index.html<span>editable</span></label><textarea aria-label="Read a Property and Emit an Event: index.html"
+                                          autocapitalize="off"
+                                          autocomplete="off"
+                                          data-file="index.html"
+                                          id="example-component-script-0"
+                                          rows="17"
+                                          spellcheck="false"
+                                          wrap="off">&lt;x-app&gt;
+  &lt;x-component name="choice"&gt;
+    &lt;x-property name="label" type="string"&gt;&lt;/x-property&gt;
+    &lt;x-event name="selected" type="string"&gt;&lt;/x-event&gt;
+    &lt;script type="application/typescript"&gt;
+      export default DRX.defineComponent(drx =&gt; class {
+        select() {
+          drx.component.events.selected.emit(
+            drx.component.props.label()
+          );
+        }
+      });
+    &lt;/script&gt;
+    &lt;button onclick="select()"&gt;Choose {{label()}}&lt;/button&gt;
+  &lt;/x-component&gt;
+  &lt;x-variable name="selection"&gt;"Nothing selected"&lt;/x-variable&gt;
+  &lt;x-component-instance component="choice" label="Coffee"
+    selected="selection(event)"&gt;&lt;/x-component-instance&gt;
+  &lt;p&gt;{{selection()}}&lt;/p&gt;
+&lt;/x-app&gt;</textarea>
+                            </div>
+                        </div>
+                        <div class="preview-pane">
+                            <div class="pane-label">Preview</div>
+                            <div class="preview-output">
+                                <div class="preview-frame"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <p>The component reads its declared property and emits a value. The page handles the event to update its own variable; the component does not access that variable directly.
+                    <code>drx.component.root</code> (the component's own shadow root) is available the same last-resort way as <code>drx.page.root</code>.
+                </p>
+                <h2 id="scripting-service">Service</h2>
+                <p><code>drx</code> shape in a service script — the smallest of the four, and the one exception to everything above: no lifecycle hooks (a service has nothing to mount or unmount; it's
+                    constructed once and lives for the app's lifetime) and no template:</p>
+                <pre class="snippet"><code>drx = {
+  apis: {
+    [name]: {
+      [endpoint]: {
+        request(options)  // send the request
+      }
+    }
+  },
+  services: {
+    [name]: { }  // other services this one declares -- whatever their own class exposes
+  }
+}</code></pre>
+                <p>No <code>variables</code>, no <code>props</code>/<code>events</code>, no <code>root</code>. It's a plain class for behavior that doesn't belong to one page or component, reached via
+                    <code>drx.services.&lt;name&gt;.&lt;method&gt;(...)</code> from anywhere that can see it. See <a href="#service">Services</a> for the full reference and a worked example.
+                </p>
             </article>
             <article data-page="variable"
                      hidden=""
@@ -1435,6 +1904,8 @@
     &lt;x-component-instance component="counter"&gt;&lt;/x-component-instance&gt;
     &lt;x-component-instance component="counter"&gt;&lt;/x-component-instance&gt;
   &lt;/x-page&gt;
+
+  &lt;x-page-container page="home"&gt;&lt;/x-page-container&gt;
 &lt;/x-app&gt;</textarea>
                             </div>
                         </div>
@@ -1479,16 +1950,14 @@
                                           autocomplete="off"
                                           data-file="index.html"
                                           id="example-9-0"
-                                          rows="10"
+                                          rows="7"
                                           spellcheck="false"
                                           wrap="off">&lt;x-app&gt;
-  &lt;x-page name="profile"&gt;
-    &lt;x-variable name="profile" type="object"&gt;
-      { "name": "Ada", "role": "admin" }
-    &lt;/x-variable&gt;
-    &lt;p&gt;{{profile.name()}} / {{profile.role()}}&lt;/p&gt;
-    &lt;button onclick="profile.name('Grace')"&gt;Rename&lt;/button&gt;
-  &lt;/x-page&gt;
+  &lt;x-variable name="profile" type="object"&gt;
+    { "name": "Ada", "role": "admin" }
+  &lt;/x-variable&gt;
+  &lt;p&gt;{{profile.name()}} / {{profile.role()}}&lt;/p&gt;
+  &lt;button onclick="profile.name('Grace')"&gt;Rename&lt;/button&gt;
 &lt;/x-app&gt;</textarea>
                             </div>
                         </div>
@@ -1564,21 +2033,19 @@
                                           autocomplete="off"
                                           data-file="index.html"
                                           id="example-10-0"
-                                          rows="15"
+                                          rows="12"
                                           spellcheck="false"
                                           wrap="off">&lt;x-app&gt;
-  &lt;x-page name="panel"&gt;
-    &lt;x-variable name="expanded"&gt;false&lt;/x-variable&gt;
-    &lt;style&gt;.open { text-decoration: underline; }&lt;/style&gt;
-    &lt;button
-      onclick="expanded(!expanded())"
-      class.open="{{expanded()}}"
-      style.font-weight="{{expanded() ? 'bold' : 'normal'}}"
-      title="Panel is {{expanded() ? 'open' : 'closed'}}"
-    &gt;
-      {{expanded() ? 'Close' : 'Open'}} panel
-    &lt;/button&gt;
-  &lt;/x-page&gt;
+  &lt;x-variable name="expanded"&gt;false&lt;/x-variable&gt;
+  &lt;style&gt;.open { text-decoration: underline; }&lt;/style&gt;
+  &lt;button
+    onclick="expanded(!expanded())"
+    class.open="{{expanded()}}"
+    style.font-weight="{{expanded() ? 'bold' : 'normal'}}"
+    title="Panel is {{expanded() ? 'open' : 'closed'}}"
+  &gt;
+    {{expanded() ? 'Close' : 'Open'}} panel
+  &lt;/button&gt;
 &lt;/x-app&gt;</textarea>
                             </div>
                         </div>
@@ -1649,18 +2116,16 @@
                                           autocomplete="off"
                                           data-file="index.html"
                                           id="example-28-0"
-                                          rows="12"
+                                          rows="9"
                                           spellcheck="false"
                                           wrap="off">&lt;x-app&gt;
   &lt;x-type name="priority"&gt;
     { "type": "enum", "flags": ["low", "medium", "high"] }
   &lt;/x-type&gt;
-  &lt;x-page name="task"&gt;
-    &lt;x-variable name="taskPriority" type="priority"&gt;"medium"&lt;/x-variable&gt;
-    &lt;p&gt;{{taskPriority()}}&lt;/p&gt;
-    &lt;button onclick="taskPriority('low')"&gt;Low&lt;/button&gt;
-    &lt;button onclick="taskPriority('high')"&gt;High&lt;/button&gt;
-  &lt;/x-page&gt;
+  &lt;x-variable name="taskPriority" type="priority"&gt;"medium"&lt;/x-variable&gt;
+  &lt;p&gt;{{taskPriority()}}&lt;/p&gt;
+  &lt;button onclick="taskPriority('low')"&gt;Low&lt;/button&gt;
+  &lt;button onclick="taskPriority('high')"&gt;High&lt;/button&gt;
 &lt;/x-app&gt;</textarea>
                             </div>
                         </div>
@@ -1732,15 +2197,13 @@
                                           autocomplete="off"
                                           data-file="index.html"
                                           id="example-14-0"
-                                          rows="9"
+                                          rows="5"
                                           spellcheck="false"
                                           wrap="off">&lt;x-app&gt;
   &lt;x-component name="notice"&gt;
     &lt;p&gt;Changes have been saved.&lt;/p&gt;
   &lt;/x-component&gt;
-  &lt;x-page name="home"&gt;
-    &lt;x-component-instance component="notice"&gt;&lt;/x-component-instance&gt;
-  &lt;/x-page&gt;
+  &lt;x-component-instance component="notice"&gt;&lt;/x-component-instance&gt;
 &lt;/x-app&gt;</textarea>
                             </div>
                         </div>
@@ -1752,78 +2215,7 @@
                         </div>
                     </div>
                 </div>
-                <h2 id="component-scripting"
-                    tabindex="-1">Scripting</h2>
-                <p>Place an inline <code>&lt;script type="application/typescript"&gt;</code> inside <code>&lt;x-component&gt;</code> and export
-                    <code>DRX.defineComponent(drx =&gt; class { ... })</code>. The script has the same isolation as the component. An imported <code>.ts</code> file uses the same export without the
-                    script tag.
-                </p>
-                <p>Read declared properties with <code>drx.component.props.&lt;name&gt;()</code>; they are read-only from the script. Emit declared events with
-                    <code>drx.component.events.&lt;name&gt;.emit(value)</code>.
-                </p>
-                <div class="example"
-                     data-example="">
-                    <div class="example-heading">
-                        <span>Read a Property and Emit an Event</span><button class="reset"
-                                type="button"
-                                title="Reset example"
-                                aria-label="Reset example"><svg aria-hidden="true"
-                                 focusable="false"
-                                 width="16"
-                                 height="16"
-                                 viewBox="0 0 24 24"
-                                 fill="none"
-                                 stroke="currentColor"
-                                 stroke-width="1.8"
-                                 stroke-linecap="round"
-                                 stroke-linejoin="round">
-                                <path d="M3 10a9 9 0 1 1 2.6 8.4" />
-                                <path d="M3 4v6h6" />
-                            </svg></button>
-                    </div>
-                    <div class="example-grid">
-                        <div class="source-pane">
-                            <div class="code-file">
-                                <label for="example-component-script-0">index.html<span>editable</span></label><textarea aria-label="Read a Property and Emit an Event: index.html"
-                                          autocapitalize="off"
-                                          autocomplete="off"
-                                          data-file="index.html"
-                                          id="example-component-script-0"
-                                          rows="20"
-                                          spellcheck="false"
-                                          wrap="off">&lt;x-app&gt;
-  &lt;x-component name="choice"&gt;
-    &lt;x-property name="label" type="string"&gt;&lt;/x-property&gt;
-    &lt;x-event name="selected" type="string"&gt;&lt;/x-event&gt;
-    &lt;script type="application/typescript"&gt;
-      export default DRX.defineComponent(drx =&gt; class {
-        select() {
-          drx.component.events.selected.emit(
-            drx.component.props.label()
-          );
-        }
-      });
-    &lt;/script&gt;
-    &lt;button onclick="select()"&gt;Choose {{label()}}&lt;/button&gt;
-  &lt;/x-component&gt;
-  &lt;x-page name="home"&gt;
-    &lt;x-variable name="selection"&gt;"Nothing selected"&lt;/x-variable&gt;
-    &lt;x-component-instance component="choice" label="Coffee"
-      selected="selection(event)"&gt;&lt;/x-component-instance&gt;
-    &lt;p&gt;{{selection()}}&lt;/p&gt;
-  &lt;/x-page&gt;
-&lt;/x-app&gt;</textarea>
-                            </div>
-                        </div>
-                        <div class="preview-pane">
-                            <div class="pane-label">Preview</div>
-                            <div class="preview-output">
-                                <div class="preview-frame"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <p>The component reads its declared property and emits a value. The page handles the event to update its own variable; the component does not access that variable directly.</p>
+                <p>A component's script only ever sees what the component itself declares — never the app or page. See <a href="#scripting/component">Scripting: Component</a> for its <code>drx</code> shape and an example.</p>
             </article>
             <article data-page="property"
                      hidden=""
@@ -1887,19 +2279,17 @@
                                           autocomplete="off"
                                           data-file="index.html"
                                           id="example-15-0"
-                                          rows="13"
+                                          rows="10"
                                           spellcheck="false"
                                           wrap="off">&lt;x-app&gt;
   &lt;x-component name="greeting"&gt;
     &lt;x-property name="person" type="string"&gt;&lt;/x-property&gt;
     &lt;p&gt;Hello, {{person()}}.&lt;/p&gt;
   &lt;/x-component&gt;
-  &lt;x-page name="home"&gt;
-    &lt;x-component-instance component="greeting" person="Ada"&gt;
-    &lt;/x-component-instance&gt;
-    &lt;x-component-instance component="greeting" person="Grace"&gt;
-    &lt;/x-component-instance&gt;
-  &lt;/x-page&gt;
+  &lt;x-component-instance component="greeting" person="Ada"&gt;
+  &lt;/x-component-instance&gt;
+  &lt;x-component-instance component="greeting" person="Grace"&gt;
+  &lt;/x-component-instance&gt;
 &lt;/x-app&gt;</textarea>
                             </div>
                         </div>
@@ -1974,7 +2364,7 @@
                                           autocomplete="off"
                                           data-file="index.html"
                                           id="example-16-0"
-                                          rows="20"
+                                          rows="17"
                                           spellcheck="false"
                                           wrap="off">&lt;x-app&gt;
   &lt;x-component name="notice"&gt;
@@ -1988,12 +2378,10 @@
     &lt;/script&gt;
     &lt;button onclick="dismiss()"&gt;Dismiss notice&lt;/button&gt;
   &lt;/x-component&gt;
-  &lt;x-page name="home"&gt;
-    &lt;x-variable name="message"&gt;"Waiting"&lt;/x-variable&gt;
-    &lt;x-component-instance component="notice" dismissed="message(event)"&gt;
-    &lt;/x-component-instance&gt;
-    &lt;p&gt;{{message()}}&lt;/p&gt;
-  &lt;/x-page&gt;
+  &lt;x-variable name="message"&gt;"Waiting"&lt;/x-variable&gt;
+  &lt;x-component-instance component="notice" dismissed="message(event)"&gt;
+  &lt;/x-component-instance&gt;
+  &lt;p&gt;{{message()}}&lt;/p&gt;
 &lt;/x-app&gt;</textarea>
                             </div>
                         </div>
@@ -2063,17 +2451,15 @@
                                           autocomplete="off"
                                           data-file="index.html"
                                           id="example-17-0"
-                                          rows="11"
+                                          rows="8"
                                           spellcheck="false"
                                           wrap="off">&lt;x-app&gt;
   &lt;x-component name="summary"&gt;&lt;p&gt;Summary view&lt;/p&gt;&lt;/x-component&gt;
   &lt;x-component name="details"&gt;&lt;p&gt;Detailed view&lt;/p&gt;&lt;/x-component&gt;
-  &lt;x-page name="home"&gt;
-    &lt;x-variable name="view"&gt;"summary"&lt;/x-variable&gt;
-    &lt;button onclick="view('summary')"&gt;Summary&lt;/button&gt;
-    &lt;button onclick="view('details')"&gt;Details&lt;/button&gt;
-    &lt;x-component-instance component="{{view()}}"&gt;&lt;/x-component-instance&gt;
-  &lt;/x-page&gt;
+  &lt;x-variable name="view"&gt;"summary"&lt;/x-variable&gt;
+  &lt;button onclick="view('summary')"&gt;Summary&lt;/button&gt;
+  &lt;button onclick="view('details')"&gt;Details&lt;/button&gt;
+  &lt;x-component-instance component="{{view()}}"&gt;&lt;/x-component-instance&gt;
 &lt;/x-app&gt;</textarea>
                             </div>
                         </div>
@@ -2114,6 +2500,9 @@
                         </tfoot>
                     </table>
                 </div>
+                <p class="example-note">Don't place <code>&lt;x-if&gt;</code> directly inside <code>&lt;table&gt;</code>/<code>&lt;tbody&gt;</code>/<code>&lt;tr&gt;</code> — the browser's HTML
+                    parser relocates unrecognized elements out of that restricted content model before DRX ever sees them, severing the <code>&lt;x-if&gt;</code> from the row it was meant to
+                    wrap (it surfaces as a runtime error, not a parse error). Build the grid with <code>&lt;div&gt;</code> instead.</p>
                 <div class="example"
                      data-example="">
                     <div class="example-heading">
@@ -2142,16 +2531,14 @@
                                           autocomplete="off"
                                           data-file="index.html"
                                           id="example-11-0"
-                                          rows="10"
+                                          rows="7"
                                           spellcheck="false"
                                           wrap="off">&lt;x-app&gt;
-  &lt;x-page name="details"&gt;
-    &lt;x-variable name="visible"&gt;false&lt;/x-variable&gt;
-    &lt;button onclick="visible(!visible())"&gt;Toggle details&lt;/button&gt;
-    &lt;x-if condition="{{visible()}}"&gt;
-      &lt;p&gt;These details appear when visible is true.&lt;/p&gt;
-    &lt;/x-if&gt;
-  &lt;/x-page&gt;
+  &lt;x-variable name="visible"&gt;false&lt;/x-variable&gt;
+  &lt;button onclick="visible(!visible())"&gt;Toggle details&lt;/button&gt;
+  &lt;x-if condition="{{visible()}}"&gt;
+    &lt;p&gt;These details appear when visible is true.&lt;/p&gt;
+  &lt;/x-if&gt;
 &lt;/x-app&gt;</textarea>
                             </div>
                         </div>
@@ -2212,6 +2599,9 @@
                 </div>
                 <p class="example-note">The reference table marks <code>as</code> as required; its prose also describes an <code>item</code> default. These examples specify <code>as</code> explicitly.
                 </p>
+                <p class="example-note">Don't place <code>&lt;x-for&gt;</code> directly inside <code>&lt;table&gt;</code>/<code>&lt;tbody&gt;</code>/<code>&lt;tr&gt;</code> — the browser's HTML
+                    parser relocates unrecognized elements out of that restricted content model before DRX ever sees them, severing the <code>&lt;x-for&gt;</code> from the row it was meant to
+                    wrap (it surfaces as a runtime "row is not defined" error, not a parse error). Build the grid with <code>&lt;div&gt;</code> instead.</p>
                 <div class="example"
                      data-example="">
                     <div class="example-heading">
@@ -2240,18 +2630,16 @@
                                           autocomplete="off"
                                           data-file="index.html"
                                           id="example-12-0"
-                                          rows="12"
+                                          rows="9"
                                           spellcheck="false"
                                           wrap="off">&lt;x-app&gt;
-  &lt;x-page name="menu"&gt;
-    &lt;x-variable name="items" type="array"&gt;
-      [{ "id": 1, "label": "Coffee" }, { "id": 2, "label": "Tea" }]
-    &lt;/x-variable&gt;
-    &lt;x-for each="{{items()}}" as="item" index="i" track="id"&gt;
-      &lt;p&gt;{{i()}}: {{item.label()}}&lt;/p&gt;
-    &lt;/x-for&gt;
-    &lt;button onclick="items([...items()].reverse())"&gt;Reverse&lt;/button&gt;
-  &lt;/x-page&gt;
+  &lt;x-variable name="items" type="array"&gt;
+    [{ "id": 1, "label": "Coffee" }, { "id": 2, "label": "Tea" }]
+  &lt;/x-variable&gt;
+  &lt;x-for each="{{items()}}" as="item" index="i" track="id"&gt;
+    &lt;p&gt;{{i()}}: {{item.label()}}&lt;/p&gt;
+  &lt;/x-for&gt;
+  &lt;button onclick="items([...items()].reverse())"&gt;Reverse&lt;/button&gt;
 &lt;/x-app&gt;</textarea>
                             </div>
                         </div>
@@ -2293,20 +2681,18 @@
                                           autocomplete="off"
                                           data-file="index.html"
                                           id="example-13-0"
-                                          rows="14"
+                                          rows="11"
                                           spellcheck="false"
                                           wrap="off">&lt;x-app&gt;
-  &lt;x-page name="settings"&gt;
-    &lt;x-variable name="settings" type="object"&gt;
-      { "notifications": true, "compact": false }
-    &lt;/x-variable&gt;
-    &lt;x-for each="{{settings()}}" as="value" key="setting"&gt;
-      &lt;p&gt;{{setting()}}: {{value()}}&lt;/p&gt;
-    &lt;/x-for&gt;
-    &lt;button onclick="settings.compact(!settings.compact())"&gt;
-      Toggle compact
-    &lt;/button&gt;
-  &lt;/x-page&gt;
+  &lt;x-variable name="settings" type="object"&gt;
+    { "notifications": true, "compact": false }
+  &lt;/x-variable&gt;
+  &lt;x-for each="{{settings()}}" as="value" key="setting"&gt;
+    &lt;p&gt;{{setting()}}: {{value()}}&lt;/p&gt;
+  &lt;/x-for&gt;
+  &lt;button onclick="settings.compact(!settings.compact())"&gt;
+    Toggle compact
+  &lt;/button&gt;
 &lt;/x-app&gt;</textarea>
                             </div>
                         </div>
@@ -2416,7 +2802,7 @@
                                           autocomplete="off"
                                           data-file="index.html"
                                           id="example-25-0"
-                                          rows="20"
+                                          rows="17"
                                           spellcheck="false"
                                           wrap="off">&lt;x-app&gt;
   &lt;x-api name="todos" url="https://jsonplaceholder.typicode.com"&gt;
@@ -2424,21 +2810,19 @@
       &lt;x-response type="array"&gt;&lt;/x-response&gt;
     &lt;/x-endpoint&gt;
   &lt;/x-api&gt;
-  &lt;x-page name="home"&gt;
-    &lt;x-variable name="items" type="array"&gt;[]&lt;/x-variable&gt;
-    &lt;script type="application/typescript"&gt;
-      export default DRX.definePage(drx =&gt; class {
-        async load() {
-          const response = await drx.apis.todos.list.request();
-          drx.page.variables.items.set((await response.value()).slice(0, 5));
-        }
-      });
-    &lt;/script&gt;
-    &lt;button onclick="load()"&gt;Load tasks&lt;/button&gt;
-    &lt;x-for each="{{items()}}" as="item" track="id"&gt;
-      &lt;p&gt;{{item.title()}}&lt;/p&gt;
-    &lt;/x-for&gt;
-  &lt;/x-page&gt;
+  &lt;x-variable name="items" type="array"&gt;[]&lt;/x-variable&gt;
+  &lt;script type="application/typescript"&gt;
+    export default DRX.defineApp(drx =&gt; class {
+      async load() {
+        const response = await drx.apis.todos.list.request();
+        drx.app.variables.items.set((await response.value()).slice(0, 5));
+      }
+    });
+  &lt;/script&gt;
+  &lt;button onclick="load()"&gt;Load tasks&lt;/button&gt;
+  &lt;x-for each="{{items()}}" as="item" track="id"&gt;
+    &lt;p&gt;{{item.title()}}&lt;/p&gt;
+  &lt;/x-for&gt;
 &lt;/x-app&gt;</textarea>
                             </div>
                         </div>
@@ -2536,7 +2920,7 @@
                                           autocomplete="off"
                                           data-file="index.html"
                                           id="example-26-0"
-                                          rows="20"
+                                          rows="17"
                                           spellcheck="false"
                                           wrap="off">&lt;x-app&gt;
   &lt;x-api name="todos" url="https://jsonplaceholder.typicode.com"&gt;
@@ -2546,22 +2930,20 @@
       &lt;x-response type="object"&gt;&lt;/x-response&gt;
     &lt;/x-endpoint&gt;
   &lt;/x-api&gt;
-  &lt;x-page name="home"&gt;
-    &lt;x-variable name="title"&gt;""&lt;/x-variable&gt;
-    &lt;script type="application/typescript"&gt;
-      export default DRX.definePage(drx =&gt; class {
-        async load() {
-          const response = await drx.apis.todos.get.request({
-            parameters: { id: 7 },
-            headers: { accept: 'application/json' }
-          });
-          drx.page.variables.title.set((await response.value()).title);
-        }
-      });
-    &lt;/script&gt;
-    &lt;button onclick="load()"&gt;Load task 7&lt;/button&gt;
-    &lt;p&gt;{{title()}}&lt;/p&gt;
-  &lt;/x-page&gt;
+  &lt;x-variable name="title"&gt;""&lt;/x-variable&gt;
+  &lt;script type="application/typescript"&gt;
+    export default DRX.defineApp(drx =&gt; class {
+      async load() {
+        const response = await drx.apis.todos.get.request({
+          parameters: { id: 7 },
+          headers: { accept: 'application/json' }
+        });
+        drx.app.variables.title.set((await response.value()).title);
+      }
+    });
+  &lt;/script&gt;
+  &lt;button onclick="load()"&gt;Load task 7&lt;/button&gt;
+  &lt;p&gt;{{title()}}&lt;/p&gt;
 &lt;/x-app&gt;</textarea>
                             </div>
                         </div>
@@ -2651,7 +3033,7 @@
                                           autocomplete="off"
                                           data-file="index.html"
                                           id="example-27-0"
-                                          rows="20"
+                                          rows="17"
                                           spellcheck="false"
                                           wrap="off">&lt;x-app&gt;
   &lt;x-api name="todos" url="https://jsonplaceholder.typicode.com"&gt;
@@ -2660,23 +3042,21 @@
       &lt;x-response type="object"&gt;&lt;/x-response&gt;
     &lt;/x-endpoint&gt;
   &lt;/x-api&gt;
-  &lt;x-page name="home"&gt;
-    &lt;x-variable name="result"&gt;""&lt;/x-variable&gt;
-    &lt;script type="application/typescript"&gt;
-      export default DRX.definePage(drx =&gt; class {
-        async create() {
-          const response = await drx.apis.todos.create.request({
-            body: { userId: 1, title: 'Ship it', completed: false }
-          });
-          drx.page.variables.result.set(
-            JSON.stringify(await response.value())
-          );
-        }
-      });
-    &lt;/script&gt;
-    &lt;button onclick="create()"&gt;Send request&lt;/button&gt;
-    &lt;p&gt;{{result()}}&lt;/p&gt;
-  &lt;/x-page&gt;
+  &lt;x-variable name="result"&gt;""&lt;/x-variable&gt;
+  &lt;script type="application/typescript"&gt;
+    export default DRX.defineApp(drx =&gt; class {
+      async create() {
+        const response = await drx.apis.todos.create.request({
+          body: { userId: 1, title: 'Ship it', completed: false }
+        });
+        drx.app.variables.result.set(
+          JSON.stringify(await response.value())
+        );
+      }
+    });
+  &lt;/script&gt;
+  &lt;button onclick="create()"&gt;Send request&lt;/button&gt;
+  &lt;p&gt;{{result()}}&lt;/p&gt;
 &lt;/x-app&gt;</textarea>
                             </div>
                         </div>
@@ -2756,7 +3136,7 @@
                                           autocomplete="off"
                                           data-file="index.html"
                                           id="example-20-0"
-                                          rows="20"
+                                          rows="17"
                                           spellcheck="false"
                                           wrap="off">&lt;x-app&gt;
   &lt;x-service name="greeter"&gt;
@@ -2766,18 +3146,16 @@
       });
     &lt;/script&gt;
   &lt;/x-service&gt;
-  &lt;x-page name="home"&gt;
-    &lt;x-variable name="message"&gt;""&lt;/x-variable&gt;
-    &lt;script type="application/typescript"&gt;
-      export default DRX.definePage(drx =&gt; class {
-        onMount() {
-          const message = drx.services.greeter.greet('Ada');
-          drx.page.variables.message.set(message);
-        }
-      });
-    &lt;/script&gt;
-    &lt;p&gt;{{message()}}&lt;/p&gt;
-  &lt;/x-page&gt;
+  &lt;x-variable name="message"&gt;""&lt;/x-variable&gt;
+  &lt;script type="application/typescript"&gt;
+    export default DRX.defineApp(drx =&gt; class {
+      onMount() {
+        const message = drx.services.greeter.greet('Ada');
+        drx.app.variables.message.set(message);
+      }
+    });
+  &lt;/script&gt;
+  &lt;p&gt;{{message()}}&lt;/p&gt;
 &lt;/x-app&gt;</textarea>
                             </div>
                         </div>
@@ -2826,24 +3204,22 @@
                                           autocomplete="off"
                                           data-file="index.html"
                                           id="example-21-0"
-                                          rows="18"
+                                          rows="15"
                                           spellcheck="false"
                                           wrap="off">&lt;x-app&gt;
   &lt;x-packages&gt;{ "lodash": "^4.17.21" }&lt;/x-packages&gt;
-  &lt;x-page name="home"&gt;
-    &lt;x-variable name="message"&gt;"hello world"&lt;/x-variable&gt;
-    &lt;script type="application/typescript"&gt;
-      import { upperCase } from 'lodash';
-      export default DRX.definePage(drx =&gt; class {
-        transform() {
-          const message = drx.page.variables.message;
-          message.set(upperCase(message.get()));
-        }
-      });
-    &lt;/script&gt;
-    &lt;p&gt;{{message()}}&lt;/p&gt;
-    &lt;button onclick="transform()"&gt;Uppercase&lt;/button&gt;
-  &lt;/x-page&gt;
+  &lt;x-variable name="message"&gt;"hello world"&lt;/x-variable&gt;
+  &lt;script type="application/typescript"&gt;
+    import { upperCase } from 'lodash';
+    export default DRX.defineApp(drx =&gt; class {
+      transform() {
+        const message = drx.app.variables.message;
+        message.set(upperCase(message.get()));
+      }
+    });
+  &lt;/script&gt;
+  &lt;p&gt;{{message()}}&lt;/p&gt;
+  &lt;button onclick="transform()"&gt;Uppercase&lt;/button&gt;
 &lt;/x-app&gt;</textarea>
                             </div>
                         </div>
@@ -2924,7 +3300,7 @@
                                           autocomplete="off"
                                           data-file="index.html"
                                           id="example-22-0"
-                                          rows="11"
+                                          rows="8"
                                           spellcheck="false"
                                           wrap="off">&lt;x-app&gt;
   &lt;x-asset name="dot" type="image/svg+xml"&gt;
@@ -2932,9 +3308,7 @@
       &lt;circle cx="12" cy="12" r="10" fill="steelblue" /&gt;
     &lt;/svg&gt;
   &lt;/x-asset&gt;
-  &lt;x-page name="home"&gt;
-    &lt;img src="{{asset.dot}}" width="48" height="48" alt="Blue dot" /&gt;
-  &lt;/x-page&gt;
+  &lt;img src="{{asset.dot}}" width="48" height="48" alt="Blue dot" /&gt;
 &lt;/x-app&gt;</textarea>
                             </div>
                         </div>
@@ -3008,20 +3382,18 @@
                                           autocomplete="off"
                                           data-file="index.html"
                                           id="example-23-0"
-                                          rows="14"
+                                          rows="11"
                                           spellcheck="false"
                                           wrap="off">&lt;x-app&gt;
-  &lt;x-page name="details"&gt;
-    &lt;x-variable name="expanded"&gt;false&lt;/x-variable&gt;
-    &lt;button onclick="expanded(!expanded())"&gt;
-      Toggle
-      &lt;x-icon
-        name="{{expanded() ? 'chevron-up' : 'chevron-down'}}"
-        style.width="20px" style.height="20px" aria-hidden="true"
-      &gt;&lt;/x-icon&gt;
-    &lt;/button&gt;
-    &lt;x-if condition="{{expanded()}}"&gt;&lt;p&gt;More detail.&lt;/p&gt;&lt;/x-if&gt;
-  &lt;/x-page&gt;
+  &lt;x-variable name="expanded"&gt;false&lt;/x-variable&gt;
+  &lt;button onclick="expanded(!expanded())"&gt;
+    Toggle
+    &lt;x-icon
+      name="{{expanded() ? 'chevron-up' : 'chevron-down'}}"
+      style.width="20px" style.height="20px" aria-hidden="true"
+    &gt;&lt;/x-icon&gt;
+  &lt;/button&gt;
+  &lt;x-if condition="{{expanded()}}"&gt;&lt;p&gt;More detail.&lt;/p&gt;&lt;/x-if&gt;
 &lt;/x-app&gt;</textarea>
                             </div>
                         </div>
@@ -3039,8 +3411,8 @@
                      id="page-modals">
                 <h1 tabindex="-1">Modals</h1>
                 <p class="intro">Open a page and await the value it returns.</p>
-                <p>Any page can open with <code>drx.pages.&lt;name&gt;.showModal({ data })</code>. Its data is available from <code>onMount()</code> onward as <code>drx.modal.data</code> in scripts
-                    and <code>modal.data</code> in templates. Close it with <code>drx.modal.close(value)</code> or <code>modal.close(value)</code>.</p>
+                <p>Any page can open with <code>drx.pages.&lt;name&gt;.showModal({ data })</code>. Its data is available from <code>onMount()</code> onward as <code>drx.modal.data()</code> in scripts
+                    and <code>modal.data()</code> in templates (a signal, like a variable — call it to read). Close it with <code>drx.modal.close(value)</code> or <code>modal.close(value)</code>.</p>
                 <p>DRX supplies a bare full-screen host. The page owns its backdrop, centering, and sizing.</p>
                 <div class="example"
                      data-example="">
@@ -3099,12 +3471,14 @@
     &lt;div class="overlay"&gt;
       &lt;section class="card" role="dialog" aria-modal="true"
         aria-labelledby="question"&gt;
-        &lt;h2 id="question"&gt;Delete {{modal.data.name}}?&lt;/h2&gt;
+        &lt;h2 id="question"&gt;Delete {{modal.data().name}}?&lt;/h2&gt;
         &lt;button onclick="modal.close({ confirmed: false })"&gt;Cancel&lt;/button&gt;
         &lt;button onclick="modal.close({ confirmed: true })"&gt;Delete&lt;/button&gt;
       &lt;/section&gt;
     &lt;/div&gt;
   &lt;/x-page&gt;
+
+  &lt;x-page-container page="home"&gt;&lt;/x-page-container&gt;
 &lt;/x-app&gt;</textarea>
                             </div>
                         </div>
@@ -3160,7 +3534,7 @@
                                           autocomplete="off"
                                           data-file="index.html"
                                           id="example-31-0"
-                                          rows="16"
+                                          rows="13"
                                           spellcheck="false"
                                           wrap="off">&lt;x-app&gt;
   &lt;x-pwa-metadata&gt;{
@@ -3174,9 +3548,7 @@
       { "src": "icon-512.png", "sizes": "512x512" }
     ]
   }&lt;/x-pwa-metadata&gt;
-  &lt;x-page name="home"&gt;
-    &lt;p&gt;Installable as an app once deployed.&lt;/p&gt;
-  &lt;/x-page&gt;
+  &lt;p&gt;Installable as an app once deployed.&lt;/p&gt;
 &lt;/x-app&gt;</textarea>
                             </div>
                         </div>
@@ -3285,7 +3657,7 @@
                                           autocomplete="off"
                                           data-file="index.html"
                                           id="example-29-0"
-                                          rows="20"
+                                          rows="17"
                                           spellcheck="false"
                                           wrap="off">&lt;x-app&gt;
   &lt;x-type name="tags"&gt;
@@ -3296,16 +3668,14 @@
       { "type": "string" }, { "type": "number" }
     ] }
   &lt;/x-type&gt;
-  &lt;x-page name="home"&gt;
-    &lt;x-variable name="tags" type="tags"&gt;
-      { "urgent": true, "reviewed": false }
-    &lt;/x-variable&gt;
-    &lt;x-variable name="id" type="identifier"&gt;"draft"&lt;/x-variable&gt;
-    &lt;p&gt;{{JSON.stringify(tags())}}&lt;/p&gt;
-    &lt;p&gt;ID: {{id()}}&lt;/p&gt;
-    &lt;button onclick="tags.reviewed(true)"&gt;Mark reviewed&lt;/button&gt;
-    &lt;button onclick="id(42)"&gt;Use a numeric ID&lt;/button&gt;
-  &lt;/x-page&gt;
+  &lt;x-variable name="tags" type="tags"&gt;
+    { "urgent": true, "reviewed": false }
+  &lt;/x-variable&gt;
+  &lt;x-variable name="id" type="identifier"&gt;"draft"&lt;/x-variable&gt;
+  &lt;p&gt;{{JSON.stringify(tags())}}&lt;/p&gt;
+  &lt;p&gt;ID: {{id()}}&lt;/p&gt;
+  &lt;button onclick="tags.reviewed(true)"&gt;Mark reviewed&lt;/button&gt;
+  &lt;button onclick="id(42)"&gt;Use a numeric ID&lt;/button&gt;
 &lt;/x-app&gt;</textarea>
                             </div>
                         </div>
@@ -3348,7 +3718,7 @@
                                           autocomplete="off"
                                           data-file="index.html"
                                           id="example-30-0"
-                                          rows="13"
+                                          rows="10"
                                           spellcheck="false"
                                           wrap="off">&lt;x-app&gt;
   &lt;x-type name="profile"&gt;
@@ -3357,10 +3727,8 @@
       "role": { "type": "string", "default": { "value": "member" } }
     } }
   &lt;/x-type&gt;
-  &lt;x-page name="home"&gt;
-    &lt;x-variable name="person" type="profile"&gt;{ "name": "Ada" }&lt;/x-variable&gt;
-    &lt;p&gt;{{person.name()}} / {{person.role()}}&lt;/p&gt;
-  &lt;/x-page&gt;
+  &lt;x-variable name="person" type="profile"&gt;{ "name": "Ada" }&lt;/x-variable&gt;
+  &lt;p&gt;{{person.name()}} / {{person.role()}}&lt;/p&gt;
 &lt;/x-app&gt;</textarea>
                             </div>
                         </div>
@@ -3377,7 +3745,7 @@
         <script>
             'use strict';
 
-            const RUNTIME = 'https://cdn.jsdelivr.net/gh/Vorplex/mono/packages/vorplex/drx/standalone/cdn/drx.js';
+            const RUNTIME = 'https://cdn.jsdelivr.net/npm/@vorplex/drx@latest/dist/standalone/drx.js';
             const FILE_BASE = 'https://drx-preview.invalid/';
             const pages = [...document.querySelectorAll('[data-page]')];
             const links = [...document.querySelectorAll('nav a')];
@@ -3508,7 +3876,7 @@
             }
 
             function showPage(initial = false) {
-                const aliases = { 'quick-start': 'overview', 'page-container': 'page/page-containers', templating: 'expressions', types: 'tson', scripts: 'page/scripting' };
+                const aliases = { 'quick-start': 'overview', 'page-container': 'page/page-containers', templating: 'expressions', types: 'tson', scripts: 'scripting', 'app-scripting': 'scripting/app', 'page-scripting': 'scripting/page', 'component-scripting': 'scripting/component' };
                 const hash = location.hash.slice(1);
                 const routeName = aliases[hash] || hash;
                 if (routeName !== hash) history.replaceState(null, '', '#' + routeName);
@@ -3543,8 +3911,10 @@
 
             // Runs inside the sandbox. This is preview infrastructure, not a DRX renderer.
             // DRX itself shows its own loading spinner and pretty-prints its own errors inside
-            // the mounted page, so this bridge only needs to serve the editable in-memory files
-            // and, for the routing example, keep clicked links inside the iframe.
+            // the mounted page, so this bridge only needs to serve the editable in-memory files,
+            // keep clicked links inside the iframe for the routing example, and keep the parent's
+            // address bar in sync with the iframe's own hash-based path -- every DRX app tracks
+            // that path unconditionally now, so this runs for every preview, not just routed ones.
             function previewBridge(config) {
                 const originalFetch = window.fetch.bind(window);
                 window.fetch = (input, options) => {
@@ -3560,14 +3930,24 @@
                     }
                     return originalFetch(input, options);
                 };
+                try { if (!location.hash) location.hash = '/'; } catch (_) { }
                 if (config.routing) {
-                    try { location.hash = '/'; } catch (_) { }
                     document.addEventListener('click', event => {
                         const anchor = event.composedPath().find(node => node instanceof HTMLAnchorElement);
                         const href = anchor?.getAttribute('href');
                         if (href?.startsWith('#')) { event.preventDefault(); location.hash = href; }
                     }, true);
                 }
+                const notifyPath = () => {
+                    try { window.parent.postMessage({ type: 'drx-preview-path', path: location.hash.replace(/^#/, '') || '/' }, '*'); } catch (_) { }
+                };
+                window.addEventListener('hashchange', notifyPath);
+                window.addEventListener('load', notifyPath);
+                notifyPath();
+                window.addEventListener('message', event => {
+                    if (event.source !== window.parent || event.data?.type !== 'drx-preview-navigate') return;
+                    try { location.hash = event.data.path; } catch (_) { }
+                });
             }
 
             function previewDocument(files) {
@@ -3579,7 +3959,7 @@
                 const style = doc.createElement('style');
                 style.textContent = 'html{color-scheme:light}body{margin:0;padding:20px;background:white;color:#25272b;font:14px/1.6 system-ui}x-app{display:none}';
                 doc.head.append(style);
-                const config = { base: FILE_BASE, files, routing: Boolean(doc.querySelector('x-router')) };
+                const config = { base: FILE_BASE, files, routing: Boolean(doc.querySelector('x-route')) };
                 const bridge = doc.createElement('script');
                 bridge.textContent = '(' + previewBridge.toString() + ')(' + JSON.stringify(config).replace(/</g, '\\u003c') + ');';
                 doc.head.prepend(bridge);
@@ -3606,6 +3986,37 @@
                 run(example);
             }
 
+            // The iframe is sandboxed without allow-same-origin, so its origin is opaque to us --
+            // we can't read or set contentWindow.location directly. Both directions go through
+            // postMessage instead, relayed by the previewBridge script running inside the iframe.
+            function ensureAddressBar(example) {
+                let address = example.querySelector('.preview-address');
+                if (address) return address;
+                address = document.createElement('div');
+                address.className = 'preview-address';
+                address.innerHTML = '<span class="preview-address-prefix">#</span><input type="text" class="preview-address-input" spellcheck="false" autocomplete="off" autocapitalize="off" aria-label="Preview address">';
+                const input = address.querySelector('input');
+                const go = () => navigatePreview(example, input.value);
+                input.addEventListener('keydown', event => { if (event.key === 'Enter') { event.preventDefault(); go(); } });
+                input.addEventListener('blur', go);
+                example.querySelector('.preview-output').before(address);
+                return address;
+            }
+
+            function navigatePreview(example, path) {
+                const frame = example.querySelector('iframe');
+                const trimmed = path.trim();
+                const normalized = trimmed ? (trimmed.startsWith('/') ? trimmed : '/' + trimmed) : '/';
+                frame?.contentWindow?.postMessage({ type: 'drx-preview-navigate', path: normalized }, '*');
+            }
+
+            window.addEventListener('message', event => {
+                if (event.data?.type !== 'drx-preview-path') return;
+                const frame = [...document.querySelectorAll('.preview-frame iframe')].find(frame => frame.contentWindow === event.source);
+                const input = frame?.closest('[data-example]')?.querySelector('.preview-address-input');
+                if (input && document.activeElement !== input) input.value = event.data.path;
+            });
+
             function run(example) {
                 clearTimeout(pendingRuns.get(example));
                 pendingRuns.delete(example);
@@ -3617,6 +4028,7 @@
                 frame.referrerPolicy = 'no-referrer';
                 frame.srcdoc = previewDocument(files);
                 example.querySelector('.preview-frame').append(frame);
+                ensureAddressBar(example).querySelector('input').value = '/';
             }
 
             for (const example of document.querySelectorAll('[data-example]')) {

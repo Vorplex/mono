@@ -1,11 +1,23 @@
 import { ModuleLoader } from '@vorplex/compiler';
+import { $String } from '@vorplex/core';
 import { DrxDocumentState } from './drx';
+
+const createScriptDefault = (define: string) => $String.dedent(`
+    export default DRX.${define}(drx => class {
+        onMount() {
+
+        }
+        onUnmount() {
+
+        }
+    });
+`);
 
 export const DrxScripting = {
     defaults: {
-        app: 'export default DRX.defineApp(drx => class {\n\n});\n',
-        page: 'export default DRX.definePage(drx => class {\n\n});\n',
-        component: 'export default DRX.defineComponent(drx => class {\n\n});\n',
+        app: createScriptDefault('defineApp'),
+        page: createScriptDefault('definePage'),
+        component: createScriptDefault('defineComponent'),
         service: 'export default DRX.defineService(drx => class {\n\n});\n'
     } as const,
     instantiate(bundle: string, id: string, drx: any): any {

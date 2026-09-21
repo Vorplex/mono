@@ -33,6 +33,15 @@ export class $Router {
         return result.groups ?? {};
     }
 
+    public static matchPrefix(route: string, path: string): { params: Record<string, string>; rest: string } | null {
+        const value = path.trim().split(/[?#]/, 1)[0];
+        const source = route === '/' ? '' : $Router.getRouteRegexSource(route);
+        const regex = new RegExp(`^${source}(?=/|$)`, 'i');
+        const result = regex.exec(value);
+        if (!result) return null;
+        return { params: result.groups ?? {}, rest: value.slice(result[0].length) };
+    }
+
     public static getParameters(route: string): RouteParameter[] {
         const pattern = [
             // check if the parameter starts with ...
@@ -56,6 +65,10 @@ export class $Router {
     }
 
     public static getRouteRegex(route: string): RegExp {
+        return new RegExp(`^${$Router.getRouteRegexSource(route)}$`, 'gmi');
+    }
+
+    public static getRouteRegexSource(route: string): string {
         const variables = $Router.getParameters(route);
         for (const variable of variables) {
             if (variable.rest) {
@@ -66,7 +79,7 @@ export class $Router {
                 route = route.replace(`{${variable.name}}`, `(?<${variable.name}>(?:[^/]+))`);
             }
         }
-        return new RegExp(`^${route}$`, 'gmi');
+        return route;
     }
 
     public static getQueryParameters(url: string): Record<string, string> {

@@ -5,7 +5,6 @@ export enum NodeType {
     DependencyTree = 'X-DEPENDENCY-TREE',
     PwaMetadata = 'X-PWA-METADATA',
     Variable = 'X-VARIABLE',
-    Router = 'X-ROUTER',
     Type = 'X-TYPE',
     Service = 'X-SERVICE',
     Asset = 'X-ASSET',

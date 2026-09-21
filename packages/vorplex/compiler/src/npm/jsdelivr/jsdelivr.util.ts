@@ -1,4 +1,5 @@
-import { $Path, $String, createIdentifier, InMemoryStorage, type StorageProvider } from '@vorplex/core';
+import { $Path, $String, createIdentifier, type StorageProvider } from '@vorplex/core';
+import { IndexedDbStorage } from '@vorplex/web';
 import { NPM, PackageImport } from '../npm.util';
 import type { PackageJson } from '../package-json.type';
 
@@ -37,7 +38,7 @@ export const PackageFileCacheKey = createIdentifier({
 export type PackageFileCacheKey = ReturnType<typeof PackageFileCacheKey>;
 
 export type JsDelivrStorageDefinition = {
-    cache: {
+    jsdelivr: {
         'package-version': Record<PackageVersionCacheKey, string>,
         data: Record<PackageVersionCacheKey, JsDelivrData>,
         'file-path': Record<PackageFileCacheKey, string>,
@@ -51,18 +52,18 @@ export const JsDelivr = {
     url: 'https://cdn.jsdelivr.net/npm' as const,
     dataUrl: 'https://data.jsdelivr.com/v1/packages/npm' as const,
     resolveUrl: 'https://data.jsdelivr.com/v1/package/resolve/npm' as const,
-    cache: new InMemoryStorage<JsDelivrStorageDefinition>() as StorageProvider<JsDelivrStorageDefinition>,
+    cache: new IndexedDbStorage<JsDelivrStorageDefinition>() as StorageProvider<JsDelivrStorageDefinition>,
 
     async resolveVersion(name: string, semanticVersion?: string) {
         semanticVersion ??= 'latest';
         const key = PackageVersionCacheKey({ name, version: semanticVersion });
-        const cached = await JsDelivr.cache.get('cache', 'package-version', key);
+        const cached = await JsDelivr.cache.get('jsdelivr', 'package-version', key);
         if (cached) return cached;
         const url = $Path.join(JsDelivr.resolveUrl, `${name}@${semanticVersion}`);
         const response = await fetch(url);
         if (!response.ok) throw new Error(`Failed to fetch package "${name}" version "${semanticVersion}". ${response.statusText}`);
         const data = (await response.json()) as { version: string };
-        await JsDelivr.cache.set('cache', 'package-version', key, data.version);
+        await JsDelivr.cache.set('jsdelivr', 'package-version', key, data.version);
         return data.version;
     },
 
@@ -79,13 +80,13 @@ export const JsDelivr = {
     async getData(name: string, semanticVersion?: string): Promise<JsDelivrData> {
         const version = await JsDelivr.resolveVersion(name, semanticVersion);
         const key = PackageVersionCacheKey({ name, version });
-        const cached = await JsDelivr.cache.get('cache', 'data', key);
+        const cached = await JsDelivr.cache.get('jsdelivr', 'data', key);
         if (cached) return cached;
         const url = $Path.join(JsDelivr.dataUrl, `${name}@${version}`);
         const response = await fetch(url);
         if (!response.ok) throw new Error(`Failed to fetch package "${name}" metadata. ${response.statusText}`);
         const data = await response.json();
-        await JsDelivr.cache.set('cache', 'data', key, data);
+        await JsDelivr.cache.set('jsdelivr', 'data', key, data);
         return data;
     },
 
@@ -107,7 +108,7 @@ export const JsDelivr = {
     async resolveFilePath(name: string, semanticVersion: string, path: string): Promise<string> {
         const version = await JsDelivr.resolveVersion(name, semanticVersion);
         const key = PackageFileCacheKey({ name, version, path });
-        const cached = await JsDelivr.cache.get('cache', 'file-path', key);
+        const cached = await JsDelivr.cache.get('jsdelivr', 'file-path', key);
         if (cached) return cached;
         const paths = await JsDelivr.getFilePaths(name, version, new RegExp('^' + $String.sanitizeForRegex($Path.absolute(path)) + '(?:\\.js|/index.js)?$'));
         function getPathPriority(filePath: string): number {
@@ -117,7 +118,7 @@ export const JsDelivr = {
             return 1;
         }
         const resolved = paths.sort((a, b) => getPathPriority(b) - getPathPriority(a))[0];
-        if (resolved) await JsDelivr.cache.set('cache', 'file-path', key, resolved);
+        if (resolved) await JsDelivr.cache.set('jsdelivr', 'file-path', key, resolved);
         return resolved;
     },
 
@@ -126,7 +127,7 @@ export const JsDelivr = {
         const resolvedPath = path ? await JsDelivr.resolveFilePath(name, resolvedVersion, path) : null;
         if (path && !resolvedPath) throw new Error(`Failed to resolve path "${path}" from package "${name}" version "${semanticVersion}". Not Found.`);
         const key = PackageFileCacheKey({ name, version: resolvedVersion, path: resolvedPath ?? '' });
-        const cached = await JsDelivr.cache.get('cache', 'file', key);
+        const cached = await JsDelivr.cache.get('jsdelivr', 'file', key);
         if (cached) return cached;
         const url = $Path.join(JsDelivr.url, `${name}@${resolvedVersion}`, resolvedPath);
         const response = await fetch(url);
@@ -139,18 +140,18 @@ export const JsDelivr = {
             path: resolvedPath,
             content: await response.text(),
         };
-        await JsDelivr.cache.set('cache', 'file', key, file);
+        await JsDelivr.cache.set('jsdelivr', 'file', key, file);
         return file;
     },
 
     async getPackageJson(name: string, semanticVersion?: string): Promise<PackageJson> {
         const version = await JsDelivr.resolveVersion(name, semanticVersion);
         const key = PackageVersionCacheKey({ name, version });
-        const cached = await JsDelivr.cache.get('cache', 'package-json', key);
+        const cached = await JsDelivr.cache.get('jsdelivr', 'package-json', key);
         if (cached) return cached;
         const { content } = await JsDelivr.getFile(name, semanticVersion, 'package.json');
         const packageJson = JSON.parse(content);
-        await JsDelivr.cache.set('cache', 'package-json', key, packageJson);
+        await JsDelivr.cache.set('jsdelivr', 'package-json', key, packageJson);
         return packageJson;
     },
 
@@ -161,19 +162,19 @@ export const JsDelivr = {
     async resolveImportFilePath(packageName: string, semanticVersion?: string, subpath?: string): Promise<string> {
         const version = await JsDelivr.resolveVersion(packageName, semanticVersion);
         const key = PackageFileCacheKey({ name: packageName, version, path: subpath ?? '' });
-        const cached = await JsDelivr.cache.get('cache', 'file-path', key);
+        const cached = await JsDelivr.cache.get('jsdelivr', 'file-path', key);
         if (cached) return cached;
         const packageJson = await JsDelivr.getPackageJson(packageName, version);
         const filePaths = await JsDelivr.getFilePaths(packageName, version);
         const entryPoint = NPM.getPackageEntryPoint(packageJson, filePaths, subpath);
         if (entryPoint) {
-            await JsDelivr.cache.set('cache', 'file-path', key, entryPoint);
+            await JsDelivr.cache.set('jsdelivr', 'file-path', key, entryPoint);
             return entryPoint;
         }
         if (subpath) {
             const file = await JsDelivr.resolveFilePath(packageName, version, subpath);
             if (file) {
-                await JsDelivr.cache.set('cache', 'file-path', key, file);
+                await JsDelivr.cache.set('jsdelivr', 'file-path', key, file);
                 return file;
             }
         }

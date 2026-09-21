@@ -40,7 +40,14 @@ export const DrxPageContainer = {
                 const appContext = context.nearest.app!;
                 const page = appContext.app.pageIds.map(id => appContext.state.pages[id]).find(page => page.name === pageName);
                 if (!page) throw new Error(`Unknown page "${pageName}"`);
-                DrxPage.mount(container, page, context);
+                const pageContext = {
+                    ...context,
+                    locals: {
+                        ...appContext.locals,
+                        router: context.locals.router
+                    }
+                };
+                DrxPage.mount(container, page, pageContext);
             });
         });
     },

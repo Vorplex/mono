@@ -114,7 +114,8 @@ export const DrxComponentInstance = {
                     component: {
                         variables: DrxVariable.createApi(variables, variableStates, scope, state),
                         props: Array.from(props).reduce((api, [name, propState]) => Object.assign(api, { [name]: () => propState.value }), {} as Record<string, () => any>),
-                        events: eventsApi
+                        events: eventsApi,
+                        root: shadow
                     },
                     apis: DrxApi.createApi(definition.apiIds, state, scope),
                     services: DrxScripting.instantiateServices(definition.serviceIds, state, context.bundle, componentContext.serviceInstances)

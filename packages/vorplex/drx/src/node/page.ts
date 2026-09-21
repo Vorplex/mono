@@ -1,7 +1,7 @@
 import { $Id, Scope, Signal } from '@vorplex/core';
 import { DrxDocumentState } from '../drx';
 import { DrxDom } from '../drx-dom';
-import { modalApi, ModalManager } from '../modal-manager';
+import { ModalManager } from '../modal-manager';
 import { PreviewContext } from '../preview-context';
 import { AppRenderContext, PageRenderContext, RenderContext, RenderContextType } from '../render-context';
 import { DrxScripting } from '../scripting';
@@ -57,41 +57,48 @@ export const DrxPage = {
             const shadow = host.attachShadow({ mode: 'open' });
             const appContext = context.nearest.app;
             const state = appContext.state;
-            StyleSheet.adopt(shadow, () => appContext.app.style, () => page.style);
+            const documentStyleSheets = Array
+                .from(shadow.ownerDocument.styleSheets)
+                .map(sheet => StyleSheet.clone(shadow.ownerDocument.defaultView, sheet))
+                .filter((sheet): sheet is CSSStyleSheet => sheet !== undefined);
+            StyleSheet.adopt(shadow, ...[
+                ...documentStyleSheets,
+                () => appContext.app.style,
+                () => page.style]
+            );
             const variables = page.variableIds.map(id => state.variables[id]);
             const { locals: variableLocals, states: variableStates } = DrxVariable.instantiate(variables);
-            const pageContext: PageRenderContext = {
-                type: RenderContextType.Page,
-                parent: context,
-                nearest: context.nearest,
-                locals: {},
-                state,
-                bundle: context.bundle,
-                page,
-                variables: variableStates
-            };
-            pageContext.nearest = { ...context.nearest, page: pageContext };
             const appVariables = appContext.app.variableIds.map(id => state.variables[id]);
             const pageDrx = {
                 app: {
                     variables: DrxVariable.createApi(appVariables, appContext.variableStates, { type: 'app' }, state),
                     get instance() { return appContext.instance; }
                 },
-                page: { variables: DrxVariable.createApi(variables, variableStates, { type: 'app' }, state) },
+                page: { variables: DrxVariable.createApi(variables, variableStates, { type: 'app' }, state), root: shadow },
                 apis: DrxApi.createApi(appContext.app.apiIds, state, { type: 'app' }),
                 services: DrxScripting.instantiateServices(appContext.app.serviceIds, state, context.bundle, appContext.serviceInstances),
-                router: DrxRouter.createApi(container.ownerDocument.defaultView, appContext.routerState),
+                router: DrxRouter.createApi(container.ownerDocument.defaultView, appContext.router.route),
                 pages: DrxPage.createApi(appContext.app.pageIds, appContext),
-                modal: modalApi
+                modal: context.locals.modal
             };
             const PageClass = DrxScripting.instantiate(context.bundle, page.id, pageDrx);
             const instance = PageClass ? new PageClass() : undefined;
-            pageContext.locals = {
-                ...context.locals,
-                modal: modalApi,
-                ...DrxScripting.getFunctionLocals(instance),
-                ...variableLocals
+            const pageContext: PageRenderContext = {
+                type: RenderContextType.Page,
+                parent: context,
+                nearest: context.nearest,
+                locals: {
+                    ...context.locals,
+                    ...DrxScripting.getFunctionLocals(instance),
+                    ...variableLocals
+                },
+                state,
+                bundle: context.bundle,
+                page,
+                variables: variableStates,
+                routeRest: context.routeRest
             };
+            pageContext.nearest = { ...context.nearest, page: pageContext };
             DrxTemplate.mount(shadow, page.template, pageContext);
             instance?.onMount?.();
             Signal.cleanup(() => {
@@ -118,12 +125,14 @@ export const DrxPage = {
             const page = state.pages[id];
             return Object.assign(api, {
                 [page.name]: {
-                    show: () => {
-                        if (!appContext.currentPage) throw new Error(`drx.pages.${page.name}.show() can't be used when <x-router> is configured -- the router owns page selection.`);
-                        appContext.currentPage(page.name);
-                    },
                     showModal: (options: { data?: any } = {}) => {
-                        return ModalManager.open(modalContainer => DrxPage.mount(modalContainer, page, appContext), options);
+                        return ModalManager.open((modalContainer, modal) => {
+                            const context: RenderContext = {
+                                ...appContext,
+                                locals: { ...appContext.locals, modal }
+                            };
+                            DrxPage.mount(modalContainer, page, context);
+                        }, options);
                     }
                 }
             });

@@ -1,18 +1,14 @@
-import { Signal, State } from '@vorplex/core';
+import { State } from '@vorplex/core';
+import { DrxDocumentState } from './drx';
 import { DrxApp } from './node/app';
 import { DrxComponent } from './node/component/component';
 import { DrxPage } from './node/page';
-import { DrxDocumentState } from './drx';
+import { RouterLocal } from './node/router';
 
 export enum RenderContextType {
     App = 'app',
     Page = 'page',
     Component = 'component'
-}
-
-export interface RouterState {
-    route: string;
-    params: Record<string, string>;
 }
 
 export interface NearestRenderContext {
@@ -28,6 +24,7 @@ export interface RenderContextBase {
     locals: Record<string, any>;
     state: DrxDocumentState;
     bundle: string;
+    routeRest?: string;
 }
 
 export interface AppRenderContext extends RenderContextBase {
@@ -35,8 +32,7 @@ export interface AppRenderContext extends RenderContextBase {
     app: DrxApp;
     variableStates: Map<string, State<any>>;
     serviceInstances: Map<string, any>;
-    currentPage?: Signal<string>;
-    routerState: State<RouterState>;
+    router: RouterLocal;
     instance?: any;
 }
 

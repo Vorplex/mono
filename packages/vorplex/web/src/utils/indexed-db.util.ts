@@ -2,7 +2,8 @@ import { StorageDefinition, StorageProvider, StoreKey, StoreValue } from '@vorpl
 
 export class IndexedDbStorage<T extends StorageDefinition = StorageDefinition> implements StorageProvider<T> {
 
-    private static connections: Record<string, Promise<any>> = {};
+    private static databaseConnections: Record<string, Promise<IDBDatabase>> = {};
+    private static pendingDatabaseUpgrades: Record<string, Promise<void>> = {};
 
     private static promisify<T>(request: IDBRequest<T>): Promise<T> {
         return new Promise((resolve, reject) => {
@@ -11,36 +12,45 @@ export class IndexedDbStorage<T extends StorageDefinition = StorageDefinition> i
         });
     }
 
-    private static connect<T>(databaseName: string, storeName: string, mode: IDBTransactionMode, callback: (store: IDBObjectStore) => IDBRequest<T>): Promise<T> {
-        const connect = async () => {
-            let database: IDBDatabase = await this.promisify(indexedDB.open(databaseName));
-            if (!database.objectStoreNames.contains(storeName)) {
-                const version = database.version;
-                database.close();
-                database = await new Promise<IDBDatabase>((resolve, reject) => {
-                    const request = indexedDB.open(databaseName, version + 1);
-                    request.onupgradeneeded = () => request.result.createObjectStore(storeName);
-                    request.onsuccess = () => resolve(request.result);
-                    request.onerror = (event: any) => reject(event.target.error);
-                });
-            }
+    private static async ensureStore(databaseName: string, storeName: string): Promise<IDBDatabase> {
+        let database = await this.databaseConnections[databaseName];
+        if (database.objectStoreNames.contains(storeName)) return database;
+        await this.pendingDatabaseUpgrades[databaseName]?.catch(() => { });
+        database = await this.databaseConnections[databaseName];
+        if (database.objectStoreNames.contains(storeName)) return database;
+        const upgrade = (async () => {
+            const version = database.version;
+            database.close();
+            this.databaseConnections[databaseName] = new Promise<IDBDatabase>((resolve, reject) => {
+                const request = indexedDB.open(databaseName, version + 1);
+                request.onupgradeneeded = () => request.result.createObjectStore(storeName);
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = (event: any) => reject(event.target.error);
+            });
+            await this.databaseConnections[databaseName];
+        })();
+        this.pendingDatabaseUpgrades[databaseName] = upgrade;
+        try {
+            await upgrade;
+        } finally {
+            if (this.pendingDatabaseUpgrades[databaseName] === upgrade) delete this.pendingDatabaseUpgrades[databaseName];
+        }
+        return this.databaseConnections[databaseName];
+    }
 
-            try {
-                const store = database.transaction(storeName, mode).objectStore(storeName);
-                return await this.promisify(callback(store));
-            } finally {
-                database.close();
-            }
-        };
-        const connection = (this.connections[databaseName] ?? Promise.resolve())
-            .catch(() => { })
-            .then(() => connect())
-            .finally(() => this.connections[databaseName] === connection && delete this.connections[databaseName]);
-        this.connections[databaseName] = connection;
-        return connection;
+    private static async connect<T>(databaseName: string, storeName: string, mode: IDBTransactionMode, callback: (store: IDBObjectStore) => IDBRequest<T>): Promise<T> {
+        this.databaseConnections[databaseName] ??= this.promisify(indexedDB.open(databaseName));
+        const database = await this.ensureStore(databaseName, storeName);
+        const store = database
+            .transaction(storeName, mode)
+            .objectStore(storeName);
+        return await this.promisify(callback(store));
     }
 
     public static async deleteDatabase(database: string) {
+        const existing = await this.databaseConnections[database]?.catch(() => undefined);
+        existing?.close();
+        delete this.databaseConnections[database];
         return new Promise((resolve, reject) => {
             const request = indexedDB.deleteDatabase(database);
             request.onsuccess = () => resolve(request.result);

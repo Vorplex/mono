@@ -1,61 +1,57 @@
-import { Scope, Signal } from '@vorplex/core';
+import { Scope, Signal, SignalProxy } from '@vorplex/core';
+
+export interface ModalApi {
+    data: SignalProxy<any>;
+    close(result?: any): void;
+}
 
 interface ModalFrame {
-    data: any;
+    data: SignalProxy<any>;
     host: HTMLDialogElement;
     root: Scope;
     resolve: (result: any) => void;
-    result: any;
+    result?: any;
 }
 
-const MODAL_CLASS = 'x-modal';
-
-// Native, vanilla-DOM. Each modal is its own <dialog>, shown via showModal() -- the browser's top layer
-// guarantees it renders above everything else (no z-index arms race), and focus trapping / inert-ing the rest
-// of the page come for free. Reset to full-bleed and transparent, and the native ::backdrop neutralized below,
-// so backdrop, centering, and sizing stay the mounted page's own styling responsibility, not the framework's.
-const stack: ModalFrame[] = [];
-
-
 export const ModalManager = {
-    // Mounts `mount(container)` (a page) inside a fresh Signal.root -- independent of the caller's own scope,
-    // since a modal must outlive whatever effect/handler triggered it. Resolves when `close(result)` is called,
-    // or with `undefined` if the user dismisses it natively (Escape) -- both funnel through the dialog's own
-    // `close` event, so there's exactly one teardown path regardless of how it closed.
-    open(mount: (container: Node) => void, options: { data?: any } = {}): Promise<any> {
+    open(mount: (container: Node, api: ModalApi) => void, options: { data?: any } = {}): Promise<any> {
         return new Promise(resolve => {
             const host = document.createElement('dialog');
-            host.className = MODAL_CLASS;
-            host.style.cssText = 'position: fixed; inset: 0; margin: 0; padding: 0; border: none; width: 100%; height: 100%; max-width: none; max-height: none; background: transparent;';
+            host.className = 'x-modal';
+            host.style.cssText = `
+                position: fixed;
+                inset: 0;
+                margin: 0;
+                padding: 0;
+                border: none;
+                width: 100%;
+                height: 100%;
+                max-width: none;
+                max-height: none;
+                background: transparent;
+            `;
             document.body.appendChild(host);
-            // Pushed before mount() runs: mount() synchronously fires the mounted page's onMount() -- so if
-            // onMount() reads drx.modal.data, the frame must already be on the stack.
-            const frame: ModalFrame = { data: options.data, host, root: undefined as unknown as Scope, resolve, result: undefined };
-            stack.push(frame);
+            const frame: ModalFrame = {
+                host,
+                root: null,
+                data: Signal.create(options.data).proxy,
+                resolve
+            };
+            const api: ModalApi = {
+                data: frame.data,
+                close: (result?: any) => {
+                    frame.result = result;
+                    frame.host.close();
+                }
+            };
             host.addEventListener('close', () => {
-                stack.pop();
                 frame.root.dispose();
                 frame.host.remove();
                 frame.resolve(frame.result);
             }, { once: true });
-            frame.root = Signal.root(() => mount(host));
+            frame.root = Signal.root(() => mount(host, api));
             host.showModal();
         });
-    },
-    get data(): any {
-        return stack.at(-1)?.data;
-    },
-    close(result?: any): void {
-        const frame = stack.at(-1);
-        if (!frame) return;
-        frame.result = result;
-        frame.host.close();
     }
 };
 
-// The exact `modal` shape exposed everywhere -- `drx.modal` in app/page scripts, and the `modal` template
-// local in page markup. One shared object instead of re-declaring the same two members per call site.
-export const modalApi = {
-    get data() { return ModalManager.data; },
-    close: (result?: any) => ModalManager.close(result)
-};

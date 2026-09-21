@@ -1,4 +1,4 @@
-import { $Array, $Id, $Path, Awaitable, EntityAdaptor, EntityMap, Getter, Scope, Signal, State, TsonDefinition } from '@vorplex/core';
+import { $Array, $Id, $Path, $Tson, Awaitable, EntityAdaptor, EntityMap, Getter, Scope, Signal, State, TsonDefinition } from '@vorplex/core';
 import { DrxDom } from './drx-dom';
 import { IconSheet } from './icon-sheet';
 import { DrxApi } from './node/api/api';
@@ -20,6 +20,7 @@ import { DrxIf } from './node/if';
 import { NodeType } from './node/node-type';
 import { DrxPage } from './node/page';
 import { DrxPageContainer } from './node/page-container';
+import { DrxRouterRoute } from './node/router-route';
 import { DrxService } from './node/service';
 import { DrxTemplateItem, DrxTemplateNode, DrxTemplateTargetType } from './node/template-item';
 import { DrxText } from './node/text';
@@ -50,6 +51,7 @@ export interface DrxDocumentState {
     componentEvents: EntityMap<DrxComponentEvent>;
     componentInstances: EntityMap<DrxComponentInstance>;
     pageContainers: EntityMap<DrxPageContainer>;
+    routerRoutes: EntityMap<DrxRouterRoute>;
     icons: EntityMap<DrxIcon>;
     apis: EntityMap<DrxApi>;
     apiEndpoints: EntityMap<DrxApiEndpoint>;
@@ -71,7 +73,8 @@ export const DrxDocumentState = {
                 assetIds: [],
                 componentIds: [],
                 typeIds: [],
-                apiIds: []
+                apiIds: [],
+                template: []
             },
             pages: {},
             variables: {},
@@ -87,6 +90,7 @@ export const DrxDocumentState = {
             componentEvents: {},
             componentInstances: {},
             pageContainers: {},
+            routerRoutes: {},
             icons: {},
             apis: {},
             apiEndpoints: {},
@@ -173,6 +177,7 @@ export class DrxDocument {
             componentEvents: {},
             componentInstances: {},
             pageContainers: {},
+            routerRoutes: {},
             icons: {},
             apis: {},
             apiEndpoints: {},
@@ -202,14 +207,17 @@ export class DrxDocument {
                 case NodeType.PageContainer: state = { ...state, pageContainers: EntityAdaptor.create(state.pageContainers, node) }; break;
                 case NodeType.Icon: state = { ...state, icons: EntityAdaptor.create(state.icons, node) }; break;
                 case NodeType.Text: state = { ...state, texts: EntityAdaptor.create(state.texts, node) }; break;
+                case NodeType.RouterRoute: state = { ...state, routerRoutes: EntityAdaptor.create(state.routerRoutes, node) }; break;
             }
             const reference: DrxTemplateItem = { id: node.id, type: node.type };
             switch (targetType) {
+                case NodeType.App: return { ...state, app: { ...state.app, template: [...state.app.template, reference] } };
                 case NodeType.Page: return { ...state, pages: EntityAdaptor.updateById(state.pages, targetId, page => ({ template: [...page.template, reference] })) };
                 case NodeType.Component: return { ...state, components: EntityAdaptor.updateById(state.components, targetId, item => ({ template: [...item.template, reference] })) };
                 case NodeType.Element: return { ...state, elements: EntityAdaptor.updateById(state.elements, targetId, item => ({ template: [...item.template, reference] })) };
                 case NodeType.If: return { ...state, ifs: EntityAdaptor.updateById(state.ifs, targetId, item => ({ template: [...item.template, reference] })) };
                 case NodeType.For: return { ...state, fors: EntityAdaptor.updateById(state.fors, targetId, item => ({ template: [...item.template, reference] })) };
+                case NodeType.RouterRoute: return { ...state, routerRoutes: EntityAdaptor.updateById(state.routerRoutes, targetId, item => ({ template: [...item.template, reference] })) };
             }
         });
     }
@@ -217,11 +225,13 @@ export class DrxDocument {
     public removeNode(targetType: DrxTemplateTargetType, targetId: string, node: DrxTemplateItem): void {
         this.state.set(state => {
             switch (targetType) {
+                case NodeType.App: state = { ...state, app: { ...state.app, template: $Array.removeWhere(state.app.template, entry => entry.id === node.id, true) } }; break;
                 case NodeType.Page: state = { ...state, pages: EntityAdaptor.updateById(state.pages, targetId, page => ({ template: $Array.removeWhere(page.template, entry => entry.id === node.id, true) })) }; break;
                 case NodeType.Component: state = { ...state, components: EntityAdaptor.updateById(state.components, targetId, item => ({ template: $Array.removeWhere(item.template, entry => entry.id === node.id, true) })) }; break;
                 case NodeType.Element: state = { ...state, elements: EntityAdaptor.updateById(state.elements, targetId, item => ({ template: $Array.removeWhere(item.template, entry => entry.id === node.id, true) })) }; break;
                 case NodeType.If: state = { ...state, ifs: EntityAdaptor.updateById(state.ifs, targetId, item => ({ template: $Array.removeWhere(item.template, entry => entry.id === node.id, true) })) }; break;
                 case NodeType.For: state = { ...state, fors: EntityAdaptor.updateById(state.fors, targetId, item => ({ template: $Array.removeWhere(item.template, entry => entry.id === node.id, true) })) }; break;
+                case NodeType.RouterRoute: state = { ...state, routerRoutes: EntityAdaptor.updateById(state.routerRoutes, targetId, item => ({ template: $Array.removeWhere(item.template, entry => entry.id === node.id, true) })) }; break;
             }
             switch (node.type) {
                 case NodeType.Element: return { ...state, elements: EntityAdaptor.delete(state.elements, node.id) };
@@ -231,6 +241,7 @@ export class DrxDocument {
                 case NodeType.PageContainer: return { ...state, pageContainers: EntityAdaptor.delete(state.pageContainers, node.id) };
                 case NodeType.Icon: return { ...state, icons: EntityAdaptor.delete(state.icons, node.id) };
                 case NodeType.Text: return { ...state, texts: EntityAdaptor.delete(state.texts, node.id) };
+                case NodeType.RouterRoute: return { ...state, routerRoutes: EntityAdaptor.delete(state.routerRoutes, node.id) };
                 default: return state;
             }
         });
@@ -240,20 +251,24 @@ export class DrxDocument {
         this.state.set(state => {
             const getContainer = (type: DrxTemplateTargetType, id: string) => {
                 switch (type) {
+                    case NodeType.App: return state.app;
                     case NodeType.Page: return state.pages[id];
                     case NodeType.Component: return state.components[id];
                     case NodeType.Element: return state.elements[id];
                     case NodeType.If: return state.ifs[id];
                     case NodeType.For: return state.fors[id];
+                    case NodeType.RouterRoute: return state.routerRoutes[id];
                 }
             };
             const setTemplate = (state: DrxDocumentState, type: DrxTemplateTargetType, id: string, template: DrxTemplateItem[]): DrxDocumentState => {
                 switch (type) {
+                    case NodeType.App: return { ...state, app: { ...state.app, template } };
                     case NodeType.Page: return { ...state, pages: EntityAdaptor.updateById(state.pages, id, () => ({ template })) };
                     case NodeType.Component: return { ...state, components: EntityAdaptor.updateById(state.components, id, () => ({ template })) };
                     case NodeType.Element: return { ...state, elements: EntityAdaptor.updateById(state.elements, id, () => ({ template })) };
                     case NodeType.If: return { ...state, ifs: EntityAdaptor.updateById(state.ifs, id, () => ({ template })) };
                     case NodeType.For: return { ...state, fors: EntityAdaptor.updateById(state.fors, id, () => ({ template })) };
+                    case NodeType.RouterRoute: return { ...state, routerRoutes: EntityAdaptor.updateById(state.routerRoutes, id, () => ({ template })) };
                 }
             };
             if (from.type === to.type && from.id === to.id) {
@@ -269,15 +284,48 @@ export class DrxDocument {
 
     public getNodeParent(id: string): { type: NodeType; id: string } | undefined {
         const state = this.state.value;
-        if (state.app.pageIds.includes(id) || state.app.componentIds.includes(id)) return { type: NodeType.App, id: state.app.id };
         const references = (template: DrxTemplateItem[]) => template.some(item => item.id === id);
-        for (const page of Object.values(state.pages)) if (references(page.template)) return { type: NodeType.Page, id: page.id };
+        if (
+            state.app.pageIds.includes(id) ||
+            state.app.componentIds.includes(id) ||
+            state.app.variableIds.includes(id) ||
+            state.app.serviceIds.includes(id) ||
+            state.app.assetIds.includes(id) ||
+            state.app.typeIds.includes(id) ||
+            state.app.apiIds.includes(id) ||
+            references(state.app.template)
+        ) return { type: NodeType.App, id: state.app.id };
+        for (const page of Object.values(state.pages)) {
+            if (references(page.template) || page.variableIds.includes(id)) return { type: NodeType.Page, id: page.id };
+        }
         for (const component of Object.values(state.components)) {
-            if (references(component.template) || component.componentIds.includes(id)) return { type: NodeType.Component, id: component.id };
+            if (
+                references(component.template) ||
+                component.componentIds.includes(id) ||
+                component.variableIds.includes(id) ||
+                component.serviceIds.includes(id) ||
+                component.assetIds.includes(id) ||
+                component.typeIds.includes(id) ||
+                component.apiIds.includes(id) ||
+                component.propertyIds.includes(id) ||
+                component.eventIds.includes(id)
+            ) return { type: NodeType.Component, id: component.id };
         }
         for (const element of Object.values(state.elements)) if (references(element.template)) return { type: NodeType.Element, id: element.id };
         for (const item of Object.values(state.ifs)) if (references(item.template)) return { type: NodeType.If, id: item.id };
         for (const item of Object.values(state.fors)) if (references(item.template)) return { type: NodeType.For, id: item.id };
+        for (const item of Object.values(state.routerRoutes)) if (references(item.template)) return { type: NodeType.RouterRoute, id: item.id };
+        for (const api of Object.values(state.apis)) {
+            if (api.typeIds.includes(id) || api.endpointIds.includes(id)) return { type: NodeType.Api, id: api.id };
+        }
+        for (const endpoint of Object.values(state.apiEndpoints)) {
+            if (
+                endpoint.parameterIds.includes(id) ||
+                endpoint.headerIds.includes(id) ||
+                endpoint.bodyId === id ||
+                endpoint.responseId === id
+            ) return { type: NodeType.ApiEndpoint, id: endpoint.id };
+        }
         return undefined;
     }
 
@@ -305,6 +353,17 @@ export class DrxDocument {
         return undefined;
     }
 
+    public getNodeParents(id: string): { type: NodeType; id: string }[] {
+        const parents: { type: NodeType; id: string }[] = [];
+        let current = this.getNodeParent(id);
+        while (current) {
+            parents.push(current);
+            if (current.type === NodeType.App || current.type === NodeType.Component) break;
+            current = this.getNodeParent(current.id);
+        }
+        return parents;
+    }
+
     public async mount(target: Element): Promise<Scope | undefined> {
         return DrxDom.bootstrap(target, async () => {
             const state = this.state.value;
@@ -313,91 +372,103 @@ export class DrxDocument {
             return DrxApp.mount(target, state.app, state, bundle);
         });
     }
-    public async preview(container: Element, options: { target: { type: 'page' | 'component', id: string }, resolveAsset?: (asset: DrxAsset) => string, styleSheets?: Getter<string | undefined>[] }): Promise<{ dispose: () => void }> {
+    public async preview(container: Element, options: { target: { type: 'app' | 'page' | 'component', id: string }, resolveAsset?: (asset: DrxAsset) => string, styleSheets?: Getter<string | undefined>[] }): Promise<{ dispose: () => void }> {
         return DrxDom.bootstrap(container, () => {
             IconSheet.load();
-            const scope = Signal.root(() => {
+            const root = Signal.root(() => {
                 const context: PreviewContext = {
                     root: this.state.signal,
                     resolveAsset: options.resolveAsset,
                     styleSheets: (options.styleSheets ?? []).map(css => StyleSheet.create(container.ownerDocument.defaultView, css))
                 };
-                if (options.target.type === 'component') {
+                if (options.target.type === 'app') {
+                    DrxApp.preview(container, context);
+                } else if (options.target.type === 'component') {
                     DrxComponent.preview(container, options.target.id, context);
                 } else {
                     DrxPage.preview(container, options.target.id, context);
                 }
             });
-            return { dispose: () => scope.dispose() };
+            return { dispose: () => root.dispose() };
         });
     }
 
-    public getLocals(targetId: string): Record<string, TsonDefinition> {
-        const proxy = this.state.signal.proxy;
+    public getLocals(target: { type: NodeType, id: string }) {
         const state = this.state.value;
-        const app = proxy.app;
-
-        const walkTemplate = (template: DrxTemplateItem[], forLocals: [string, TsonDefinition][]): [string, TsonDefinition][] | undefined => {
-            for (const item of template) {
-                if (item.id === targetId) return forLocals;
-                if (item.type === NodeType.Element) {
-                    const found = walkTemplate(proxy.elements[item.id].template(), forLocals);
-                    if (found) return found;
-                } else if (item.type === NodeType.If) {
-                    const found = walkTemplate(proxy.ifs[item.id].template(), forLocals);
-                    if (found) return found;
-                } else if (item.type === NodeType.For) {
-                    const forNode = proxy.fors[item.id];
-                    const added: [string, TsonDefinition][] = [[forNode.as() || 'item', { type: 'any' }]];
-                    if (forNode.index()) added.push([forNode.index(), { type: 'any' }]);
-                    if (forNode.key()) added.push([forNode.key(), { type: 'any' }]);
-                    const found = walkTemplate(forNode.template(), [...forLocals, ...added]);
-                    if (found) return found;
-                }
+        const locals: { source: 'global' | 'app-variable' | 'page-variable' | 'component-variable' | 'component-property' | 'component-event' | 'for' | 'asset', name: string, definition: TsonDefinition, shadowed?: boolean }[] = [];
+        if ([NodeType.Api, NodeType.Page, NodeType.Element, NodeType.For, NodeType.If, NodeType.Icon, NodeType.PageContainer, NodeType.Text, NodeType.ComponentInstance, NodeType.RouterRoute].includes(target.type)) {
+            for (const asset of state.app.assetIds.map(id => state.assets[id])) {
+                locals.push({
+                    source: 'asset',
+                    name: asset.name,
+                    definition: $Tson.string()
+                });
             }
-            return undefined;
-        };
-
-        const resolveVariables = (variableIds: string[], scope: DrxScope): [string, TsonDefinition][] =>
-            variableIds.map(id => [proxy.variables[id].name(), DrxType.resolve(scope, proxy.variables[id].type(), state)]);
-
-        for (const pageId of app.pageIds()) {
-            const page = proxy.pages[pageId];
-            const forLocals = walkTemplate(page.template(), []);
-            if (!forLocals) continue;
-            const scope: DrxScope = { type: 'app' };
-            const reserved: [string, TsonDefinition][] = [['asset', { type: 'any' }], ['modal', { type: 'any' }]];
-            if (app.router()) reserved.push(['router', { type: 'any' }]);
-            return Object.fromEntries([
-                ...resolveVariables(app.variableIds(), scope),
-                ...resolveVariables(page.variableIds(), scope),
-                ...forLocals,
-                ...reserved
-            ]);
         }
-
-        const findInComponents = (componentIds: string[]): Record<string, TsonDefinition> | undefined => {
-            for (const componentId of componentIds) {
-                const component = proxy.components[componentId];
-                const forLocals = walkTemplate(component.template(), []);
-                if (forLocals) {
-                    const scope: DrxScope = { type: 'component', componentId };
-                    const propertyLocals: [string, TsonDefinition][] = component.propertyIds()
-                        .map(id => [proxy.componentProperties[id].name(), DrxType.resolve(scope, proxy.componentProperties[id].type(), state)]);
-                    return Object.fromEntries([
-                        ...resolveVariables(component.variableIds(), scope),
-                        ...propertyLocals,
-                        ...forLocals,
-                        ['asset', { type: 'any' }]
-                    ]);
+        if ([NodeType.Element, NodeType.For, NodeType.If, NodeType.Icon, NodeType.PageContainer, NodeType.Text, NodeType.ComponentInstance, NodeType.RouterRoute].includes(target.type)) {
+            for (const parent of this.getNodeParents(target.id).reverse()) {
+                if (parent.type === NodeType.App) {
+                    const appVariableLocals = state.app.variableIds
+                        .map(id => state.variables[id])
+                        .map(variable => ({
+                            source: 'app-variable' as const,
+                            name: variable.name,
+                            definition: DrxType.resolve({ type: 'app' }, variable.type, state)
+                        }));
+                    locals.push(...appVariableLocals);
+                    locals.push({
+                        source: 'global',
+                        name: 'router',
+                        definition: $Tson.object({ properties: { route: $Tson.string(), params: $Tson.record({ property: $Tson.string() }) } })
+                    });
+                    locals.push({ source: 'global', name: 'modal', definition: $Tson.object() });
+                } else if (parent.type === NodeType.Page) {
+                    const pageVariableLocals = state.pages[parent.id].variableIds
+                        .map(id => state.variables[id])
+                        .map(variable => ({
+                            source: 'page-variable' as const,
+                            name: variable.name,
+                            definition: DrxType.resolve({ type: 'app' }, variable.type, state)
+                        }));
+                    locals.push(...pageVariableLocals);
+                } else if (parent.type === NodeType.Component) {
+                    const componentScope: DrxScope = { type: 'component', componentId: parent.id };
+                    const componentVariableLocals = state.components[parent.id].variableIds
+                        .map(id => state.variables[id])
+                        .map(variable => ({
+                            source: 'component-variable' as const,
+                            name: variable.name,
+                            definition: DrxType.resolve(componentScope, variable.type, state)
+                        }));
+                    locals.push(...componentVariableLocals);
+                    const componentPropertyLocals = state.components[parent.id].propertyIds
+                        .map(id => state.componentProperties[id])
+                        .map(property => ({
+                            source: 'component-property' as const,
+                            name: property.name,
+                            definition: DrxType.resolve(componentScope, property.type, state)
+                        }));
+                    locals.push(...componentPropertyLocals);
+                    const componentEventLocals = state.components[parent.id].eventIds
+                        .map(id => state.componentEvents[id])
+                        .map(event => ({
+                            source: 'component-event' as const,
+                            name: event.name,
+                            definition: $Tson.any()
+                        }));
+                    locals.push(...componentEventLocals);
+                } else if (parent.type === NodeType.For) {
+                    const forNode = state.fors[parent.id];
+                    locals.push({ source: 'for', name: forNode.as, definition: $Tson.any() });
+                    if (forNode.index) locals.push({ source: 'for', name: forNode.index, definition: $Tson.number() });
+                    if (forNode.key) locals.push({ source: 'for', name: forNode.key, definition: $Tson.string() });
                 }
-                const nested = findInComponents(component.componentIds());
-                if (nested) return nested;
             }
-            return undefined;
-        };
-
-        return findInComponents(app.componentIds()) ?? {};
+        }
+        return locals.map((local, index) => ({
+            ...local,
+            shadowed: local.source !== 'asset' && locals.slice(index + 1).some(other => other.source !== 'asset' && other.name === local.name)
+        }));
     }
 
     public toFormattedString(): string {

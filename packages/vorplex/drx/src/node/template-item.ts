@@ -9,6 +9,7 @@ import { DrxIcon } from './icon';
 import { DrxIf } from './if';
 import { NodeType } from './node-type';
 import { DrxPageContainer } from './page-container';
+import { DrxRouterRoute } from './router-route';
 import { DrxText } from './text';
 
 export interface DrxTemplateItem {
@@ -16,9 +17,9 @@ export interface DrxTemplateItem {
     type: NodeType;
 }
 
-export type DrxTemplateNode = DrxElement | DrxIf | DrxFor | DrxComponentInstance | DrxPageContainer | DrxIcon | DrxText;
+export type DrxTemplateNode = DrxElement | DrxIf | DrxFor | DrxComponentInstance | DrxPageContainer | DrxIcon | DrxText | DrxRouterRoute;
 
-export type DrxTemplateTargetType = NodeType.Page | NodeType.Component | NodeType.Element | NodeType.If | NodeType.For;
+export type DrxTemplateTargetType = NodeType.App | NodeType.Page | NodeType.Component | NodeType.Element | NodeType.If | NodeType.For | NodeType.RouterRoute;
 
 export const DrxTemplate = {
     from(parent: Element, state: DrxDocumentState): DrxTemplateItem[] {
@@ -38,11 +39,9 @@ export const DrxTemplate = {
                 NodeType.Packages,
                 NodeType.DependencyTree,
                 NodeType.Variable,
-                NodeType.Router,
                 NodeType.Type,
                 NodeType.Service,
                 NodeType.Asset,
-                NodeType.RouterRoute,
                 NodeType.Component,
                 NodeType.ComponentProperty,
                 NodeType.ComponentEvent,
@@ -61,6 +60,8 @@ export const DrxTemplate = {
                 items.push(DrxPageContainer.parse(child, state));
             } else if (child.tagName === NodeType.Icon) {
                 items.push(DrxIcon.parse(child, state));
+            } else if (child.tagName === NodeType.RouterRoute) {
+                items.push(DrxRouterRoute.parse(child, state));
             } else {
                 items.push(DrxElement.parse(child, state));
             }
@@ -75,6 +76,7 @@ export const DrxTemplate = {
             if (item.type === NodeType.ComponentInstance) return DrxComponentInstance.to(state.componentInstances[item.id]);
             if (item.type === NodeType.PageContainer) return DrxPageContainer.to(state.pageContainers[item.id]);
             if (item.type === NodeType.Icon) return DrxIcon.to(state.icons[item.id]);
+            if (item.type === NodeType.RouterRoute) return DrxRouterRoute.to(state.routerRoutes[item.id], state);
             return DrxElement.to(state.elements[item.id], state);
         });
     },
@@ -88,6 +90,7 @@ export const DrxTemplate = {
                 else if (item.type === NodeType.ComponentInstance) DrxComponentInstance.mount(container, state.componentInstances[item.id], context);
                 else if (item.type === NodeType.PageContainer) DrxPageContainer.mount(container, state.pageContainers[item.id], context);
                 else if (item.type === NodeType.Icon) DrxIcon.mount(container, state.icons[item.id], context);
+                else if (item.type === NodeType.RouterRoute) DrxRouterRoute.mount(container, state.routerRoutes[item.id], context);
                 else DrxElement.mount(container, state.elements[item.id], context);
             }
         });
@@ -104,6 +107,7 @@ export const DrxTemplate = {
                 if (type === NodeType.ComponentInstance) return DrxComponentInstance.preview(container, id, context);
                 if (type === NodeType.PageContainer) return DrxPageContainer.preview(container, id, context);
                 if (type === NodeType.Icon) return DrxIcon.preview(container, id, context);
+                if (type === NodeType.RouterRoute) return DrxRouterRoute.preview(container, id, context);
                 return DrxElement.preview(container, id, context);
             }
         );

@@ -172,6 +172,9 @@ importers:
       '@vorplex/core':
         specifier: workspace:*
         version: link:../core
+      '@vorplex/web':
+        specifier: workspace:*
+        version: link:../web
       esbuild-wasm:
         specifier: 0.25.12
         version: 0.25.12
