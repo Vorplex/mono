@@ -421,7 +421,11 @@ export class DrxDocument {
                         name: 'router',
                         definition: $Tson.object({ properties: { route: $Tson.string(), params: $Tson.record({ property: $Tson.string() }) } })
                     });
-                    locals.push({ source: 'global', name: 'modal', definition: $Tson.object() });
+                    locals.push({
+                        source: 'global',
+                        name: 'modal',
+                        definition: $Tson.object({ properties: { data: $Tson.any({ default: { value: undefined } }) } })
+                    });
                 } else if (parent.type === NodeType.Page) {
                     const pageVariableLocals = state.pages[parent.id].variableIds
                         .map(id => state.variables[id])
