@@ -53,7 +53,7 @@ export const DrxFor = {
         host.style.display = 'contents';
         container.appendChild(host);
         const entries = Signal.keyed(
-            () => DrxExpressionParser.parse(item.each, context.locals),
+            () => DrxExpressionParser.evaluate(item.each, context.locals),
             entry => item.track ? $Value.get(entry.value, item.track) : entry.key,
             entry => {
                 const itemHost = document.createElement(NodeType.For);

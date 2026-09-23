@@ -53,7 +53,8 @@ export const DrxApi = {
         for (const id of api.endpointIds) element.appendChild(DrxApiEndpoint.to(state.apiEndpoints[id], state));
         return element;
     },
-    createApi(apiIds: string[], state: DrxDocumentState, scope: DrxScope): Record<string, Record<string, { request(options?: ApiRequestOptions): Promise<ApiRequestResult> }>> {
+    createApi(state: DrxDocumentState, scope: DrxScope): Record<string, Record<string, { request(options?: ApiRequestOptions): Promise<ApiRequestResult> }>> {
+        const apiIds = scope.type === 'app' ? state.app.apiIds : state.components[scope.componentId].apiIds;
         const api: Record<string, Record<string, { request(options?: ApiRequestOptions): Promise<ApiRequestResult> }>> = {};
         for (const apiId of apiIds) {
             const definition = state.apis[apiId];
@@ -99,7 +100,11 @@ export const DrxApi = {
                                 if (!resolved) {
                                     const response = endpoint.responseId ? state.apiResponses[endpoint.responseId] : undefined;
                                     const json = await raw.json();
-                                    const [parsed] = $Tson.parse(DrxType.resolve(scope, response?.type ?? 'any', state)).parse(json);
+                                    const [parsed, errors] = $Tson.parse(DrxType.resolve(scope, response?.type ?? 'any', state)).parse(json);
+                                    if (errors.length > 0) {
+                                        console.error(`Endpoint response did not satisfy type "${response.type ?? 'any'}"`, errors);
+                                        throw new Error(`Endpoint response did not satisfy type "${response.type ?? 'any'}"`);
+                                    }
                                     value = parsed;
                                     resolved = true;
                                 }

@@ -11,6 +11,8 @@ export enum NodeType {
     RouterRoute = 'X-ROUTE',
     Component = 'X-COMPONENT',
     If = 'X-IF',
+    ElseIf = 'X-ELSE-IF',
+    Else = 'X-ELSE',
     For = 'X-FOR',
     Element = 'ELEMENT',
     Text = '#text',

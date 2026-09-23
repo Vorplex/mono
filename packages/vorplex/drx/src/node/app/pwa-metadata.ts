@@ -1,5 +1,5 @@
-import { DrxDom } from '../drx-dom';
-import { NodeType } from './node-type';
+import { DrxDom } from '../../drx-dom';
+import { NodeType } from '../node-type';
 
 export interface DrxPwaIcon {
     src: string;
@@ -10,10 +10,10 @@ export interface DrxPwaIcon {
 
 export interface DrxPwaMetadata {
     name: string;
-    shortName?: string;
+    short_name?: string;
     description?: string;
-    themeColor?: string;
-    backgroundColor?: string;
+    theme_color?: string;
+    background_color?: string;
     display?: string;
     icons: DrxPwaIcon[];
 }

@@ -58,10 +58,9 @@ export const DrxPageContainer = {
         container.appendChild(host);
         Signal.effect(() => {
             const name = context.root.proxy.pageContainers[id].page();
-            const pages = context.root.proxy.pages();
-            const page = context.root.proxy.app.pageIds().map(pageId => pages[pageId]).find(page => page.name === name);
-            if (!page) return;
-            DrxPage.preview(host, page.id, context);
+            const pageId = context.root.proxy.app.pageIds().find(pageId => context.root.proxy.pages[pageId].name() === name);
+            if (!pageId) return;
+            DrxPage.preview(host, pageId, context);
         });
         Signal.cleanup(() => host.remove());
         return host;

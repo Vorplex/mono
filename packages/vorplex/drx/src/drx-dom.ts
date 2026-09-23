@@ -3,7 +3,7 @@ import { NodeType } from './node/node-type';
 
 export const DrxDom = {
     async bootstrap<T>(target: Element, callback: () => Awaitable<T>): Promise<T | undefined> {
-        const container = document.createElement('div');
+        const container = target.ownerDocument.createElement('div');
         container.style.cssText = `
                 display: flex;
                 align-items: center;
@@ -23,7 +23,7 @@ export const DrxDom = {
         try { return await callback(); }
         catch (error) {
             console.error(error);
-            const pre = document.createElement('pre');
+            const pre = target.ownerDocument.createElement('pre');
             pre.style.cssText = `
                 white-space: pre-wrap;
                     color: #b00020;

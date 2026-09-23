@@ -117,8 +117,8 @@ export const DrxComponentInstance = {
                         events: eventsApi,
                         root: shadow
                     },
-                    apis: DrxApi.createApi(definition.apiIds, state, scope),
-                    services: DrxScripting.instantiateServices(definition.serviceIds, state, context.bundle, componentContext.serviceInstances)
+                    apis: DrxApi.createApi(state, scope),
+                    services: DrxScripting.instantiateServices(definition.serviceIds, state, context.bundle, componentContext.serviceInstances, scope)
                 };
                 const ComponentClass = DrxScripting.instantiate(context.bundle, definition.id, componentDrx);
                 const instance = ComponentClass ? new ComponentClass() : undefined;

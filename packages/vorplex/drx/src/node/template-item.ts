@@ -1,15 +1,17 @@
 import { Getter, Scope, Signal } from '@vorplex/core';
+import { DrxDocumentState } from '../drx';
 import { PreviewContext } from '../preview-context';
 import { RenderContext } from '../render-context';
-import { DrxDocumentState } from '../drx';
 import { DrxComponentInstance } from './component/instance';
 import { DrxElement } from './element';
 import { DrxFor } from './for';
 import { DrxIcon } from './icon';
-import { DrxIf } from './if';
+import { DrxElse } from './if/else';
+import { DrxElseIf } from './if/else-if';
+import { DrxIf } from './if/if';
 import { NodeType } from './node-type';
 import { DrxPageContainer } from './page-container';
-import { DrxRouterRoute } from './router-route';
+import { DrxRouterRoute } from './router/router-route';
 import { DrxText } from './text';
 
 export interface DrxTemplateItem {
@@ -19,7 +21,7 @@ export interface DrxTemplateItem {
 
 export type DrxTemplateNode = DrxElement | DrxIf | DrxFor | DrxComponentInstance | DrxPageContainer | DrxIcon | DrxText | DrxRouterRoute;
 
-export type DrxTemplateTargetType = NodeType.App | NodeType.Page | NodeType.Component | NodeType.Element | NodeType.If | NodeType.For | NodeType.RouterRoute;
+export type DrxTemplateTargetType = NodeType.App | NodeType.Page | NodeType.Component | NodeType.Element | NodeType.If | NodeType.ElseIf | NodeType.Else | NodeType.For | NodeType.RouterRoute;
 
 export const DrxTemplate = {
     from(parent: Element, state: DrxDocumentState): DrxTemplateItem[] {
@@ -46,8 +48,10 @@ export const DrxTemplate = {
                 NodeType.ComponentProperty,
                 NodeType.ComponentEvent,
                 NodeType.Api,
+                NodeType.ElseIf,
+                NodeType.Else,
                 'SCRIPT',
-                'STYLE'
+                'STYLE',
             ];
             if (noneTemplateTags.includes(child.tagName)) continue;
             if (child.tagName === NodeType.If) {
@@ -99,20 +103,40 @@ export const DrxTemplate = {
         const entries = Signal.keyed(
             () => items() ?? [],
             entry => entry.value.id,
-            entry => {
-                const { id, type } = entry().value;
-                if (type === NodeType.Text) return DrxText.preview(container, id, context);
-                if (type === NodeType.If) return DrxIf.preview(container, id, context);
-                if (type === NodeType.For) return DrxFor.preview(container, id, context);
-                if (type === NodeType.ComponentInstance) return DrxComponentInstance.preview(container, id, context);
-                if (type === NodeType.PageContainer) return DrxPageContainer.preview(container, id, context);
-                if (type === NodeType.Icon) return DrxIcon.preview(container, id, context);
-                if (type === NodeType.RouterRoute) return DrxRouterRoute.preview(container, id, context);
-                return DrxElement.preview(container, id, context);
-            }
+            entry => DrxTemplate.previewItem(container, entry().value, context)
         );
         Signal.effect(() => {
             for (const entry of entries()) container.appendChild(entry);
         });
-    }
+    },
+    previewItem(container: Node, item: DrxTemplateItem, context: PreviewContext): Node {
+        const renderDefault = (target: Node): Node => {
+            if (item.type === NodeType.Text) return DrxText.preview(target, item.id, context);
+            if (item.type === NodeType.If) return DrxIf.preview(target, item.id, context);
+            if (item.type === NodeType.ElseIf) return DrxElseIf.preview(target, item.id, context);
+            if (item.type === NodeType.Else) return DrxElse.preview(target, item.id, context);
+            if (item.type === NodeType.For) return DrxFor.preview(target, item.id, context);
+            if (item.type === NodeType.ComponentInstance) return DrxComponentInstance.preview(target, item.id, context);
+            if (item.type === NodeType.PageContainer) return DrxPageContainer.preview(target, item.id, context);
+            if (item.type === NodeType.Icon) return DrxIcon.preview(target, item.id, context);
+            if (item.type === NodeType.RouterRoute) return DrxRouterRoute.preview(target, item.id, context);
+            return DrxElement.preview(target, item.id, context);
+        };
+        if (!context.render) return renderDefault(container);
+        const host = document.createElement(NodeType.Element);
+        host.style.display = 'contents';
+        host.setAttribute('data-drx-id', item.id);
+        Signal.effect(() => {
+            const result = context.render(item, context.root.proxy);
+            if (result === null) return;
+            if (result === undefined) {
+                renderDefault(host);
+                return;
+            }
+            host.appendChild(result);
+            Signal.cleanup(() => result.remove());
+        });
+        Signal.cleanup(() => host.remove());
+        return host;
+    },
 };

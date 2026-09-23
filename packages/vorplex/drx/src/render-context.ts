@@ -1,9 +1,9 @@
 import { State } from '@vorplex/core';
 import { DrxDocumentState } from './drx';
-import { DrxApp } from './node/app';
+import { DrxApp } from './node/app/app';
 import { DrxComponent } from './node/component/component';
 import { DrxPage } from './node/page';
-import { RouterLocal } from './node/router';
+import { RouterLocal } from './node/router/router';
 
 export enum RenderContextType {
     App = 'app',

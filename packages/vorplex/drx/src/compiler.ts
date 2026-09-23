@@ -1,4 +1,4 @@
-import { $Id, $Object, $String, $Value } from '@vorplex/core';
+import { $Id, $String, $Value } from '@vorplex/core';
 import { version } from '../package.json';
 import { DrxDocumentState } from './drx';
 import { ICON_SHEET_URL } from './icon-sheet';
@@ -38,7 +38,7 @@ export const DrxCompiler = {
                             bootstrap({ state: 'state.json', bundle: 'bundle.js', icons: 'icons.svg' });
                         </script>
                         ${state.app.pwaMetadata ? '<link rel="manifest" href="manifest.json" />' : ''}
-                        ${!$String.isNullOrEmpty(state.app.pwaMetadata?.themeColor) ? `<meta name="theme-color" content="${state.app.pwaMetadata.themeColor}" />` : ''}
+                        ${!$String.isNullOrEmpty(state.app.pwaMetadata?.theme_color) ? `<meta name="theme-color" content="${state.app.pwaMetadata.theme_color}" />` : ''}
                     </head>
                     <body></body>
                 </html>
@@ -52,8 +52,8 @@ export const DrxCompiler = {
             const serviceWorker = await fetch(`${runtimeUrl}/pwa-service-worker.js`).then(response => response.text());
             const pwa = state.app.pwaMetadata;
             const manifest = {
-                ...$Object.mapKeys(pwa, key => $String.snakeCase(key)),
-                short_name: pwa.shortName ?? pwa.name,
+                ...pwa,
+                short_name: pwa.short_name ?? pwa.name,
                 display: pwa.display ?? 'standalone',
                 start_url: '.',
                 scope: '.',

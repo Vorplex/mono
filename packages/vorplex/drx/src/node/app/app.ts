@@ -1,24 +1,24 @@
 import { DependencyTree } from '@vorplex/compiler';
 import { $Id, Scope, Signal } from '@vorplex/core';
-import { DrxDocumentState } from '../drx';
-import { DrxDom } from '../drx-dom';
-import { PreviewContext } from '../preview-context';
-import { AppRenderContext, RenderContextType } from '../render-context';
-import { DrxScripting } from '../scripting';
-import { StyleSheet } from '../style-sheet';
-import { DrxApi } from './api/api';
-import { DrxAsset } from './asset';
-import { DrxComponent } from './component/component';
-import { DrxDependencyTree } from './dependency-tree';
-import { NodeType } from './node-type';
-import { DrxPackages } from './packages';
-import { DrxPage } from './page';
+import { DrxDocumentState } from '../../drx';
+import { DrxDom } from '../../drx-dom';
+import { PreviewContext } from '../../preview-context';
+import { AppRenderContext, RenderContextType } from '../../render-context';
+import { DrxScripting } from '../../scripting';
+import { StyleSheet } from '../../style-sheet';
+import { DrxApi } from '../api/api';
+import { DrxAsset } from '../asset';
+import { DrxComponent } from '../component/component';
+import { DrxDependencyTree } from '../dependency-tree';
+import { NodeType } from '../node-type';
+import { DrxPackages } from '../packages';
+import { DrxPage } from '../page';
+import { DrxRouter } from '../router/router';
+import { DrxService } from '../service';
+import { DrxTemplate, DrxTemplateItem } from '../template-item';
+import { DrxType } from '../type';
+import { DrxVariable } from '../variable';
 import { DrxPwaMetadata } from './pwa-metadata';
-import { DrxRouter } from './router';
-import { DrxService } from './service';
-import { DrxTemplate, DrxTemplateItem } from './template-item';
-import { DrxType } from './type';
-import { DrxVariable } from './variable';
 
 export interface DrxApp {
     id: string;
@@ -92,7 +92,15 @@ export const DrxApp = {
         return Signal.root(() => {
             const view = container.ownerDocument.defaultView;
             const router = DrxRouter.mount(view);
-            StyleSheet.adopt(container.ownerDocument, () => app.style);
+            const host = document.createElement(NodeType.App);
+            host.style.display = 'contents';
+            container.appendChild(host);
+            const shadow = host.attachShadow({ mode: 'open' });
+            const documentStyleSheets = Array
+                .from(shadow.ownerDocument.styleSheets)
+                .map(sheet => StyleSheet.clone(shadow.ownerDocument.defaultView, sheet))
+                .filter((sheet): sheet is CSSStyleSheet => sheet !== undefined);
+            StyleSheet.adopt(shadow, ...documentStyleSheets, () => app.style);
             const variables = app.variableIds.map(id => state.variables[id]);
             const { locals: variableLocals, states: variableStates } = DrxVariable.instantiate(variables);
             const appContext: AppRenderContext = {
@@ -116,18 +124,25 @@ export const DrxApp = {
                 app: {
                     variables: DrxVariable.createApi(variables, variableStates, { type: 'app' }, state)
                 },
-                apis: DrxApi.createApi(app.apiIds, state, { type: 'app' }),
-                services: DrxScripting.instantiateServices(app.serviceIds, state, bundle, appContext.serviceInstances),
+                apis: DrxApi.createApi(state, { type: 'app' }),
+                services: DrxScripting.instantiateServices(app.serviceIds, state, bundle, appContext.serviceInstances, { type: 'app' }),
                 router: DrxRouter.createApi(view, router.route),
                 pages: DrxPage.createApi(app.pageIds, appContext)
             };
             const AppClass = DrxScripting.instantiate(bundle, app.id, appDrx);
             const instance = AppClass ? new AppClass() : undefined;
             appContext.instance = instance;
-
-            DrxTemplate.mount(container, app.template, appContext);
+            appContext.locals = {
+                ...appContext.locals,
+                ...DrxScripting.getFunctionLocals(instance),
+                ...variableLocals
+            };
+            DrxTemplate.mount(shadow, app.template, appContext);
             instance?.onMount?.();
-            Signal.cleanup(() => instance?.onUnmount?.());
+            Signal.cleanup(() => {
+                instance?.onUnmount?.();
+                host.remove();
+            });
         });
     },
     preview(container: Node, context: PreviewContext): Scope {
@@ -136,8 +151,13 @@ export const DrxApp = {
             host.style.display = 'contents';
             host.setAttribute('data-drx-id', context.root.proxy.app.id());
             container.appendChild(host);
-            StyleSheet.adopt(host.ownerDocument, () => context.root.proxy.app.style(), ...context.styleSheets);
-            DrxTemplate.preview(host, () => context.root.proxy.app.template(), context);
+            const shadow = host.attachShadow({ mode: 'open' });
+            const documentStyleSheets = Array
+                .from(shadow.ownerDocument.styleSheets)
+                .map(sheet => StyleSheet.clone(shadow.ownerDocument.defaultView, sheet))
+                .filter((sheet): sheet is CSSStyleSheet => sheet !== undefined);
+            StyleSheet.adopt(shadow, ...documentStyleSheets, () => context.root.proxy.app.style(), ...context.styleSheets);
+            DrxTemplate.preview(shadow, () => context.root.proxy.app.template(), context);
             Signal.cleanup(() => host.remove());
         });
     }

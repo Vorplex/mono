@@ -36,10 +36,14 @@ export class TsonObject<T extends Record<string, any> = Record<string, any>> ext
     public override parse(value: any, failFast = false): TsonResult<T> {
         let result: any = this.parseDefault(value);
         if (result) return result;
-        const errors: TsonError[] = [];
         if (typeof value !== 'object') {
             return [undefined, [new TsonError('Object expected', value, this)]];
         }
+        if (!this.definition.properties || Object.keys(this.definition.properties).length === 0) {
+            const result = this.definition.prototype ? Object.setPrototypeOf({ ...value }, this.definition.prototype) : value;
+            return [result as T, []];
+        }
+        const errors: TsonError[] = [];
         result = {} as Partial<T>;
         for (const property in this.definition.properties) {
             if (failFast && errors.length > 0) break;

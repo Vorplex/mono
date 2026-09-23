@@ -1,16 +1,17 @@
 import { $Id, $Router, Signal } from '@vorplex/core';
-import { DrxDocumentState } from '../drx';
-import { DrxDom } from '../drx-dom';
-import { PreviewContext } from '../preview-context';
-import { RenderContext } from '../render-context';
-import { NodeType } from './node-type';
+import { DrxDocumentState } from '../../drx';
+import { DrxDom } from '../../drx-dom';
+import { PreviewContext } from '../../preview-context';
+import { RenderContext } from '../../render-context';
+import { NodeType } from '../node-type';
+import { DrxTemplate, DrxTemplateItem } from '../template-item';
 import { DrxRouter } from './router';
-import { DrxTemplate, DrxTemplateItem } from './template-item';
 
 export interface DrxRouterRoute {
     id: string;
     type: NodeType.RouterRoute;
     route: string;
+    exact?: boolean;
     template: DrxTemplateItem[];
 }
 
@@ -24,6 +25,7 @@ export const DrxRouterRoute = {
             id: DrxDom.getAttribute(element, 'id') ?? $Id.guid(),
             type: NodeType.RouterRoute,
             route: DrxDom.getRequiredAttribute(element, 'route'),
+            exact: DrxDom.getBooleanAttribute(element, 'exact'),
             template: DrxTemplate.from(element, state)
         };
         state.routerRoutes[item.id] = item;
@@ -36,6 +38,7 @@ export const DrxRouterRoute = {
         const element = document.createElement(NodeType.RouterRoute);
         DrxDom.setAttribute(element, 'id', item.id);
         DrxDom.setAttribute(element, 'route', item.route);
+        if (item.exact) DrxDom.setAttribute(element, 'exact', 'true');
         for (const child of DrxTemplate.to(item.template, state)) element.appendChild(child);
         return element;
     },
@@ -44,12 +47,22 @@ export const DrxRouterRoute = {
         host.style.display = 'contents';
         container.appendChild(host);
         Signal.effect(() => {
-            const match = $Router.matchPrefix(item.route, context.routeRest ?? context.nearest.app.router.route());
+            const path = context.routeRest ?? context.nearest.app.router.route();
+            let match: {
+                params: Record<string, string>;
+                rest: string;
+            };
+            if (item.exact) {
+                const params = $Router.match(item.route, path);
+                match = params ? { params, rest: '' } : null;
+            } else {
+                match = $Router.matchPrefix(item.route, path);
+            }
             if (!match) return;
             const params = context.locals.router?.params?.() ?? {};
             const routeContext: RenderContext = {
                 ...RenderContext.withLocals(context, {
-                    router: DrxRouter.createLocal(context.nearest.app.router.route, { ...params, ...match.params })
+                    router: DrxRouter.createLocal(context.nearest.app.router.route, { ...params, ...match.params }, container.ownerDocument.defaultView)
                 }),
                 routeRest: match.rest
             };

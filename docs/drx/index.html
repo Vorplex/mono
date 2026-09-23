@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>DRX Docs</title>
+<script src="https://cdn.jsdelivr.net/npm/marked@4.3.0/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs/loader.js"></script>
+<script>
+(function () {
+    var MONACO_BASE = 'https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/';
+    if (!window.require) { window.__drxMonacoReady = Promise.resolve(null); return; }
+    var worker = 'self.MonacoEnvironment = { baseUrl: ' + JSON.stringify(MONACO_BASE) + ' };' +
+        'importScripts(' + JSON.stringify(MONACO_BASE + 'vs/base/worker/workerMain.js') + ');';
+    window.MonacoEnvironment = {
+        globalAPI: true,
+        getWorkerUrl: function () { return 'data:text/javascript;charset=utf-8,' + encodeURIComponent(worker); }
+    };
+    window.require.config({ paths: { vs: MONACO_BASE + 'vs' } });
+    window.__drxMonacoReady = new Promise(function (resolve) {
+        var timeout = setTimeout(function () { resolve(null); }, 15000);
+        window.require(['vs/editor/editor.main'], function () {
+            clearTimeout(timeout);
+            resolve(window.monaco || null);
+        }, function () {
+            clearTimeout(timeout);
+            resolve(null);
+        });
+    });
+})();
+</script>
+<style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; }
+    body {
+        display: flex;
+        font: 14px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color: #25272b;
+        background: #fff;
+    }
+    #nav {
+        width: 260px;
+        flex: none;
+        overflow-y: auto;
+        border-right: 1px solid #e5e7eb;
+        padding: 16px 12px;
+    }
+    #nav-title {
+        font-size: 20px;
+        font-weight: 700;
+        color: #111827;
+        margin: 4px 8px 0;
+    }
+    #nav-subtitle {
+        font-size: 12px;
+        color: #6b7280;
+        margin: 2px 8px 16px;
+    }
+    .nav-overview {
+        display: block;
+        padding: 6px 8px;
+        margin-bottom: 14px;
+        border-radius: 6px;
+        color: #2563ad;
+        font-weight: 600;
+        text-decoration: none;
+        font-size: 13px;
+    }
+    .nav-overview:hover { background: #f3f4f6; }
+    .nav-heading {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 6px;
+        cursor: pointer;
+        user-select: none;
+        font-size: 13px;
+        font-weight: 700;
+        color: #111827;
+        padding: 6px 8px;
+        margin: 10px 0 2px;
+        border-radius: 6px;
+    }
+    .nav-heading:hover { background: #f3f4f6; }
+    .nav-chevron {
+        flex: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 16px;
+        height: 16px;
+        color: #9ca3af;
+        transition: transform .15s;
+    }
+    .nav-heading.collapsed .nav-chevron, .nav-group.collapsed .nav-chevron { transform: rotate(-90deg); }
+    .nav-list { list-style: none; margin: 0; padding: 0; }
+    .nav-list .nav-list { padding-left: 14px; }
+    .nav-list.collapsed { display: none; }
+    .nav-list a.nav-link {
+        display: block;
+        padding: 4px 8px;
+        border-radius: 6px;
+        color: #374151;
+        text-decoration: none;
+        font-size: 13px;
+    }
+    .nav-list a.nav-link:hover, .nav-overview:hover { background: #f3f4f6; }
+    .nav-list a.active, .nav-overview.active { background: #e8ecff; color: #2563ad; font-weight: 600; }
+    .nav-group {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 6px;
+        border-radius: 6px;
+        padding: 2px 2px 2px 8px;
+        margin: 6px 0 2px;
+    }
+    .nav-group:hover { background: #f3f4f6; }
+    .nav-group a.nav-group-link {
+        flex: 1;
+        display: block;
+        padding: 4px 0;
+        color: #374151;
+        font-weight: 600;
+        font-size: 12.5px;
+        text-decoration: none;
+    }
+    .nav-group a.nav-group-link.active { color: #2563ad; }
+    .nav-group .nav-chevron { padding: 6px; }
+    #content {
+        flex: 1;
+        min-width: 0;
+        overflow-y: auto;
+        padding: 32px 40px 80px;
+    }
+    #content-inner { max-width: 860px; margin: 0 auto; }
+    #content h1 { font-size: 28px; margin: 0 0 8px; }
+    #content h2 { font-size: 20px; margin: 32px 0 12px; border-bottom: 1px solid #e5e7eb; padding-bottom: 6px; }
+    #content h3 { font-size: 16px; margin: 24px 0 8px; }
+    #content h4 { font-size: 14px; margin: 20px 0 8px; }
+    #content p { margin: 0 0 14px; }
+    #content a { color: #2563ad; }
+    #content blockquote {
+        margin: 0 0 14px;
+        padding: 8px 14px;
+        background: #f8fafc;
+        border-left: 3px solid #cbd5e1;
+        color: #4c535f;
+    }
+    #content code {
+        font: 12.5px/1.4 "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+        background: #f3f4f6;
+        padding: 1px 5px;
+        border-radius: 4px;
+    }
+    #content pre {
+        background: #f8fafc;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 12px 14px;
+        overflow-x: auto;
+        margin: 0 0 14px;
+    }
+    #content pre code { background: none; padding: 0; }
+    .code-slot { margin: 0 0 14px; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; }
+    .code-header {
+        height: 34px;
+        box-sizing: border-box;
+        display: flex;
+        align-items: center;
+        padding: 0 10px;
+        background: #f8fafc;
+        border-bottom: 1px solid #e5e7eb;
+        font: 12px/1 "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+        color: #68707d;
+        text-transform: uppercase;
+        letter-spacing: .03em;
+    }
+    .code-mount { }
+    #content ul, #content ol { margin: 0 0 14px; padding-left: 24px; }
+    #content li { margin: 4px 0; }
+    #content table { border-collapse: collapse; width: 100%; margin: 0 0 14px; }
+    #content th, #content td {
+        border: 1px solid #e5e7eb;
+        padding: 6px 10px;
+        text-align: left;
+        font-size: 13px;
+        vertical-align: top;
+    }
+    #content th { background: #f8fafc; }
+    .loading, .error { color: #68707d; }
+    .error { color: #b00020; }
+
+    .playground-slot { margin: 0 0 18px; }
+    .playground {
+        display: flex;
+        gap: 1px;
+        background: #e5e7eb;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        overflow: hidden;
+        height: 360px;
+    }
+    .pg-pane { background: #fff; display: flex; flex-direction: column; min-width: 0; flex: 1 1 50%; }
+    .pg-editor-mount { flex: 1; min-height: 0; display: flex; }
+    .pg-editor-mount .pg-textarea {
+        flex: 1;
+        border: none;
+        resize: none;
+        padding: 12px;
+        font: 12.5px/1.5 "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+        outline: none;
+    }
+    .pg-toolbar, .pg-editor-header {
+        height: 34px;
+        box-sizing: border-box;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        background: #f8fafc;
+        border-bottom: 1px solid #e5e7eb;
+        padding: 0 8px;
+        flex: none;
+    }
+    .pg-editor-header {
+        font: 12px/1 "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+        color: #68707d;
+        text-transform: uppercase;
+        letter-spacing: .03em;
+    }
+    .pg-refresh {
+        flex: none;
+        border: 1px solid #d1d5db;
+        background: #fff;
+        color: #374151;
+        border-radius: 6px;
+        width: 24px;
+        height: 24px;
+        cursor: pointer;
+        font-size: 13px;
+        line-height: 1;
+    }
+    .pg-refresh:hover { background: #f3f4f6; }
+    .pg-address {
+        flex: 1;
+        border: 1px solid #d1d5db;
+        background: #fff;
+        color: #25272b;
+        border-radius: 6px;
+        padding: 5px 8px;
+        font: 12px/1 "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+        outline: none;
+    }
+    .pg-address:focus { border-color: #2563ad; }
+    .pg-frame { flex: 1; min-height: 0; border: none; background: #fff; }
+    .pg-console { flex: none; border-top: 1px solid #e5e7eb; display: flex; flex-direction: column; max-height: 45%; }
+    .pg-console-toggle {
+        flex: none;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        height: 26px;
+        padding: 0 8px;
+        background: #f8fafc;
+        border: none;
+        cursor: pointer;
+        font: 11px/1 "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+        color: #68707d;
+        text-transform: uppercase;
+        letter-spacing: .03em;
+    }
+    .pg-console-toggle:hover { background: #f3f4f6; }
+    .pg-console-count {
+        background: #e5e7eb;
+        color: #374151;
+        border-radius: 8px;
+        padding: 1px 6px;
+        font-size: 10px;
+        text-transform: none;
+    }
+    .pg-console-count.has-error { background: #fee2e2; color: #b00020; }
+    .pg-console-count:empty { display: none; }
+    .pg-console-chevron { margin-left: auto; width: 12px; height: 12px; color: #9ca3af; transition: transform .15s; transform: rotate(-90deg); }
+    .pg-console.expanded .pg-console-chevron { transform: rotate(0deg); }
+    .pg-console-log { flex: 1; min-height: 0; overflow-y: auto; display: none; background: #fff; }
+    .pg-console.expanded .pg-console-log { display: block; }
+    .pg-console-line {
+        padding: 3px 10px;
+        font: 12px/1.4 "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+        white-space: pre-wrap;
+        word-break: break-word;
+        color: #374151;
+    }
+    .pg-console-line + .pg-console-line { border-top: 1px solid #e5e7eb; }
+    .pg-console-line.level-error { color: #b00020; background: #fef2f2; }
+    .pg-console-line.level-warn { color: #92400e; background: #fffbeb; }
+
+    @media (max-width: 760px) {
+        body { flex-direction: column; }
+        #nav { width: 100%; border-right: none; border-bottom: 1px solid #e5e7eb; max-height: 240px; }
+        #content { padding: 20px; }
+        .playground { flex-direction: column; height: 520px; }
+    }
+</style>
+</head>
+<body>
+<nav id="nav">
+    <div id="nav-title">DRX</div>
+    <div id="nav-subtitle">Documentation</div>
+    <a href="#/index.md" class="nav-overview" data-path="index.md">Overview</a>
+    <div id="nav-tree"></div>
+</nav>
+<main id="content"><div id="content-inner" class="loading">Loading…</div></main>
+<script>
+(function () {
+    var DOCS_ROOT = new URL('.', location.href).href;
+    var DRX_RUNTIME = 'https://cdn.jsdelivr.net/npm/@vorplex/drx@latest/dist/standalone/drx.js';
+
+    var contentInner = document.getElementById('content-inner');
+    var navTreeEl = document.getElementById('nav-tree');
+    var currentDocPath = 'index.md';
+    var codeSources = {};
+    var codeCounter = 0;
+    var monaco = null;
+    var activeEditors = [];
+
+    function monacoLanguage(lang) {
+        switch (lang) {
+            case 'html': return 'html';
+            case 'ts': case 'typescript': return 'typescript';
+            case 'js': case 'javascript': return 'javascript';
+            case 'json': return 'json';
+            case 'css': return 'css';
+            default: return 'plaintext';
+        }
+    }
+
+    function disposeActiveEditors() {
+        activeEditors.forEach(function (editor) { editor.dispose(); });
+        activeEditors = [];
+    }
+
+    function escapeHtml(value) {
+        return String(value).replace(/[&<>"']/g, function (c) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+        });
+    }
+
+    function fetchText(path) {
+        return fetch(new URL(path, DOCS_ROOT)).then(function (res) {
+            if (!res.ok) throw new Error(res.status + ' ' + res.statusText);
+            return res.text();
+        });
+    }
+
+    function resolveDocPath(basePath, href) {
+        var baseUrl = new URL(basePath, DOCS_ROOT);
+        var resolved = new URL(href, baseUrl);
+        return resolved.href.slice(DOCS_ROOT.length);
+    }
+
+    // ---- nav tree, built by scanning index.md-shaped files for `## Heading` + `- [Title](path)` lines ----
+    // Any linked file literally named index.md is treated as a nested section and expanded recursively.
+
+    function parseIndexLinks(markdown) {
+        var lines = markdown.split(/\r?\n/);
+        var heading = null;
+        var entries = [];
+        lines.forEach(function (line) {
+            var h = line.match(/^##\s+(.+?)\s*$/);
+            if (h) { heading = h[1].trim(); return; }
+            var l = line.match(/^\s*-\s*\[(.+?)\]\((.+?)\)\s*$/);
+            if (l) entries.push({ heading: heading, title: l[1].replace(/\\/g, ''), href: l[2] });
+        });
+        return entries;
+    }
+
+    function buildNavNode(path, visited) {
+        if (visited[path]) return Promise.resolve([]);
+        visited[path] = true;
+        return fetchText(path).then(function (md) {
+            var entries = parseIndexLinks(md);
+            var order = [];
+            var groups = {};
+            return entries.reduce(function (chain, entry) {
+                return chain.then(function () {
+                    var key = entry.heading || '';
+                    if (!groups[key]) { groups[key] = []; order.push(key); }
+                    var resolvedHref = resolveDocPath(path, entry.href);
+                    var addItem = function (children) {
+                        groups[key].push({ title: entry.title, href: resolvedHref, children: children });
+                    };
+                    if (!/\/index\.md$/.test(resolvedHref)) { addItem(null); return; }
+                    return buildNavNode(resolvedHref, visited).then(addItem);
+                });
+            }, Promise.resolve()).then(function () {
+                return order.map(function (key) { return { heading: key || null, items: groups[key] }; });
+            });
+        }).catch(function () { return []; });
+    }
+
+    function makeChevron() {
+        var chevron = document.createElement('span');
+        chevron.className = 'nav-chevron';
+        chevron.innerHTML = '<svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 3.5L5 6.5L8 3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+        return chevron;
+    }
+
+    function bindToggle(header, list) {
+        header.addEventListener('click', function (event) {
+            if (event.target.closest('a.nav-group-link')) return;
+            var collapsed = list.classList.toggle('collapsed');
+            header.classList.toggle('collapsed', collapsed);
+        });
+    }
+
+    function renderNavGroups(groups, container) {
+        groups.forEach(function (group) {
+            var list = document.createElement('ul');
+            list.className = 'nav-list';
+            if (group.heading) {
+                var h = document.createElement('div');
+                h.className = 'nav-heading';
+                var label = document.createElement('span');
+                label.textContent = group.heading;
+                h.appendChild(label);
+                h.appendChild(makeChevron());
+                container.appendChild(h);
+                bindToggle(h, list);
+            }
+            group.items.forEach(function (item) {
+                var li = document.createElement('li');
+                var hasChildren = item.children && item.children.length;
+                if (hasChildren) {
+                    var groupRow = document.createElement('div');
+                    groupRow.className = 'nav-group';
+                    var a = document.createElement('a');
+                    a.className = 'nav-group-link';
+                    a.href = '#/' + item.href;
+                    a.textContent = item.title;
+                    a.dataset.path = item.href;
+                    groupRow.appendChild(a);
+                    groupRow.appendChild(makeChevron());
+                    li.appendChild(groupRow);
+                    var childList = document.createElement('div');
+                    childList.className = 'nav-list';
+                    renderNavGroups(item.children, childList);
+                    li.appendChild(childList);
+                    bindToggle(groupRow, childList);
+                } else {
+                    var link = document.createElement('a');
+                    link.className = 'nav-link';
+                    link.href = '#/' + item.href;
+                    link.textContent = item.title;
+                    link.dataset.path = item.href;
+                    li.appendChild(link);
+                }
+                list.appendChild(li);
+            });
+            container.appendChild(list);
+        });
+    }
+
+    function highlightActiveNav(path) {
+        document.querySelectorAll('#nav a[data-path]').forEach(function (a) {
+            a.classList.toggle('active', a.dataset.path === path);
+        });
+    }
+
+    // ---- markdown rendering ----
+
+    var renderer = new marked.Renderer();
+
+    renderer.code = function (code, infostring) {
+        var parts = (infostring || '').trim().toLowerCase().split(/\s+/);
+        var lang = parts[0] || 'text';
+        var isRunnableExample = lang === 'html' && parts.indexOf('drx') !== -1;
+        var id = 'code-' + (codeCounter++);
+        codeSources[id] = { code: code, lang: lang, runnable: isRunnableExample };
+        var cls = isRunnableExample ? 'playground-slot' : 'code-slot';
+        return '<div class="' + cls + '" data-code="' + id + '"></div>';
+    };
+
+    renderer.link = function (href, title, text) {
+        var titleAttr = title ? ' title="' + escapeHtml(title) + '"' : '';
+        if (/^https?:\/\//i.test(href) || /^mailto:/i.test(href)) {
+            return '<a href="' + escapeHtml(href) + '" target="_blank" rel="noopener"' + titleAttr + '>' + text + '</a>';
+        }
+        if (/\.md(#.*)?$/.test(href)) {
+            var resolved = resolveDocPath(currentDocPath, href.replace(/#.*$/, ''));
+            return '<a href="#/' + resolved + '"' + titleAttr + '>' + text + '</a>';
+        }
+        return '<a href="' + escapeHtml(href) + '"' + titleAttr + '>' + text + '</a>';
+    };
+
+    marked.setOptions({ renderer: renderer, gfm: true });
+
+    // ---- interactive example: editor + preview with an address bar and console ----
+
+    function mountPlayground(slot, code) {
+        var wrap = document.createElement('div');
+        wrap.className = 'playground';
+        wrap.innerHTML =
+            '<div class="pg-pane pg-editor">' +
+                '<div class="pg-editor-header">index.html</div>' +
+                '<div class="pg-editor-mount"></div>' +
+            '</div>' +
+            '<div class="pg-pane pg-preview">' +
+                '<div class="pg-toolbar">' +
+                    '<button type="button" class="pg-refresh" title="Refresh preview" aria-label="Refresh preview">&#8635;</button>' +
+                    '<input type="text" class="pg-address" value="/" spellcheck="false" autocomplete="off" />' +
+                '</div>' +
+                '<iframe class="pg-frame"></iframe>' +
+                '<div class="pg-console">' +
+                    '<button type="button" class="pg-console-toggle">' +
+                        '<span>Console</span>' +
+                        '<span class="pg-console-count"></span>' +
+                        '<span class="pg-console-chevron"><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 3.5L5 6.5L8 3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>' +
+                    '</button>' +
+                    '<div class="pg-console-log"></div>' +
+                '</div>' +
+            '</div>';
+        slot.appendChild(wrap);
+
+        var editorMount = wrap.querySelector('.pg-editor-mount');
+        var iframe = wrap.querySelector('.pg-frame');
+        var addressInput = wrap.querySelector('.pg-address');
+        var refreshBtn = wrap.querySelector('.pg-refresh');
+        var consolePanel = wrap.querySelector('.pg-console');
+        var consoleToggle = wrap.querySelector('.pg-console-toggle');
+        var consoleCount = wrap.querySelector('.pg-console-count');
+        var consoleLog = wrap.querySelector('.pg-console-log');
+        var consoleEntryCount = 0;
+        var consoleHasError = false;
+        var consoleAutoShown = false;
+
+        consoleToggle.addEventListener('click', function () {
+            consolePanel.classList.toggle('expanded');
+        });
+
+        function resetConsole() {
+            consoleLog.innerHTML = '';
+            consoleEntryCount = 0;
+            consoleHasError = false;
+            consoleAutoShown = false;
+            consoleCount.textContent = '';
+            consoleCount.classList.remove('has-error');
+            consolePanel.classList.remove('expanded');
+        }
+
+        function addConsoleEntry(level, text) {
+            consoleEntryCount++;
+            consoleCount.textContent = String(consoleEntryCount);
+            if (level === 'error') {
+                consoleHasError = true;
+                consoleCount.classList.add('has-error');
+            }
+            var line = document.createElement('div');
+            line.className = 'pg-console-line level-' + level;
+            line.textContent = text;
+            consoleLog.appendChild(line);
+            consoleLog.scrollTop = consoleLog.scrollHeight;
+            if (!consoleAutoShown) {
+                consoleAutoShown = true;
+                consolePanel.classList.add('expanded');
+            }
+        }
+
+        var editor = monaco ? monaco.editor.create(editorMount, {
+            value: code,
+            language: 'html',
+            theme: 'vs',
+            automaticLayout: true,
+            minimap: { enabled: false },
+            scrollBeyondLastLine: false,
+            fontSize: 12.5,
+            fontFamily: '"SFMono-Regular", Consolas, "Liberation Mono", monospace'
+        }) : null;
+        if (editor) activeEditors.push(editor);
+
+        var fallbackTextarea = null;
+        if (!editor) {
+            fallbackTextarea = document.createElement('textarea');
+            fallbackTextarea.className = 'pg-textarea';
+            fallbackTextarea.spellcheck = false;
+            fallbackTextarea.value = code;
+            editorMount.appendChild(fallbackTextarea);
+        }
+
+        function getValue() { return editor ? editor.getValue() : fallbackTextarea.value; }
+
+        function buildDocument(source) {
+            var bridge =
+                '(function () {' +
+                '  try { if (!location.hash) location.hash = "/"; } catch (e) {}' +
+                '  function notify() {' +
+                '    try { parent.postMessage({ type: "drx-docs-route", path: location.hash.replace(/^#/, "") || "/" }, "*"); } catch (e) {}' +
+                '  }' +
+                '  window.addEventListener("hashchange", notify);' +
+                '  window.addEventListener("load", notify);' +
+                '  window.addEventListener("message", function (event) {' +
+                '    if (event.source !== parent || !event.data || event.data.type !== "drx-docs-navigate") return;' +
+                '    try { location.hash = event.data.path; } catch (e) {}' +
+                '  });' +
+                '  document.addEventListener("click", function (event) {' +
+                '    var path = event.composedPath ? event.composedPath() : [event.target];' +
+                '    var anchor = path.find(function (node) { return node instanceof HTMLAnchorElement; });' +
+                '    var href = anchor && anchor.getAttribute("href");' +
+                '    if (href && href.charAt(0) === "#") { event.preventDefault(); location.hash = href; }' +
+                '  }, true);' +
+                '  notify();' +
+                '  function serializeArg(arg) {' +
+                '    if (typeof arg === "string") return arg;' +
+                '    if (arg instanceof Error) return arg.stack || (arg.name + ": " + arg.message);' +
+                '    try { return JSON.stringify(arg); } catch (e) { return String(arg); }' +
+                '  }' +
+                '  function sendConsole(level, text) {' +
+                '    try { parent.postMessage({ type: "drx-docs-console", level: level, text: text }, "*"); } catch (e) {}' +
+                '  }' +
+                '  ["log", "info", "warn", "error", "debug"].forEach(function (level) {' +
+                '    var original = console[level];' +
+                '    console[level] = function () {' +
+                '      sendConsole(level === "debug" ? "log" : level, Array.prototype.map.call(arguments, serializeArg).join(" "));' +
+                '      original.apply(console, arguments);' +
+                '    };' +
+                '  });' +
+                '  window.addEventListener("error", function (event) {' +
+                '    sendConsole("error", (event.message || "Error") + (event.filename ? " (" + event.filename + ":" + event.lineno + ")" : ""));' +
+                '  });' +
+                '  window.addEventListener("unhandledrejection", function (event) {' +
+                '    var reason = event.reason;' +
+                '    sendConsole("error", "Unhandled promise rejection: " + (reason instanceof Error ? (reason.stack || reason.message) : serializeArg(reason)));' +
+                '  });' +
+                '})();';
+            return '<!doctype html><html><head><meta charset="utf-8">' +
+                '<style>html{color-scheme:light}body{margin:0;padding:16px;background:#fff;color:#25272b;font:14px/1.6 system-ui}</style>' +
+                '<script src="' + DRX_RUNTIME + '"><\/script>' +
+                '<script>' + bridge + '<\/script>' +
+                '</head><body>' + source + '</body></html>';
+        }
+
+        function run() {
+            resetConsole();
+            iframe.srcdoc = buildDocument(getValue());
+        }
+
+        var debounceTimer;
+        var onEdit = function () {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(run, 600);
+        };
+        if (editor) editor.onDidChangeModelContent(onEdit);
+        else fallbackTextarea.addEventListener('input', onEdit);
+        refreshBtn.addEventListener('click', run);
+
+        function navigate(path) {
+            var trimmedPath = path.trim();
+            var normalized = trimmedPath ? (trimmedPath.charAt(0) === '/' ? trimmedPath : '/' + trimmedPath) : '/';
+            if (iframe.contentWindow) iframe.contentWindow.postMessage({ type: 'drx-docs-navigate', path: normalized }, '*');
+        }
+        addressInput.addEventListener('keydown', function (event) {
+            if (event.key === 'Enter') navigate(addressInput.value);
+        });
+        addressInput.addEventListener('blur', function () { navigate(addressInput.value); });
+
+        window.addEventListener('message', function (event) {
+            if (event.source !== iframe.contentWindow || !event.data) return;
+            if (event.data.type === 'drx-docs-route') {
+                if (document.activeElement !== addressInput) addressInput.value = event.data.path;
+            } else if (event.data.type === 'drx-docs-console') {
+                addConsoleEntry(event.data.level, event.data.text);
+            }
+        });
+
+        run();
+    }
+
+    // ---- static code block: read-only syntax-highlighted display ----
+
+    function mountCodeBlock(slot, code, lang) {
+        if (!monaco) {
+            var pre = document.createElement('pre');
+            var codeEl = document.createElement('code');
+            codeEl.className = 'lang-' + lang;
+            codeEl.textContent = code;
+            pre.appendChild(codeEl);
+            slot.replaceWith(pre);
+            return;
+        }
+        slot.classList.add('code-slot');
+        var header = document.createElement('div');
+        header.className = 'code-header';
+        header.textContent = lang;
+        var mount = document.createElement('div');
+        mount.className = 'code-mount';
+        slot.appendChild(header);
+        slot.appendChild(mount);
+
+        var lineCount = code.split(/\r?\n/).length;
+        var height = Math.min(480, Math.max(40, lineCount * 19 + 16));
+        mount.style.height = height + 'px';
+
+        var editor = monaco.editor.create(mount, {
+            value: code,
+            language: monacoLanguage(lang),
+            theme: 'vs',
+            automaticLayout: true,
+            minimap: { enabled: false },
+            scrollBeyondLastLine: false,
+            readOnly: true,
+            domReadOnly: true,
+            lineNumbers: 'off',
+            folding: false,
+            renderLineHighlight: 'none',
+            fontSize: 12.5,
+            fontFamily: '"SFMono-Regular", Consolas, "Liberation Mono", monospace',
+            scrollbar: { alwaysConsumeMouseWheel: false }
+        });
+        activeEditors.push(editor);
+    }
+
+    // ---- routing ----
+
+    function pathFromHash() {
+        var raw = decodeURIComponent(location.hash.replace(/^#\/?/, ''));
+        return raw || 'index.md';
+    }
+
+    function loadDoc() {
+        var path = pathFromHash();
+        disposeActiveEditors();
+        contentInner.className = 'loading';
+        contentInner.textContent = 'Loading…';
+        fetchText(path).then(function (md) {
+            currentDocPath = path;
+            contentInner.className = '';
+            contentInner.innerHTML = marked.parse(md);
+            Object.keys(codeSources).forEach(function (id) {
+                var slot = contentInner.querySelector('[data-code="' + id + '"]');
+                var entry = codeSources[id];
+                if (!slot) { delete codeSources[id]; return; }
+                if (entry.runnable) mountPlayground(slot, entry.code);
+                else mountCodeBlock(slot, entry.code, entry.lang);
+                delete codeSources[id];
+            });
+            highlightActiveNav(path);
+            window.scrollTo(0, 0);
+        }).catch(function (err) {
+            contentInner.className = 'error';
+            contentInner.textContent = 'Could not load "' + path + '" (' + (err && err.message ? err.message : err) + ').';
+        });
+    }
+
+    window.addEventListener('hashchange', loadDoc);
+
+    Promise.all([
+        window.__drxMonacoReady.then(function (m) { monaco = m; }),
+        buildNavNode('index.md', {}).then(function (tree) { renderNavGroups(tree, navTreeEl); })
+    ]).then(loadDoc);
+})();
+</script>
+</body>
+</html>
