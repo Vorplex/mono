@@ -1,7 +1,7 @@
 import { type DrxDocumentState } from '../src/drx';
 import { DrxDom } from '../src/drx-dom';
 import { IconSheet } from '../src/icon-sheet';
-import { DrxApp } from '../src/node/app';
+import { DrxApp } from '../src/node/app/app';
 
 export async function bootstrap(paths: { bundle: string, state: string, icons: string }) {
     await DrxDom.bootstrap(document.body, async () => {
