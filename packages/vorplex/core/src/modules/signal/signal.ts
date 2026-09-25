@@ -22,6 +22,7 @@ export type SignalProxy<T> =
 
 export class Signal<T = any> {
 
+    public static readonly pending: unique symbol = Symbol('pending');
     private static batchDepth = 0;
     private static flushing = false;
     private static readonly pendingComputations = new Set<ComputationScope>();
@@ -144,6 +145,30 @@ export class Signal<T = any> {
             signal(next);
         });
         return () => signal();
+    }
+
+    public static memoAsync<T>(callback: () => Promise<T>): Getter<T | typeof Signal.pending> {
+        const rejected = Symbol();
+        let error: unknown;
+        const state = Signal.create<T | typeof Signal.pending | typeof rejected>(Signal.pending);
+        Signal.effect(async () => {
+            let active = true;
+            Signal.cleanup(() => active = false);
+            state(Signal.pending);
+            try {
+                const value = await callback();
+                if (active) state(value);
+            } catch (reason) {
+                if (!active) return;
+                error = reason;
+                state(rejected);
+            }
+        });
+        return () => {
+            const value = state();
+            if (value === rejected) throw error;
+            return value as T | typeof Signal.pending;
+        };
     }
 
     public static keyed<T, U>(source: Getter<readonly T[] | Record<string, T>>, key: (item: { index: number, key: string, value: T }) => any, create: (item: Signal<{ value: T, index: number, key: any }>) => U): Getter<U[]> {
