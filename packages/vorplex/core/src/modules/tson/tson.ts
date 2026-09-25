@@ -325,6 +325,23 @@ export class $Tson {
         return resolve(definition, $PathSelector.parse(path));
     }
 
+    public static walk(definition: TsonDefinition, map: (child: TsonDefinition) => TsonDefinition): TsonDefinition {
+        if (definition == null) return definition;
+        switch (definition.type) {
+            case 'object':
+                if (!definition.properties) return definition;
+                return { ...definition, properties: Object.fromEntries(Object.entries(definition.properties).map(([key, value]) => [key, map(value)])) };
+            case 'record':
+                return definition.property ? { ...definition, property: map(definition.property) } : definition;
+            case 'array':
+                return definition.itemDefinition ? { ...definition, itemDefinition: map(definition.itemDefinition) } : definition;
+            case 'union':
+                return { ...definition, union: definition.union.map(map) };
+            default:
+                return definition;
+        }
+    }
+
     public static resolveRefs(definition: TsonDefinition, resolve: (id: string) => TsonDefinition | undefined): TsonDefinition {
         const resolveRefs = (definition: TsonDefinition, seen: ReadonlySet<string>): TsonDefinition => {
             if (definition == null) return definition;
@@ -334,23 +351,7 @@ export class $Tson {
                 if (resolved == null) throw new Error(`Unable to resolve TSON ref with id "${definition.id}"`);
                 return resolveRefs(resolved, new Set(seen).add(definition.id));
             }
-            switch (definition.type) {
-                case 'object':
-                    if (!definition.properties) return definition;
-                    return {
-                        ...definition,
-                        properties: Object.fromEntries(Object.entries(definition.properties).map(([key, value]) => [key, resolveRefs(value, seen)]))
-                    };
-                case 'record':
-                    if (!definition.property) return definition;
-                    return { ...definition, property: resolveRefs(definition.property, seen) };
-                case 'array':
-                    return definition.itemDefinition ? { ...definition, itemDefinition: resolveRefs(definition.itemDefinition, seen) } : definition;
-                case 'union':
-                    return { ...definition, union: definition.union.map(item => resolveRefs(item, seen)) };
-                default:
-                    return definition;
-            }
+            return $Tson.walk(definition, child => resolveRefs(child, seen));
         };
         return resolveRefs(definition, new Set());
     }
