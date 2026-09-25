@@ -1,4 +1,4 @@
-import { $Id, $Tson, TsonDefinition } from '@vorplex/core';
+import { $Id, $Tson, MapAdaptor, TsonDefinition } from '@vorplex/core';
 import { DrxDocumentState, DrxScope } from '../drx';
 import { DrxDom } from '../drx-dom';
 import { NodeType } from './node-type';
@@ -34,10 +34,9 @@ export const DrxType = {
         const defaultTypeName = name as TsonDefinition['type'];
         if ($Tson.definitions.includes(defaultTypeName)) return $Tson.getDefaultDefinition(defaultTypeName);
         const owner = scope.type === 'app' ? state.app : state.components[scope.componentId];
-        const types = [
-            ...owner.typeIds,
-            ...owner.apiIds.flatMap(id => state.apis[id].typeIds)
-        ].map(id => state.types[id]);
-        return types.find(type => type.name === name)?.type ?? $Tson.any();
+        const types = MapAdaptor.fromArray(owner.typeIds.map(id => state.types[id]), record => [record.name, record.type]);
+        const resolved = types[name];
+        if (!resolved) return $Tson.any();
+        return $Tson.resolveRefs(resolved, refName => DrxType.resolve(scope, refName, state));
     }
 };

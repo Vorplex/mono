@@ -349,8 +349,7 @@ export const validators = {
                 if ($Tson.definitions.includes(name as TsonDefinition['type'])) return true;
                 const owner = scope.type === 'app' ? state.app : state.components[scope.componentId];
                 if (!owner) return true;
-                const pool = [...owner.typeIds, ...owner.apiIds.flatMap(id => state.apis[id]?.typeIds ?? [])];
-                return pool.some(id => state.types[id]?.name === name);
+                return owner.typeIds.some(id => state.types[id]?.name === name);
             };
             const check = (id: string, scope: DrxScope) => {
                 const variable = state.variables[id];
@@ -379,8 +378,8 @@ export const validators = {
         },
         validateNamesUnique: (state: DrxDocumentState): DrxProblem[] => {
             const problems: DrxProblem[] = [];
-            const checkPool = (owner: { typeIds: string[]; apiIds: string[] }) => {
-                const pool = [...owner.typeIds, ...owner.apiIds.flatMap(id => state.apis[id]?.typeIds ?? [])];
+            const checkPool = (owner: { typeIds: string[] }) => {
+                const pool = owner.typeIds;
                 const seen = new Set<string>();
                 for (const id of pool) {
                     const name = state.types[id]?.name;
@@ -466,14 +465,6 @@ export const validators = {
                 if (name === undefined) continue;
                 if (seen.has(name)) problems.push({ severity: 'error', code: 'DRX002', message: `Duplicate api name "${name}"`, target: { type: NodeType.Api, id } });
                 else seen.add(name);
-            }
-            return problems;
-        },
-        validateTypesExists: (state: DrxDocumentState): DrxProblem[] => {
-            const problems: DrxProblem[] = [];
-            for (const api of Object.values(state.apis)) {
-                const target: DrxProblemTarget = { type: NodeType.Api, id: api.id };
-                for (const id of api.typeIds) if (!state.types[id]) problems.push({ severity: 'error', code: 'DRX001', message: `Type reference "${id}" does not exist`, target });
             }
             return problems;
         },
@@ -590,63 +581,17 @@ export const validators = {
         }
     },
     apiBody: {
-        validateTypeRequired: (state: DrxDocumentState): DrxProblem[] => {
+        validateDefinitionValid: (state: DrxDocumentState): DrxProblem[] => {
             return Object.values(state.apiBodies)
-                .filter(body => !body.type?.trim())
-                .map(body => ({ severity: 'error' as const, code: 'DRX003', message: 'Body type is required', target: { type: NodeType.ApiEndpoint, id: body.id } }));
-        },
-        validateTypeResolves: (state: DrxDocumentState): DrxProblem[] => {
-            const problems: DrxProblem[] = [];
-            const resolves = (scope: DrxScope, name: string): boolean => {
-                if ($Tson.definitions.includes(name as TsonDefinition['type'])) return true;
-                const owner = scope.type === 'app' ? state.app : state.components[scope.componentId];
-                if (!owner) return true;
-                const pool = [...owner.typeIds, ...owner.apiIds.flatMap(id => state.apis[id]?.typeIds ?? [])];
-                return pool.some(id => state.types[id]?.name === name);
-            };
-            const apiScope = new Map<string, DrxScope>();
-            for (const id of state.app.apiIds) apiScope.set(id, { type: 'app' });
-            for (const component of Object.values(state.components)) for (const id of component.apiIds) apiScope.set(id, { type: 'component', componentId: component.id });
-            for (const api of Object.values(state.apis)) {
-                const scope = apiScope.get(api.id) ?? { type: 'app' };
-                for (const endpointId of api.endpointIds) {
-                    const endpoint = state.apiEndpoints[endpointId];
-                    if (!endpoint?.bodyId) continue;
-                    const body = state.apiBodies[endpoint.bodyId];
-                    if (body?.type && !resolves(scope, body.type)) problems.push({ severity: 'warning', code: 'DRX005', message: `Unknown type "${body.type}" for endpoint "${endpoint.name}" body`, target: { type: NodeType.ApiEndpoint, id: endpoint.bodyId } });
-                }
-            }
-            return problems;
+                .filter(body => !$Tson.definitions.includes(body.definition?.type as TsonDefinition['type']))
+                .map(body => ({ severity: 'error' as const, code: 'DRX018', message: 'Body has a malformed definition (unrecognized or missing "type" discriminator)', target: { type: NodeType.ApiEndpoint, id: body.id } }));
         }
     },
     apiResponse: {
-        validateTypeRequired: (state: DrxDocumentState): DrxProblem[] => {
+        validateDefinitionValid: (state: DrxDocumentState): DrxProblem[] => {
             return Object.values(state.apiResponses)
-                .filter(response => !response.type?.trim())
-                .map(response => ({ severity: 'error' as const, code: 'DRX003', message: 'Response type is required', target: { type: NodeType.ApiEndpoint, id: response.id } }));
-        },
-        validateTypeResolves: (state: DrxDocumentState): DrxProblem[] => {
-            const problems: DrxProblem[] = [];
-            const resolves = (scope: DrxScope, name: string): boolean => {
-                if ($Tson.definitions.includes(name as TsonDefinition['type'])) return true;
-                const owner = scope.type === 'app' ? state.app : state.components[scope.componentId];
-                if (!owner) return true;
-                const pool = [...owner.typeIds, ...owner.apiIds.flatMap(id => state.apis[id]?.typeIds ?? [])];
-                return pool.some(id => state.types[id]?.name === name);
-            };
-            const apiScope = new Map<string, DrxScope>();
-            for (const id of state.app.apiIds) apiScope.set(id, { type: 'app' });
-            for (const component of Object.values(state.components)) for (const id of component.apiIds) apiScope.set(id, { type: 'component', componentId: component.id });
-            for (const api of Object.values(state.apis)) {
-                const scope = apiScope.get(api.id) ?? { type: 'app' };
-                for (const endpointId of api.endpointIds) {
-                    const endpoint = state.apiEndpoints[endpointId];
-                    if (!endpoint?.responseId) continue;
-                    const response = state.apiResponses[endpoint.responseId];
-                    if (response?.type && !resolves(scope, response.type)) problems.push({ severity: 'warning', code: 'DRX005', message: `Unknown type "${response.type}" for endpoint "${endpoint.name}" response`, target: { type: NodeType.ApiEndpoint, id: endpoint.responseId } });
-                }
-            }
-            return problems;
+                .filter(response => !$Tson.definitions.includes(response.definition?.type as TsonDefinition['type']))
+                .map(response => ({ severity: 'error' as const, code: 'DRX018', message: 'Response has a malformed definition (unrecognized or missing "type" discriminator)', target: { type: NodeType.ApiEndpoint, id: response.id } }));
         }
     },
     componentProperty: {
@@ -671,8 +616,7 @@ export const validators = {
                 if ($Tson.definitions.includes(name as TsonDefinition['type'])) return true;
                 const owner = scope.type === 'app' ? state.app : state.components[scope.componentId];
                 if (!owner) return true;
-                const pool = [...owner.typeIds, ...owner.apiIds.flatMap(id => state.apis[id]?.typeIds ?? [])];
-                return pool.some(id => state.types[id]?.name === name);
+                return owner.typeIds.some(id => state.types[id]?.name === name);
             };
             for (const component of Object.values(state.components)) {
                 const scope: DrxScope = { type: 'component', componentId: component.id };
@@ -711,8 +655,7 @@ export const validators = {
                 if ($Tson.definitions.includes(name as TsonDefinition['type'])) return true;
                 const owner = scope.type === 'app' ? state.app : state.components[scope.componentId];
                 if (!owner) return true;
-                const pool = [...owner.typeIds, ...owner.apiIds.flatMap(id => state.apis[id]?.typeIds ?? [])];
-                return pool.some(id => state.types[id]?.name === name);
+                return owner.typeIds.some(id => state.types[id]?.name === name);
             };
             for (const component of Object.values(state.components)) {
                 const scope: DrxScope = { type: 'component', componentId: component.id };

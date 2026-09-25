@@ -9,7 +9,6 @@ export interface DrxApi {
     id: string;
     name: string;
     url: string;
-    typeIds: string[];
     endpointIds: string[];
 }
 
@@ -34,9 +33,6 @@ export const DrxApi = {
             id: DrxDom.getAttribute(element, 'id') ?? $Id.guid(),
             name: DrxDom.getRequiredAttribute(element, 'name'),
             url: DrxDom.getRequiredAttribute(element, 'url'),
-            typeIds: DrxType
-                .from(element, state)
-                .map(type => type.id),
             endpointIds: DrxApiEndpoint
                 .from(element, state)
                 .map(endpoint => endpoint.id)
@@ -49,7 +45,6 @@ export const DrxApi = {
         DrxDom.setAttribute(element, 'id', api.id);
         DrxDom.setAttribute(element, 'name', api.name);
         DrxDom.setAttribute(element, 'url', api.url);
-        for (const id of api.typeIds) element.appendChild(DrxType.to(state.types[id]));
         for (const id of api.endpointIds) element.appendChild(DrxApiEndpoint.to(state.apiEndpoints[id], state));
         return element;
     },
@@ -100,10 +95,10 @@ export const DrxApi = {
                                 if (!resolved) {
                                     const response = endpoint.responseId ? state.apiResponses[endpoint.responseId] : undefined;
                                     const json = await raw.json();
-                                    const [parsed, errors] = $Tson.parse(DrxType.resolve(scope, response?.type ?? 'any', state)).parse(json);
+                                    const definition = response ? $Tson.resolveRefs(response.definition, name => DrxType.resolve(scope, name, state)) : $Tson.any();
+                                    const [parsed, errors] = $Tson.parse(definition).parse(json);
                                     if (errors.length > 0) {
-                                        console.error(`Endpoint response did not satisfy type "${response.type ?? 'any'}"`, errors);
-                                        throw new Error(`Endpoint response did not satisfy type "${response.type ?? 'any'}"`);
+                                        throw new Error(`Endpoint response did not satisfy its declared type for endpoint "${endpoint.name}"`);
                                     }
                                     value = parsed;
                                     resolved = true;

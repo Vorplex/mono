@@ -1,6 +1,6 @@
 # \<x-type>
 
-Declares a named, reusable [TSON](../core/tson/index.html) schema referenced by name from any `type` attribute. Use it to validate `<x-variable>`, `<x-property>`/`<x-event>`, or api body/response shapes, and to avoid repeating the same schema inline in multiple places.
+Declares a named, reusable [TSON](../core/tson/index.html) schema referenced by name from any `type` attribute, or by `{ "type": "ref", "id": "<name-of-type>" }` from within another inline TSON definition (such as an `<x-body>`/`<x-response>`). Use it to validate `<x-variable>`, `<x-property>`/`<x-event>`, and to avoid repeating the same schema inline in multiple places.
 
 ```html
 <x-type></x-type>

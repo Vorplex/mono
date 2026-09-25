@@ -39,13 +39,34 @@ export const DrxExpressionParser = {
     isLiteral(expression: string): boolean {
         return expression != null && $String.matchDelimited(expression, ['{{', '}}']).every(segment => segment.type === 'text');
     },
-    isLocal(expression: string): { name: string; path: string } | null {
-        if (expression == null) return;
+    isLocal(expression: string): { name: string; path: string[] } | null {
+        if (expression == null) return null;
         const segments = $String.matchDelimited(expression, ['{{', '}}']);
         if (segments.length !== 1 || segments[0].type !== 'match') return null;
-        const match = /^([A-Za-z_$][\w$]*)((?:\.[A-Za-z_$][\w$]*)*)\(\)$/.exec(segments[0].value.trim());
-        if (!match) return null;
-        return { name: match[1], path: match[2].replace(/^\./, '') };
+        return DrxExpressionParser.isPureLocal(segments[0].value);
+    },
+    isPureLocal(expression: string): { name: string; path: string[] } | null {
+        if (expression == null) return null;
+        const marker = Object.freeze(Object.create(null));
+        const calls: { name: string; path: string[] }[] = [];
+        const record = (name: string, path: string[]): any => new Proxy(() => { }, {
+            get: (_target, key) => typeof key === 'string' ? record(name, [...path, key]) : undefined,
+            apply: (_target, _this, args) => {
+                if (args.length > 0) throw new Error('Unexpected arguments');
+                calls.push({ name, path });
+                return marker;
+            }
+        });
+        const scope = new Proxy({}, {
+            has: () => true,
+            get: (_target, key) => typeof key === 'string' ? record(key, []) : undefined
+        });
+        try {
+            const result = new Function('scope', `with (scope) { return (function () { 'use strict'; return (${expression}); })(); }`)(scope);
+            return result === marker && calls.length === 1 ? calls[0] : null;
+        } catch {
+            return null;
+        }
     },
     isAsset(expression: string): string {
         if (expression == null) return null;

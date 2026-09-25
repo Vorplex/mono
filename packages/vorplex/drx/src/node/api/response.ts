@@ -1,11 +1,11 @@
-import { $Id } from '@vorplex/core';
+import { $Id, TsonDefinition } from '@vorplex/core';
 import { DrxDocumentState } from '../../drx';
 import { DrxDom } from '../../drx-dom';
 import { NodeType } from '../node-type';
 
 export interface DrxApiResponse {
     id: string;
-    type: string;
+    definition: TsonDefinition;
 }
 
 export const DrxApiResponse = {
@@ -16,7 +16,7 @@ export const DrxApiResponse = {
     parse(element: Element, state: DrxDocumentState): DrxApiResponse {
         const response: DrxApiResponse = {
             id: DrxDom.getAttribute(element, 'id') ?? $Id.guid(),
-            type: DrxDom.getAttribute(element, 'type') ?? 'any'
+            definition: DrxDom.getJsonContent(element) ?? { type: 'any' }
         };
         state.apiResponses[response.id] = response;
         return response;
@@ -24,7 +24,7 @@ export const DrxApiResponse = {
     to(response: DrxApiResponse): Element {
         const element = document.createElement(NodeType.ApiResponse);
         DrxDom.setAttribute(element, 'id', response.id);
-        DrxDom.setAttribute(element, 'type', response.type);
+        DrxDom.setJsonContent(element, response.definition);
         return element;
     }
 };

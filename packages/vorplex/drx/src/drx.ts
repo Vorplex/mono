@@ -1,5 +1,6 @@
 import { $Array, $Id, $Path, $Tson, Awaitable, EntityAdaptor, EntityMap, Getter, Scope, Signal, SignalProxy, State, TsonDefinition } from '@vorplex/core';
 import { DrxDom } from './drx-dom';
+import { DrxExpressionParser } from './expression-parser';
 import { IconSheet } from './icon-sheet';
 import { DrxApi } from './node/api/api';
 import { DrxApiBody } from './node/api/body';
@@ -358,7 +359,7 @@ export class DrxDocument {
         for (const item of Object.values(state.fors)) if (references(item.template)) return { type: NodeType.For, id: item.id };
         for (const item of Object.values(state.routerRoutes)) if (references(item.template)) return { type: NodeType.RouterRoute, id: item.id };
         for (const api of Object.values(state.apis)) {
-            if (api.typeIds.includes(id) || api.endpointIds.includes(id)) return { type: NodeType.Api, id: api.id };
+            if (api.endpointIds.includes(id)) return { type: NodeType.Api, id: api.id };
         }
         for (const endpoint of Object.values(state.apiEndpoints)) {
             if (
@@ -506,7 +507,10 @@ export class DrxDocument {
                     locals.push(...componentEventLocals);
                 } else if (parent.type === NodeType.For) {
                     const forNode = state.fors[parent.id];
-                    locals.push({ source: 'for', name: forNode.as, definition: $Tson.any() });
+                    const eachLocal = DrxExpressionParser.isPureLocal(forNode.each);
+                    const eachDefinition = eachLocal && locals.find(local => local.name === eachLocal.name)?.definition;
+                    const itemDefinition = eachDefinition && $Tson.getDefinitionAtPath(eachDefinition, eachLocal.path);
+                    locals.push({ source: 'for', name: forNode.as, definition: itemDefinition?.type === 'array' ? (itemDefinition.itemDefinition ?? $Tson.any()) : $Tson.any() });
                     if (forNode.index) locals.push({ source: 'for', name: forNode.index, definition: $Tson.number() });
                     if (forNode.key) locals.push({ source: 'for', name: forNode.key, definition: $Tson.string() });
                 }
