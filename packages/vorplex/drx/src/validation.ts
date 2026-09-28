@@ -1,4 +1,4 @@
-import { $Router, $Tson, TsonDefinition } from '@vorplex/core';
+import { $Router, $String, $Tson, TsonDefinition } from '@vorplex/core';
 import type { DrxDocumentState, DrxScope } from './drx';
 import { DrxExpressionParser } from './expression-parser';
 import { NodeType } from './node/node-type';
@@ -13,6 +13,34 @@ export interface DrxProblem {
     code: string;
     message: string;
     target: DrxProblemTarget;
+}
+
+function findDocumentSelectors(css: string | undefined): string[] {
+    if (!css?.trim() || typeof CSSStyleSheet === 'undefined') return [];
+    const sheet = new CSSStyleSheet();
+    try {
+        sheet.replaceSync(css);
+    } catch {
+        return [];
+    }
+    const selectors: string[] = [];
+    const walk = (rules: CSSRuleList): void => {
+        for (const rule of Array.from(rules)) {
+            if (rule instanceof CSSStyleRule && /(^|[\s,>+~(])(:root|html|body)(?![\w-])/i.test(rule.selectorText)) selectors.push(rule.selectorText);
+            if ('cssRules' in rule) walk((rule as CSSGroupingRule).cssRules);
+        }
+    };
+    walk(sheet.cssRules);
+    return selectors;
+}
+
+function validateBindingExpressions(attributes: Record<string, string>, target: DrxProblemTarget): DrxProblem[] {
+    const problems: DrxProblem[] = [];
+    for (const [name, value] of Object.entries(attributes)) {
+        if (!name.startsWith('class.') && !name.startsWith('style.')) continue;
+        if (!value?.trim() || !DrxExpressionParser.isLiteral(value)) problems.push({ severity: 'error', code: 'DRX022', message: `Attribute "${name}" must be an expression without {{ }}, e.g. ${name}="isActive()"`, target });
+    }
+    return problems;
 }
 
 function findTemplateParent(state: DrxDocumentState, id: string, visited: Set<string> = new Set()): { type: 'app' | 'page' | 'component'; id: string } | undefined {
@@ -110,6 +138,15 @@ export const validators = {
         }
     },
     page: {
+        validateNoDocumentSelectors: (state: DrxDocumentState): DrxProblem[] => {
+            const problems: DrxProblem[] = [];
+            for (const page of Object.values(state.pages)) {
+                for (const selector of findDocumentSelectors(page.style)) {
+                    problems.push({ severity: 'warning', code: 'DRX020', message: `Page style selector "${selector}" targets the document and has no effect -- document styles (:root, html, body) belong in the app style`, target: { type: NodeType.Page, id: page.id } });
+                }
+            }
+            return problems;
+        },
         validateNameRequired: (state: DrxDocumentState): DrxProblem[] => {
             return Object.values(state.pages)
                 .filter(page => !page.name?.trim())
@@ -136,6 +173,15 @@ export const validators = {
         }
     },
     component: {
+        validateNoDocumentSelectors: (state: DrxDocumentState): DrxProblem[] => {
+            const problems: DrxProblem[] = [];
+            for (const component of Object.values(state.components)) {
+                for (const selector of findDocumentSelectors(component.style)) {
+                    problems.push({ severity: 'warning', code: 'DRX020', message: `Component style selector "${selector}" targets the document and has no effect -- a component only styles its own markup`, target: { type: NodeType.Component, id: component.id } });
+                }
+            }
+            return problems;
+        },
         validateNameRequired: (state: DrxDocumentState): DrxProblem[] => {
             return Object.values(state.components)
                 .filter(component => !component.name?.trim())
@@ -681,6 +727,14 @@ export const validators = {
                 }
             }
             return problems;
+        },
+        validateBindingExpressions: (state: DrxDocumentState): DrxProblem[] => {
+            return Object.values(state.elements).flatMap(element => validateBindingExpressions(element.attributes, { type: NodeType.Element, id: element.id }));
+        },
+        validateHtmlWithoutChildren: (state: DrxDocumentState): DrxProblem[] => {
+            return Object.values(state.elements)
+                .filter(element => 'html' in element.attributes && element.template.length > 0)
+                .map(element => ({ severity: 'warning' as const, code: 'DRX021', message: 'Element has an "html" attribute and child content -- the children are not rendered', target: { type: NodeType.Element, id: element.id } }));
         }
     },
     if: {
@@ -733,6 +787,9 @@ export const validators = {
                 }
             }
             return problems;
+        },
+        validateBindingExpressions: (state: DrxDocumentState): DrxProblem[] => {
+            return Object.values(state.icons).flatMap(icon => validateBindingExpressions(icon.attributes, { type: NodeType.Icon, id: icon.id }));
         }
     },
     componentInstance: {
@@ -753,7 +810,7 @@ export const validators = {
             }
             return problems;
         },
-        validateAttributeNamesValidIdentifiers: (state: DrxDocumentState): DrxProblem[] => {
+        validateAttributesDeclared: (state: DrxDocumentState): DrxProblem[] => {
             const problems: DrxProblem[] = [];
             for (const instance of Object.values(state.componentInstances)) {
                 if (!instance.component || !DrxExpressionParser.isLiteral(instance.component)) continue;
@@ -762,10 +819,13 @@ export const validators = {
                 const visibleIds = parent.type === 'component' ? state.components[parent.id]?.componentIds ?? [] : state.app.componentIds;
                 const definition = visibleIds.map(id => state.components[id]).find(component => component?.name === instance.component);
                 if (!definition) continue;
-                const eventNames = new Set(definition.eventIds.map(id => state.componentEvents[id]?.name));
+                const declared = new Set([
+                    ...definition.propertyIds.map(id => state.componentProperties[id]?.name),
+                    ...definition.eventIds.map(id => state.componentEvents[id]?.name)
+                ].filter(name => name != null).map(name => name.toLowerCase()));
                 for (const attribute of Object.keys(instance.attributes)) {
-                    if (attribute === 'id' || attribute === 'component' || eventNames.has(attribute)) continue;
-                    if (!/^[A-Za-z_$][\w$]*$/.test(attribute)) problems.push({ severity: 'error', code: 'DRX015', message: `Attribute "${attribute}" is not a valid identifier and will break the "${instance.component}" instance it binds a prop on`, target: { type: NodeType.ComponentInstance, id: instance.id } });
+                    if (attribute === 'id' || attribute === 'component' || declared.has(attribute.toLowerCase())) continue;
+                    problems.push({ severity: 'warning', code: 'DRX015', message: `Attribute "${attribute}" is not a declared property or event of "${instance.component}" and has no effect`, target: { type: NodeType.ComponentInstance, id: instance.id } });
                 }
             }
             return problems;
@@ -785,11 +845,6 @@ export const validators = {
         }
     },
     router: {
-        validateRoutePatternRequired: (state: DrxDocumentState): DrxProblem[] => {
-            return Object.values(state.routerRoutes)
-                .filter(route => !route.route?.trim())
-                .map(route => ({ severity: 'error' as const, code: 'DRX003', message: 'Route "route" is required', target: { type: NodeType.RouterRoute, id: route.id } }));
-        },
         validateRoutePatternValid: (state: DrxDocumentState): DrxProblem[] => {
             const problems: DrxProblem[] = [];
             for (const route of Object.values(state.routerRoutes)) {
@@ -807,6 +862,53 @@ export const validators = {
             for (const route of Object.values(state.routerRoutes)) {
                 if (findTemplateParent(state, route.id)?.type === 'component') {
                     problems.push({ severity: 'error', code: 'DRX019', message: 'A route can\'t be used inside a component -- components have no router to match against', target: { type: NodeType.RouterRoute, id: route.id } });
+                }
+            }
+            return problems;
+        }
+    },
+    expression: {
+        validateSyntax: (state: DrxDocumentState): DrxProblem[] => {
+            const problems: DrxProblem[] = [];
+            const check = (body: string, source: string, where: string, target: DrxProblemTarget) => {
+                try {
+                    new Function(body);
+                } catch (error) {
+                    if (error instanceof SyntaxError) problems.push({ severity: 'error', code: 'DRX023', message: `Invalid ${where} "${source.trim()}": ${error.message}`, target });
+                }
+            };
+            const expression = (value: string | undefined, where: string, target: DrxProblemTarget) => {
+                if (value?.trim()) check(`return (${value})`, value, where, target);
+            };
+            const interpolation = (value: string | undefined, where: string, target: DrxProblemTarget) => {
+                for (const segment of $String.matchDelimited(value ?? '', ['{{', '}}'])) {
+                    if (segment.type === 'match') expression(segment.value, where, target);
+                }
+            };
+            const attributes = (values: Record<string, string>, target: DrxProblemTarget) => {
+                for (const [name, value] of Object.entries(values)) {
+                    if (/^on[a-z]+$/.test(name)) check(value ?? '', value ?? '', `handler ${name}`, target);
+                    else if (name.startsWith('class.') || name.startsWith('style.')) { if (DrxExpressionParser.isLiteral(value)) expression(value, `expression in ${name}`, target); }
+                    else interpolation(value, `expression in ${name}`, target);
+                }
+            };
+            interpolation(state.app.style, 'expression in the app style', { type: NodeType.App, id: state.app.id });
+            for (const page of Object.values(state.pages)) interpolation(page.style, `expression in the style of page "${page.name}"`, { type: NodeType.Page, id: page.id });
+            for (const component of Object.values(state.components)) interpolation(component.style, `expression in the style of component "${component.name}"`, { type: NodeType.Component, id: component.id });
+            for (const text of Object.values(state.texts)) interpolation(text.content, 'expression in text', { type: NodeType.Text, id: text.id });
+            for (const element of Object.values(state.elements)) attributes(element.attributes, { type: NodeType.Element, id: element.id });
+            for (const icon of Object.values(state.icons)) {
+                interpolation(icon.name, 'expression in x-icon name', { type: NodeType.Icon, id: icon.id });
+                attributes(icon.attributes, { type: NodeType.Icon, id: icon.id });
+            }
+            for (const item of Object.values(state.ifs)) expression(item.condition, 'x-if condition', { type: NodeType.If, id: item.id });
+            for (const item of Object.values(state.elseIfs)) expression(item.condition, 'x-else-if condition', { type: NodeType.ElseIf, id: item.id });
+            for (const item of Object.values(state.fors)) expression(item.each, 'x-for each', { type: NodeType.For, id: item.id });
+            for (const container of Object.values(state.pageContainers)) interpolation(container.page, 'expression in x-page-container page', { type: NodeType.PageContainer, id: container.id });
+            for (const instance of Object.values(state.componentInstances)) {
+                interpolation(instance.component, 'expression in x-component-instance component', { type: NodeType.ComponentInstance, id: instance.id });
+                for (const [name, value] of Object.entries(instance.attributes)) {
+                    if (value?.includes('{{')) interpolation(value, `expression in ${name}`, { type: NodeType.ComponentInstance, id: instance.id });
                 }
             }
             return problems;

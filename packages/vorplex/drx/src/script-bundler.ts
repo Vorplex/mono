@@ -5,26 +5,27 @@ export const DrxScriptBundler = {
     async bundle(state: DrxDocumentState): Promise<string> {
         const entries: {
             id: string;
+            path: string;
             content: string;
             packages?: Record<string, string>;
             dependencyTree?: DependencyTree;
         }[] = [];
         const app = state.app;
-        if (app.script?.trim()) entries.push({ id: app.id, content: app.script, packages: app.packages, dependencyTree: app.dependencyTree });
+        if (app.script?.trim()) entries.push({ id: app.id, path: 'script://app.ts', content: app.script, packages: app.packages, dependencyTree: app.dependencyTree });
         for (const pageId of app.pageIds) {
             const page = state.pages[pageId];
-            if (page.script?.trim()) entries.push({ id: page.id, content: page.script, packages: app.packages, dependencyTree: app.dependencyTree });
+            if (page.script?.trim()) entries.push({ id: page.id, path: `script://pages/${page.name}.ts`, content: page.script, packages: app.packages, dependencyTree: app.dependencyTree });
         }
         for (const serviceId of app.serviceIds) {
             const service = state.services[serviceId];
-            if (service.script?.trim()) entries.push({ id: service.id, content: service.script, packages: app.packages, dependencyTree: app.dependencyTree });
+            if (service.script?.trim()) entries.push({ id: service.id, path: `script://services/${service.name}-${service.id}.ts`, content: service.script, packages: app.packages, dependencyTree: app.dependencyTree });
         }
         const getComponentScriptEntries = (componentId: string) => {
             const component = state.components[componentId];
-            if (component.script?.trim()) entries.push({ id: component.id, content: component.script, packages: component.packages, dependencyTree: component.dependencyTree });
+            if (component.script?.trim()) entries.push({ id: component.id, path: `script://components/${component.name}-${component.id}.ts`, content: component.script, packages: component.packages, dependencyTree: component.dependencyTree });
             for (const serviceId of component.serviceIds) {
                 const service = state.services[serviceId];
-                if (service.script?.trim()) entries.push({ id: service.id, content: service.script, packages: component.packages, dependencyTree: component.dependencyTree });
+                if (service.script?.trim()) entries.push({ id: service.id, path: `script://services/${service.name}-${service.id}.ts`, content: service.script, packages: component.packages, dependencyTree: component.dependencyTree });
             }
             for (const childId of component.componentIds) getComponentScriptEntries(childId);
         };
@@ -40,11 +41,11 @@ export const DrxScriptBundler = {
         const files: Record<string, { content: string; dependencyTree?: DependencyTree }> = {};
         await Promise.all(entries.map(async entry => {
             const dependencyTree = await resolveTree(entry.packages, entry.dependencyTree);
-            files[`script://${entry.id}.ts`] = { content: entry.content, dependencyTree };
+            files[entry.path] = { content: entry.content, dependencyTree };
         }));
         const entryPath = 'entry.ts';
         files[entryPath] = {
-            content: `export default { ${entries.map(entry => `'${entry.id}': require('script://${entry.id}.ts').default`).join(', ')} };`
+            content: `export default { ${entries.map(entry => `'${entry.id}': require('${entry.path}').default`).join(', ')} };`
         };
         return await Compiler.compile({ files, entryFilePath: entryPath });
     }

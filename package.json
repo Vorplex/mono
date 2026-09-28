@@ -1,13 +1,15 @@
 {
     "private": true,
     "name": "mono",
-    "version": "1.0.14",
+    "version": "1.0.15",
     "scripts": {
         "clean": "git clean -fdX",
         "build": "pnpm -r --filter \"./packages/vorplex/**\" build",
         "test": "pnpm -r --filter \"./packages/vorplex/**\" test",
         "version": "npx tsx .github/scripts/version.ts",
-        "package-list": "npx tsx .github/scripts/package-list.mts"
+        "package-list": "npx tsx .github/scripts/package-list.mts",
+        "purge-cdn": "npx tsx .github/scripts/purge-cdn.mts",
+        "serve:drx": "npx tsx packages/vorplex/drx/standalone/serve.mts"
     },
     "devDependencies": {
         "@types/node": "workspace:*",

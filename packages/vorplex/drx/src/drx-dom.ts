@@ -91,5 +91,20 @@ export const DrxDom = {
     },
     setAttribute(element: Element, attribute: string, value: string | null | undefined) {
         if (value != null) element.setAttribute(attribute, value);
+    },
+    isSvg(parent: Node): boolean {
+        if (parent?.nodeType !== Node.ELEMENT_NODE) return false;
+        const element = parent as Element;
+        return element.namespaceURI === 'http://www.w3.org/2000/svg' && element.localName !== 'foreignObject';
+    },
+    createElement(parent: Node, tag: string): HTMLElement | SVGElement {
+        if (tag === 'svg' || DrxDom.isSvg(parent)) return document.createElementNS('http://www.w3.org/2000/svg', tag);
+        return document.createElement(tag);
+    },
+    createHost(parent: Node, type: NodeType): HTMLElement | SVGElement {
+        if (DrxDom.isSvg(parent)) return document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        const host = document.createElement(type);
+        host.style.display = 'contents';
+        return host;
     }
 };

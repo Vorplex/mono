@@ -9,7 +9,7 @@
 ```html drx
 <x-app>
   <x-variable name="count">0</x-variable>
-  <button onclick="count(count() + 1)">
+  <button onclick="count(value => value + 1)">
     Clicked {{count()}} times
   </button>
 </x-app>
@@ -18,16 +18,14 @@
 ## Concepts
 
 - [Locals](concepts/locals.md)
+- [Expressions](concepts/expressions.md)
+- [Templates](concepts/templates.md)
 
 ## Nodes
 
-| Attribute Syntax  | Meaning                                                                                                  |
-| ----------------- | -------------------------------------------------------------------------------------------------------- |
-| **{ƒ} attribute** | The attribute supports text `Hello World!` or mixed text expressions `Fullname {{name()}} {{surname()}}` |
-| **(ƒ) attribute** | The attribute is a pure expression `count() + 1`                                                         |
-| attribute?        | The attribute is optional                                                                                |
+See [Expressions](concepts/expressions.md) for attribute syntax and expression forms.
 
-- [\<x-app>](nodes/x-app.md)
+- [\\<x-app>](nodes/x-app.md)
 - [\<x-import>](nodes/x-import.md)
 - [\<x-page>](nodes/x-page.md)
 - [\<x-page-container>](nodes/x-page-container.md)

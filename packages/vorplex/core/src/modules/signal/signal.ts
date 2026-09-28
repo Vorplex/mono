@@ -220,13 +220,23 @@ export class Signal<T = any> {
 
     public static scope(callback: () => void): Scope {
         const scope = new Scope(callback, Scope.current);
-        scope.run();
+        try {
+            scope.run();
+        } catch (error) {
+            scope.dispose();
+            throw error;
+        }
         return scope;
     }
 
     public static root(callback: () => void): Scope {
         const root = new Scope(callback, null);
-        root.run();
+        try {
+            root.run();
+        } catch (error) {
+            root.dispose();
+            throw error;
+        }
         return root;
     }
 

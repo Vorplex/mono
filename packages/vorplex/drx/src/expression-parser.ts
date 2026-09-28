@@ -4,13 +4,12 @@ import { DrxAsset } from './node/asset';
 import { PreviewContext } from './preview-context';
 
 export const DrxExpressionParser = {
-    invoke(expression: string, locals: Record<string, any>) {
+    invoke(expression: string, locals: Record<string, any>, thisArg?: unknown) {
         try {
             const names = Object.keys(locals);
             const func = new Function(...names, expression);
-            return func(...names.map(name => locals[name]));
+            return func.apply(thisArg, names.map(name => locals[name]));
         } catch (error) {
-            console.error(`Failed to evaluate expression (${expression})`, { error, locals });
             throw error;
         }
     },
@@ -35,6 +34,9 @@ export const DrxExpressionParser = {
             const value = DrxExpressionParser.parse(source, locals);
             callback(value);
         });
+    },
+    bindExpression(expression: string, locals: Record<string, any>, callback: (value: any) => void): void {
+        Signal.effect(() => callback(DrxExpressionParser.evaluate(expression, locals)));
     },
     isLiteral(expression: string): boolean {
         return expression != null && $String.matchDelimited(expression, ['{{', '}}']).every(segment => segment.type === 'text');
@@ -75,18 +77,38 @@ export const DrxExpressionParser = {
     bindAttributes(element: HTMLElement | SVGElement, attributes: Record<string, string>, locals: Record<string, any>): void {
         for (const [name, value] of Object.entries(attributes)) {
             if ($Element.isEventAttribute(element, name)) {
-                element.addEventListener(name.slice(2), event => DrxExpressionParser.invoke(value, { ...locals, event }));
+                element.addEventListener(name.slice(2), event => {
+                    const result = DrxExpressionParser.invoke(value, { ...locals, event }, element);
+                    if (result === false) event.preventDefault();
+                });
             } else if (name.startsWith('class.')) {
                 const className = name.slice('class.'.length);
-                DrxExpressionParser.bind(value, locals, active => element.classList.toggle(className, !!active));
+                DrxExpressionParser.bindExpression(value, locals, active => element.classList.toggle(className, !!active));
             } else if (name.startsWith('style.')) {
                 const property = name.slice('style.'.length);
-                DrxExpressionParser.bind(value, locals, style => {
+                DrxExpressionParser.bindExpression(value, locals, style => {
                     if (style == null || style === false) element.style.removeProperty(property);
                     else element.style.setProperty(property, String(style));
                 });
+            } else if (name === 'class') {
+                let applied: string[] = [];
+                DrxExpressionParser.bind(value, locals, resolved => {
+                    const next = resolved == null || resolved === false ? [] : String(resolved).split(/\s+/).filter(Boolean);
+                    for (const className of applied) if (!next.includes(className)) element.classList.remove(className);
+                    for (const className of next) element.classList.add(className);
+                    applied = next;
+                });
+            } else if (name === 'html') {
+                DrxExpressionParser.bind(value, locals, html => {
+                    element.innerHTML = html == null || html === false ? '' : String(html);
+                });
             } else {
                 DrxExpressionParser.bind(value, locals, resolved => {
+                    if (['value', 'checked', 'selected', 'indeterminate'].includes(name) && name in element) {
+                        const next = name === 'value' ? (resolved == null || resolved === false ? '' : String(resolved)) : !!resolved;
+                        if ((element as any)[name] !== next) (element as any)[name] = next;
+                        if (name === 'indeterminate') return;
+                    }
                     if (resolved == null || resolved === false) element.removeAttribute(name);
                     else element.setAttribute(name, resolved === true ? '' : String(resolved));
                 });
@@ -110,14 +132,11 @@ export const DrxExpressionParser = {
                 element.setAttribute(name, url);
                 continue;
             }
+            if (name.startsWith('class.') || name.startsWith('style.')) continue;
             if (!DrxExpressionParser.isLiteral(value)) continue;
             if ($Element.isEventAttribute(element, name)) continue;
-            if (name.startsWith('class.')) {
-                if (value) element.classList.add(name.slice('class.'.length));
-                continue;
-            }
-            if (name.startsWith('style.')) {
-                element.style.setProperty(name.slice('style.'.length), value);
+            if (name === 'html') {
+                element.innerHTML = value;
                 continue;
             }
             element.setAttribute(name, value);

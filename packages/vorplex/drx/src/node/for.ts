@@ -49,15 +49,13 @@ export const DrxFor = {
         return element;
     },
     mount(container: Node, item: DrxFor, context: RenderContext): void {
-        const host = document.createElement(NodeType.For);
-        host.style.display = 'contents';
+        const host = DrxDom.createHost(container, NodeType.For);
         container.appendChild(host);
         const entries = Signal.keyed(
             () => DrxExpressionParser.evaluate(item.each, context.locals),
             entry => item.track ? $Value.get(entry.value, item.track) : entry.key,
             entry => {
-                const itemHost = document.createElement(NodeType.For);
-                itemHost.style.display = 'contents';
+                const itemHost = DrxDom.createHost(host, NodeType.For);
                 const locals: Record<string, any> = { [item.as]: entry.proxy.value };
                 if (item.index) locals[item.index] = entry.proxy.index;
                 if (item.key) locals[item.key] = entry.proxy.key;
@@ -72,8 +70,7 @@ export const DrxFor = {
         Signal.cleanup(() => host.remove());
     },
     preview(container: Node, id: string, context: PreviewContext): Node {
-        const host = document.createElement(NodeType.For);
-        host.style.display = 'contents';
+        const host = DrxDom.createHost(container, NodeType.For);
         host.setAttribute('data-drx-id', id);
         container.appendChild(host);
         DrxTemplate.preview(host, () => context.root.proxy.fors[id].template(), context);

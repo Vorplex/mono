@@ -21,7 +21,7 @@ export const DrxElement = {
         const item: DrxElement = {
             id: $Id.guid(),
             type: NodeType.Element,
-            tag: element.tagName.toLowerCase(),
+            tag: element.localName,
             attributes: element.getAttributeNames().reduce((attributes, name) => Object.assign(attributes, { [name]: element.getAttribute(name) }), {}),
             template: DrxTemplate.from(element, state)
         };
@@ -35,18 +35,18 @@ export const DrxElement = {
         return element;
     },
     mount(container: Node, item: DrxElement, context: RenderContext): void {
-        const element = document.createElement(item.tag);
-        DrxExpressionParser.bindAttributes(element, item.attributes, context.locals);
+        const element = DrxDom.createElement(container, item.tag);
         container.appendChild(element);
-        DrxTemplate.mount(element, item.template, context);
         Signal.cleanup(() => element.remove());
+        if (!('html' in item.attributes)) DrxTemplate.mount(element, item.template, context);
+        DrxExpressionParser.bindAttributes(element, item.attributes, context.locals);
     },
     preview(container: Node, id: string, context: PreviewContext): Node {
         const anchor = document.createComment(id);
         container.appendChild(anchor);
         Signal.effect(() => {
             const tag = context.root.proxy.elements[id].tag();
-            const element = document.createElement(tag);
+            const element = DrxDom.createElement(container, tag);
             anchor.after(element);
             Signal.effect(() => {
                 const attributes = context.root.proxy.elements[id].attributes();

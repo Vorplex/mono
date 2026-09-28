@@ -1,4 +1,5 @@
 import { Getter, Scope, Signal } from '@vorplex/core';
+import { $Element } from '@vorplex/web';
 import { DrxDocumentState } from '../drx';
 import { PreviewContext } from '../preview-context';
 import { RenderContext } from '../render-context';
@@ -28,8 +29,7 @@ export const DrxTemplate = {
         const items: DrxTemplateItem[] = [];
         for (const node of Array.from(parent.childNodes)) {
             if (node.nodeType === Node.TEXT_NODE) {
-                const content = node.textContent ?? '';
-                if (/^\s*$/.test(content) && content.includes('\n')) continue;
+                if (/^\s*$/.test(node.textContent ?? '') && node.textContent.includes('\n')) continue;
                 items.push(DrxText.parse(node, state));
                 continue;
             }
@@ -53,18 +53,19 @@ export const DrxTemplate = {
                 'SCRIPT',
                 'STYLE',
             ];
-            if (noneTemplateTags.includes(child.tagName)) continue;
-            if (child.tagName === NodeType.If) {
+            const tagName = child.tagName.toUpperCase();
+            if (noneTemplateTags.includes(tagName)) continue;
+            if (tagName === NodeType.If) {
                 items.push(DrxIf.parse(child, state));
-            } else if (child.tagName === NodeType.For) {
+            } else if (tagName === NodeType.For) {
                 items.push(DrxFor.parse(child, state));
-            } else if (child.tagName === NodeType.ComponentInstance) {
+            } else if (tagName === NodeType.ComponentInstance) {
                 items.push(DrxComponentInstance.parse(child, state));
-            } else if (child.tagName === NodeType.PageContainer) {
+            } else if (tagName === NodeType.PageContainer) {
                 items.push(DrxPageContainer.parse(child, state));
-            } else if (child.tagName === NodeType.Icon) {
+            } else if (tagName === NodeType.Icon) {
                 items.push(DrxIcon.parse(child, state));
-            } else if (child.tagName === NodeType.RouterRoute) {
+            } else if (tagName === NodeType.RouterRoute) {
                 items.push(DrxRouterRoute.parse(child, state));
             } else {
                 items.push(DrxElement.parse(child, state));
@@ -86,16 +87,24 @@ export const DrxTemplate = {
     },
     mount(container: Node, items: DrxTemplateItem[], context: RenderContext): Scope {
         return Signal.scope(() => {
-            const state = context.state;
             for (const item of items) {
-                if (item.type === NodeType.Text) DrxText.mount(container, state.texts[item.id], context);
-                else if (item.type === NodeType.If) DrxIf.mount(container, state.ifs[item.id], context);
-                else if (item.type === NodeType.For) DrxFor.mount(container, state.fors[item.id], context);
-                else if (item.type === NodeType.ComponentInstance) DrxComponentInstance.mount(container, state.componentInstances[item.id], context);
-                else if (item.type === NodeType.PageContainer) DrxPageContainer.mount(container, state.pageContainers[item.id], context);
-                else if (item.type === NodeType.Icon) DrxIcon.mount(container, state.icons[item.id], context);
-                else if (item.type === NodeType.RouterRoute) DrxRouterRoute.mount(container, state.routerRoutes[item.id], context);
-                else DrxElement.mount(container, state.elements[item.id], context);
+                try {
+                    Signal.scope(() => {
+                        const state = context.state;
+                        if (item.type === NodeType.Text) DrxText.mount(container, state.texts[item.id], context);
+                        else if (item.type === NodeType.If) DrxIf.mount(container, state.ifs[item.id], context);
+                        else if (item.type === NodeType.For) DrxFor.mount(container, state.fors[item.id], context);
+                        else if (item.type === NodeType.ComponentInstance) DrxComponentInstance.mount(container, state.componentInstances[item.id], context);
+                        else if (item.type === NodeType.PageContainer) DrxPageContainer.mount(container, state.pageContainers[item.id], context);
+                        else if (item.type === NodeType.Icon) DrxIcon.mount(container, state.icons[item.id], context);
+                        else if (item.type === NodeType.RouterRoute) DrxRouterRoute.mount(container, state.routerRoutes[item.id], context);
+                        else DrxElement.mount(container, state.elements[item.id], context);
+                    });
+                } catch (error) {
+                    const node = item.type === NodeType.Element ? context.state.elements[item.id].tag : item.type === NodeType.Text ? 'text()' : item.type.toLowerCase();
+                    const owner = context.nearest.component ? `component "${context.nearest.component.component.name}"` : context.nearest.page ? `page "${context.nearest.page.page.name}"` : 'app';
+                    console.error(`Failed to render node at path "${$Element.getXPath(container as Element).replace(/\/$/, '')}/${node}" in ${owner}.`, error);
+                }
             }
         });
     },

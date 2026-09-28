@@ -1,5 +1,6 @@
 // **/*.ts
 export * from './compiler';
+export * from './document-styles';
 export * from './drx-dom';
 export * from './drx';
 export * from './expression-display';

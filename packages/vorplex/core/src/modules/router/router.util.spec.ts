@@ -106,7 +106,7 @@ describe($Router.name, () => {
     });
 
     describe($Router.matchPrefix.name, () => {
-        function test(args: { it: string; pattern: string; value: string; expected: { params: Record<string, string>; remaining: string } | null }) {
+        function test(args: { it: string; pattern: string; value: string; expected: { params: Record<string, string>; rest: string } | null }) {
             it(args.it, () => {
                 const result = $Router.matchPrefix(args.pattern, args.value);
                 expect(result).toEqual(args.expected);
@@ -117,25 +117,25 @@ describe($Router.name, () => {
             it: 'root matches everything and consumes nothing',
             pattern: '/',
             value: '/posts/edit/5',
-            expected: { params: {}, remaining: '/posts/edit/5' },
+            expected: { params: {}, rest: '/posts/edit/5' },
         });
         test({
             it: 'matches an exact path with nothing remaining',
             pattern: '/posts',
             value: '/posts',
-            expected: { params: {}, remaining: '' },
+            expected: { params: {}, rest: '' },
         });
         test({
             it: 'matches a prefix and leaves the rest for a nested route',
             pattern: '/posts',
             value: '/posts/edit/5',
-            expected: { params: {}, remaining: '/edit/5' },
+            expected: { params: {}, rest: '/edit/5' },
         });
         test({
             it: 'captures a parameter while matching as a prefix',
             pattern: '/edit/{id}',
             value: '/edit/5/preview',
-            expected: { params: { id: '5' }, remaining: '/preview' },
+            expected: { params: { id: '5' }, rest: '/preview' },
         });
         test({
             it: 'does not match a shared prefix that is not on a segment boundary',

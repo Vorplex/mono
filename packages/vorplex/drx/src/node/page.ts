@@ -1,6 +1,8 @@
 import { $Id, Scope, Signal } from '@vorplex/core';
+import { DocumentStyles } from '../document-styles';
 import { DrxDocumentState } from '../drx';
 import { DrxDom } from '../drx-dom';
+import { DrxExpressionParser } from '../expression-parser';
 import { ModalManager } from '../modal-manager';
 import { PreviewContext } from '../preview-context';
 import { AppRenderContext, PageRenderContext, RenderContext, RenderContextType } from '../render-context';
@@ -57,15 +59,7 @@ export const DrxPage = {
             const shadow = host.attachShadow({ mode: 'open' });
             const appContext = context.nearest.app;
             const state = appContext.state;
-            const documentStyleSheets = Array
-                .from(shadow.ownerDocument.styleSheets)
-                .map(sheet => StyleSheet.clone(shadow.ownerDocument.defaultView, sheet))
-                .filter((sheet): sheet is CSSStyleSheet => sheet !== undefined);
-            StyleSheet.adopt(shadow, ...[
-                ...documentStyleSheets,
-                () => appContext.app.style,
-                () => page.style]
-            );
+            DocumentStyles.mirror(shadow);
             const variables = page.variableIds.map(id => state.variables[id]);
             const { locals: variableLocals, states: variableStates } = DrxVariable.instantiate(variables);
             const appVariables = appContext.app.variableIds.map(id => state.variables[id]);
@@ -77,7 +71,7 @@ export const DrxPage = {
                 page: { variables: DrxVariable.createApi(variables, variableStates, { type: 'app' }, state), root: shadow },
                 apis: DrxApi.createApi(state, { type: 'app' }),
                 services: DrxScripting.instantiateServices(appContext.app.serviceIds, state, context.bundle, appContext.serviceInstances, { type: 'app' }),
-                router: DrxRouter.createApi(container.ownerDocument.defaultView, appContext.router.route),
+                router: DrxRouter.createApi(container.ownerDocument.defaultView, appContext.router.route, context.locals.router),
                 pages: DrxPage.createApi(appContext.app.pageIds, appContext),
                 modal: context.locals.modal
             };
@@ -96,9 +90,12 @@ export const DrxPage = {
                 bundle: context.bundle,
                 page,
                 variables: variableStates,
-                routeRest: context.routeRest
+                routeRest: context.routeRest,
+                routeGroup: context.routeGroup
             };
             pageContext.nearest = { ...context.nearest, page: pageContext };
+            StyleSheet.adopt(shadow, () => DrxExpressionParser.parse(appContext.app.style ?? '', appContext.locals), () => DrxExpressionParser.parse(page.style ?? '', pageContext.locals));
+            StyleSheet.registerDocumentRules(shadow.ownerDocument, page.id, () => DrxExpressionParser.parse(page.style ?? '', pageContext.locals));
             DrxTemplate.mount(shadow, page.template, pageContext);
             instance?.onMount?.();
             Signal.cleanup(() => {
@@ -114,11 +111,10 @@ export const DrxPage = {
             host.setAttribute('data-drx-id', id);
             container.appendChild(host);
             const shadow = host.attachShadow({ mode: 'open' });
-            const documentStyleSheets = Array
-                .from(shadow.ownerDocument.styleSheets)
-                .map(sheet => StyleSheet.clone(shadow.ownerDocument.defaultView, sheet))
-                .filter((sheet): sheet is CSSStyleSheet => sheet !== undefined);
-            StyleSheet.adopt(shadow, ...documentStyleSheets, () => context.root.proxy.app.style(), () => context.root.proxy.pages[id].style(), ...context.styleSheets);
+            StyleSheet.attach(container.ownerDocument, () => context.root.proxy.app.style());
+            DocumentStyles.mirror(shadow);
+            StyleSheet.adopt(shadow, () => context.root.proxy.app.style(), () => context.root.proxy.pages[id].style(), ...context.styleSheets);
+            StyleSheet.registerDocumentRules(shadow.ownerDocument, id, () => context.root.proxy.pages[id].style());
             DrxTemplate.preview(shadow, () => context.root.proxy.pages[id].template(), context);
             Signal.cleanup(() => host.remove());
         });

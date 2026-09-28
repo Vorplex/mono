@@ -47,8 +47,7 @@ export const DrxIf = {
         return element;
     },
     mount(container: Node, item: DrxIf, context: RenderContext): void {
-        const host = document.createElement(NodeType.If);
-        host.style.display = 'contents';
+        const host = DrxDom.createHost(container, NodeType.If);
         container.appendChild(host);
         const branches: { condition?: string; template: DrxTemplateItem[] }[] = [
             { condition: item.condition, template: item.template },
@@ -75,8 +74,7 @@ export const DrxIf = {
         });
     },
     preview(container: Node, id: string, context: PreviewContext): Node {
-        const host = document.createElement(NodeType.If);
-        host.style.display = 'contents';
+        const host = DrxDom.createHost(container, NodeType.If);
         host.setAttribute('data-drx-id', id);
         container.appendChild(host);
         DrxTemplate.preview(host, () => context.root.proxy.ifs[id].template(), context);

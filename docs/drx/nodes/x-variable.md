@@ -18,7 +18,27 @@ Declares reactive state, exposed as a callable signal (`count()` reads, `count(v
 ```html drx
 <x-app>
     <x-variable name="count" type="number">0</x-variable>
-    <button onclick="count(count() + 1)">Clicked {{count()}} times</button>
+    <button onclick="count(value => value + 1)">Clicked {{count()}} times</button>
+</x-app>
+```
+
+### Reacting to changes from a script
+
+`subscribe` calls back with the current value and again on every change, and returns a function that unsubscribes. Subscriptions end automatically when the owner unmounts.
+
+```html drx
+<x-app>
+    <x-variable name="count" type="number">0</x-variable>
+
+    <script type="application/typescript">
+        export default DRX.defineApp(drx => class {
+            onMount() {
+                drx.app.variables.count.subscribe(value => console.log(`count is ${value}`));
+            }
+        });
+    </script>
+
+    <button onclick="count(value => value + 1)">Clicked {{count()}} times</button>
 </x-app>
 ```
 
@@ -33,8 +53,8 @@ Outside a template, a variable is read and written through `drx.*.variables.<nam
     <script type="application/typescript">
         export default DRX.defineApp(drx => class {
             toggleTheme() {
-                const current = drx.app.variables.theme.get();
-                drx.app.variables.theme.set(current === 'light' ? 'dark' : 'light');
+                drx.app.variables.theme.set(theme => theme === 'light' ? 'dark' : 'light');
+                console.log(`Theme is now ${drx.app.variables.theme.get()}`);
             }
         });
     </script>

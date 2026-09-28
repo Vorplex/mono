@@ -2,8 +2,10 @@ import { DependencyTree } from '@vorplex/compiler';
 import { $Id, Scope, Signal } from '@vorplex/core';
 import { DrxDocumentState } from '../../drx';
 import { DrxDom } from '../../drx-dom';
+import { DrxExpressionParser } from '../../expression-parser';
 import { PreviewContext } from '../../preview-context';
 import { AppRenderContext, RenderContextType } from '../../render-context';
+import { DocumentStyles } from '../../document-styles';
 import { DrxScripting } from '../../scripting';
 import { StyleSheet } from '../../style-sheet';
 import { DrxApi } from '../api/api';
@@ -14,6 +16,7 @@ import { NodeType } from '../node-type';
 import { DrxPackages } from '../packages';
 import { DrxPage } from '../page';
 import { DrxRouter } from '../router/router';
+import { DrxRouterRoute } from '../router/router-route';
 import { DrxService } from '../service';
 import { DrxTemplate, DrxTemplateItem } from '../template-item';
 import { DrxType } from '../type';
@@ -96,11 +99,7 @@ export const DrxApp = {
             host.style.display = 'contents';
             container.appendChild(host);
             const shadow = host.attachShadow({ mode: 'open' });
-            const documentStyleSheets = Array
-                .from(shadow.ownerDocument.styleSheets)
-                .map(sheet => StyleSheet.clone(shadow.ownerDocument.defaultView, sheet))
-                .filter((sheet): sheet is CSSStyleSheet => sheet !== undefined);
-            StyleSheet.adopt(shadow, ...documentStyleSheets, () => app.style);
+            DocumentStyles.mirror(shadow);
             const variables = app.variableIds.map(id => state.variables[id]);
             const { locals: variableLocals, states: variableStates } = DrxVariable.instantiate(variables);
             const appContext: AppRenderContext = {
@@ -116,7 +115,8 @@ export const DrxApp = {
                 app,
                 variableStates,
                 serviceInstances: new Map(),
-                router
+                router,
+                routeGroup: DrxRouterRoute.createGroup()
             };
             appContext.nearest = { app: appContext };
 
@@ -137,7 +137,10 @@ export const DrxApp = {
                 ...DrxScripting.getFunctionLocals(instance),
                 ...variableLocals
             };
+            StyleSheet.attach(container.ownerDocument, () => DrxExpressionParser.parse(app.style ?? '', appContext.locals));
+            StyleSheet.adopt(shadow, () => DrxExpressionParser.parse(app.style ?? '', appContext.locals));
             DrxTemplate.mount(shadow, app.template, appContext);
+            appContext.routeGroup.ready(true);
             instance?.onMount?.();
             Signal.cleanup(() => {
                 instance?.onUnmount?.();
@@ -147,16 +150,14 @@ export const DrxApp = {
     },
     preview(container: Node, context: PreviewContext): Scope {
         return Signal.scope(() => {
+            StyleSheet.attach(container.ownerDocument, () => context.root.proxy.app.style());
             const host = document.createElement(NodeType.App);
             host.style.display = 'contents';
             host.setAttribute('data-drx-id', context.root.proxy.app.id());
             container.appendChild(host);
             const shadow = host.attachShadow({ mode: 'open' });
-            const documentStyleSheets = Array
-                .from(shadow.ownerDocument.styleSheets)
-                .map(sheet => StyleSheet.clone(shadow.ownerDocument.defaultView, sheet))
-                .filter((sheet): sheet is CSSStyleSheet => sheet !== undefined);
-            StyleSheet.adopt(shadow, ...documentStyleSheets, () => context.root.proxy.app.style(), ...context.styleSheets);
+            DocumentStyles.mirror(shadow);
+            StyleSheet.adopt(shadow, () => context.root.proxy.app.style(), ...context.styleSheets);
             DrxTemplate.preview(shadow, () => context.root.proxy.app.template(), context);
             Signal.cleanup(() => host.remove());
         });

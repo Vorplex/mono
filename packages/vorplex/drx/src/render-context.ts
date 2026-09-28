@@ -1,14 +1,20 @@
-import { State } from '@vorplex/core';
+import { Signal, State } from '@vorplex/core';
 import { DrxDocumentState } from './drx';
 import { DrxApp } from './node/app/app';
 import { DrxComponent } from './node/component/component';
 import { DrxPage } from './node/page';
+import type { DrxRouterRoute } from './node/router/router-route';
 import { RouterLocal } from './node/router/router';
 
 export enum RenderContextType {
     App = 'app',
     Page = 'page',
     Component = 'component'
+}
+
+export interface RouteGroup {
+    routes: Signal<DrxRouterRoute[]>;
+    ready: Signal<boolean>;
 }
 
 export interface NearestRenderContext {
@@ -25,6 +31,7 @@ export interface RenderContextBase {
     state: DrxDocumentState;
     bundle: string;
     routeRest?: string;
+    routeGroup?: RouteGroup;
 }
 
 export interface AppRenderContext extends RenderContextBase {
@@ -46,7 +53,7 @@ export interface ComponentRenderContext extends RenderContextBase {
     type: RenderContextType.Component;
     component: DrxComponent;
     variables: Map<string, State<any>>;
-    props: Map<string, State<any>>;
+    properties: Map<string, State<any>>;
     serviceInstances: Map<string, any>;
 }
 

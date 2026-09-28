@@ -19,10 +19,26 @@ Declares one of a component's inputs — an entry point exposed as a read-only, 
 <x-app>
     <x-component name="alert">
         <x-property name="level" type="string"></x-property>
-        <div class="alert" class.critical="{{level() === 'error'}}">{{level()}}</div>
+        <div class="alert" class.critical="level() === 'error'">{{level()}}</div>
     </x-component>
 
     <x-component-instance component="alert" level="error"></x-component-instance>
+</x-app>
+```
+
+### Optional properties
+
+A property the consumer doesn't pass is `undefined`, so it can be given a fallback in the template.
+
+```html drx
+<x-app>
+    <x-component name="greeting">
+        <x-property name="name" type="string"></x-property>
+        <p>Hello {{name() ?? 'stranger'}}</p>
+    </x-component>
+
+    <x-component-instance component="greeting" name="Ada"></x-component-instance>
+    <x-component-instance component="greeting"></x-component-instance>
 </x-app>
 ```
 

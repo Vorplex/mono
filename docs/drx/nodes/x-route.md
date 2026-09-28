@@ -1,6 +1,6 @@
 # \<x-route>
 
-Renders its children whenever `route` matches the current URL (partial/prefix by default). Use it for deep-linkable, browser-navigable content instead of a plain variable driving which content shows.
+Renders its children whenever `route` matches the current URL (partial/prefix by default). A route without a `route` attribute is the fallback: it renders when no other route at the same routing level matches. Paths are matched leniently: `#notes`, `#/notes` and `#/notes/` are the same path. Use it for deep-linkable, browser-navigable content instead of a plain variable driving which content shows.
 
 ```html
 <x-route>
@@ -10,10 +10,51 @@ Renders its children whenever `route` matches the current URL (partial/prefix by
 
 | Attribute | Description                                             |
 | --------- | -------------------------------------------------------- |
-| **route** | Route pattern to match, may include `{param}` segments |
+| route?    | Route pattern to match, may include `{param}` segments. Omit it for the fallback route |
 | exact?    | Match only when nothing is left over after `route` — no prefix matching, and nothing remains for a nested `<x-route>`. Needed for `route="/"` to mean just the root, since plain `/` otherwise matches every path. |
 
 ## Examples
+
+### Fallback route
+
+A route without a `route` attribute renders whenever no other route at the same routing level matches, e.g. for a "not found" page. The routing level is the app, or the route a route is rendered inside: routes nested in elements, `<x-if>`, `<x-for>` or pages placed at that level all count, and a route that isn't currently rendered (inside a false `<x-if>`) doesn't.
+
+```html drx
+<x-app>
+    <a href="#/">Home</a> <a href="#/missing">Broken link</a>
+    <x-route route="/" exact><h1>Home</h1></x-route>
+    <x-route><h1>Page not found</h1></x-route>
+</x-app>
+```
+
+### Highlighting the active link
+
+`router.active(path)` matches as a prefix, so `/notes` is active on `/notes/42` too. Pass `true` as the second argument for an exact match — `active('/', true)` is only true on the home route.
+
+```html drx
+<x-app>
+    <style>.active { font-weight: bold; }</style>
+    <a href="#/" class.active="router.active('/', true)">Home</a> <a href="#/notes" class.active="router.active('/notes')">Notes</a>
+    <x-route route="/" exact><p>Home</p></x-route>
+    <x-route route="/notes"><p>Notes</p></x-route>
+</x-app>
+```
+
+### Relative paths
+
+Inside an `<x-route>`, paths starting with `.` are relative to the part of the URL that route matched: `./edit` inside `/posts/{id}` means `/posts/42/edit`, and `../` goes up a level. They work for both `router.active` and `router.navigate`; paths starting with `/` are always absolute.
+
+```html drx
+<x-app>
+    <style>.active { font-weight: bold; }</style>
+    <a href="#/posts/42">Post 42</a>
+    <x-route route="/posts/{id}">
+        <p>Post {{router.params.id()}}</p>
+        <button class.active="router.active('./', true)" onclick="router.navigate('./')">View</button> <button class.active="router.active('./edit')" onclick="router.navigate('./edit')">Edit</button>
+        <x-route route="/edit"><p>Editing post {{router.params.id()}}</p></x-route>
+    </x-route>
+</x-app>
+```
 
 ### Linking to a route
 

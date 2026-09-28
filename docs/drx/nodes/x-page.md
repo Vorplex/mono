@@ -26,10 +26,72 @@ A distinct screen, reachable via `<x-route>`, embedded via `<x-page-container>`,
 <x-app>
     <x-page name="home">
         <x-variable name="count" type="number">0</x-variable>
-        <button onclick="count(count() + 1)">Clicked {{count()}} times</button>
+        <button onclick="count(value => value + 1)">Clicked {{count()}} times</button>
     </x-page>
 
     <x-page-container page="home"></x-page-container>
+</x-app>
+```
+
+## Shadow DOM
+
+A page renders its markup into its own open shadow root, inside the app's. That boundary is what keeps page styles from reaching other pages, and it shapes how a page script finds its elements:
+
+- **CSS rules don't cross it**; inherited values (custom properties, `font`, `color`) do.
+- **Query the page's own markup through `drx.page.root`**, not `document` — `document.querySelector` can't see inside the page.
+- **Ids are scoped to the page**, so `drx.page.root.getElementById(...)` finds them even if another page uses the same id.
+- **Events from inside the page are retargeted** at document level; use `event.composedPath()` there.
+
+```html drx
+<x-app>
+    <x-page name="panel">
+        <x-variable name="width" type="number">0</x-variable>
+        <script type="application/typescript">
+            export default DRX.definePage(drx => class {
+                measure() { drx.page.variables.width.set(Math.round(drx.page.root.getElementById('box').getBoundingClientRect().width)); }
+            });
+        </script>
+        <div id="box" style="width: 60%; padding: 8px; background: #e0f2f1">Resize the window, then measure</div>
+        <p><button onclick="measure()">Measure</button> {{width()}}px</p>
+    </x-page>
+
+    <x-page-container page="panel"></x-page-container>
+</x-app>
+```
+
+## Styling
+
+A page's `<style>` applies only to that page's own markup, so the same class name can mean different things on different pages. A page also receives the app's style and inherits the app's tokens and fonts.
+
+| Reaches a page's markup | |
+| --- | --- |
+| The app's `<style>` | Yes |
+| The page's own `<style>` | Yes — wins over the app's rules at equal specificity |
+| Other pages' styles, including pages it embeds | No |
+| CSS a library injects into the document `<head>` | Yes |
+
+- A page's rules don't reach components placed on it or pages embedded in it with `<x-page-container>`.
+- `:root`, `html` and `body` belong to the app; in a page's style they match nothing.
+- `@font-face` and `@property` work in a page's style.
+- `{{ }}` works in a page's style with the page's locals: `.title { font-size: {{size()}}px; }`.
+- A page is rendered as `display: contents`, so its top-level elements take part directly in the layout of wherever the page is placed. Position the page with a class on its own root element.
+
+```html drx
+<x-app>
+    <style>.title { font-family: Georgia, serif; }</style>
+
+    <x-page name="first">
+        <style>.title { color: #0f766e; }</style>
+        <h2 class="title">First page title</h2>
+    </x-page>
+
+    <x-page name="second">
+        <style>.title { color: #b45309; }</style>
+        <h2 class="title">Second page title</h2>
+    </x-page>
+
+    <x-page-container page="first"></x-page-container>
+    <x-page-container page="second"></x-page-container>
 </x-app>
 ```
 
@@ -66,6 +128,8 @@ interface Drx {
             reset(): void;
             /** Validates the current value against the variable's declared type; each error carries a message and a path. */
             validate(): [value: any | undefined, errors: { message: string; path: string }[]];
+            /** Calls back with the current value immediately and on every change; returns an unsubscribe function. Subscriptions end automatically when the owner unmounts. */
+            subscribe(callback: (value: any) => void): () => void;
         }>;
         /** The app script's own class instance -- call its methods directly. */
         instance: any;
@@ -82,6 +146,8 @@ interface Drx {
             reset(): void;
             /** Validates the current value against the variable's declared type; each error carries a message and a path. */
             validate(): [value: any | undefined, errors: { message: string; path: string }[]];
+            /** Calls back with the current value immediately and on every change; returns an unsubscribe function. Subscriptions end automatically when the owner unmounts. */
+            subscribe(callback: (value: any) => void): () => void;
         }>;
         /** This page's shadow root. */
         root: ShadowRoot;
@@ -100,9 +166,11 @@ interface Drx {
 
     router: {
         readonly route: string;
-        /** Always {} at script level -- read live params from the template's `router.params` instead. */
+        /** Params of the <x-route> this page is mounted under. */
         readonly params: Record<string, string>;
-        active(path: string): boolean;
+        /** Prefix match by default, exact when `exact` is true. Paths starting with . are relative to the enclosing route. */
+        active(path: string, exact?: boolean): boolean;
+        /** Paths starting with . are relative to the enclosing route. */
         navigate(path: string): void;
     };
 
@@ -134,7 +202,7 @@ A button's `onclick` calls a method declared directly on the page's own script:
 
         <script type="application/typescript">
             export default DRX.definePage(drx => class {
-                increment() { drx.page.variables.count.set(drx.page.variables.count.get() + 1); }
+                increment() { drx.page.variables.count.set(value => value + 1); }
             });
         </script>
 

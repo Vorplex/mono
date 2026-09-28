@@ -410,6 +410,7 @@ export class DrxDocument {
     public async mount(target: Element): Promise<Scope | undefined> {
         return DrxDom.bootstrap(target, async () => {
             const state = this.state.value;
+            for (const problem of this.validate()) console[problem.severity === 'error' ? 'error' : 'warn'](`${problem.code}: ${problem.message}`);
             IconSheet.load();
             const bundle = await DrxScriptBundler.bundle(state);
             return DrxApp.mount(target, state.app, state, bundle);
@@ -597,10 +598,20 @@ export class DrxDocument {
                 const inner = content.split('\n').map(line => line ? indent.repeat(depth + 1) + line : '');
                 return [`${prefix}<${tag}${attributes}>`, ...inner, `${prefix}</${tag}>`];
             }
-            const children: string[] = [];
-            for (const child of element.childNodes) {
-                for (const line of formatNode(child, depth + 1)) children.push(line);
+            const nodes = Array
+                .from(element.childNodes)
+                .filter(child => child.nodeType !== Node.TEXT_NODE || child.textContent !== '');
+            const textOf = (child: Node) => child.nodeType === Node.TEXT_NODE ? child.textContent : '';
+            if (nodes.length && (/^\s/.test(textOf(nodes[0])) || /\s$/.test(textOf(nodes[nodes.length - 1])))) return [`${prefix}${element.outerHTML}`];
+            const groups: Node[][] = [];
+            for (const child of nodes) {
+                const previous = groups[groups.length - 1];
+                if (previous && (/\s$/.test(textOf(previous[previous.length - 1])) || /^\s/.test(textOf(child)))) previous.push(child);
+                else groups.push([child]);
             }
+            const children = groups.flatMap(group => group.length === 1
+                ? formatNode(group[0], depth + 1)
+                : [`${indent.repeat(depth + 1)}${group.map(child => child.nodeType === Node.TEXT_NODE ? escapeText(child.textContent) : (child as Element).outerHTML).join('')}`]);
             if (children.length === 0) return [`${prefix}<${tag}${attributes}></${tag}>`];
             return [`${prefix}<${tag}${attributes}>`, ...children, `${prefix}</${tag}>`];
         }

@@ -2,6 +2,7 @@ import { DependencyTree } from '@vorplex/compiler';
 import { $Id, Scope, Signal } from '@vorplex/core';
 import { PreviewContext } from '../../preview-context';
 import { DrxDocumentState } from '../../drx';
+import { DocumentStyles } from '../../document-styles';
 import { DrxDom } from '../../drx-dom';
 import { StyleSheet } from '../../style-sheet';
 import { DrxApi } from '../api/api';
@@ -94,7 +95,10 @@ export const DrxComponent = {
             host.setAttribute('data-drx-id', id);
             container.appendChild(host);
             const shadow = host.attachShadow({ mode: 'open' });
+            StyleSheet.attach(container.ownerDocument, () => context.root.proxy.app.style());
+            DocumentStyles.mirror(shadow);
             StyleSheet.adopt(shadow, () => context.root.proxy.components[id].style(), ...context.styleSheets);
+            StyleSheet.registerDocumentRules(shadow.ownerDocument, id, () => context.root.proxy.components[id].style());
             DrxTemplate.preview(shadow, () => context.root.proxy.components[id].template(), { ...context, componentId: id });
             Signal.cleanup(() => host.remove());
         });

@@ -23,7 +23,7 @@ export const DrxText = {
         const text: DrxText = {
             id: $Id.guid(),
             type: NodeType.Text,
-            content: node.textContent.replace(/\s+/g, ' ').trim()
+            content: node.textContent.replace(/^\s*\n\s*/, '').replace(/\s*\n\s*$/, '').replace(/\s+/g, ' ')
         };
         state.texts[text.id] = text;
         return { id: text.id, type: text.type };
@@ -34,7 +34,8 @@ export const DrxText = {
     mount(container: Node, item: DrxText, context: RenderContext): void {
         const node = document.createTextNode('');
         container.appendChild(node);
-        DrxExpressionParser.bind(item.content, context.locals, value => {
+        if (DrxExpressionParser.isLiteral(item.content)) node.textContent = item.content;
+        else DrxExpressionParser.bind(item.content, context.locals, value => {
             node.textContent = value == null ? '' : String(value);
         });
         Signal.cleanup(() => node.remove());

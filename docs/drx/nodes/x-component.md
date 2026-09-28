@@ -58,6 +58,70 @@ A declared `<x-event>` is also callable bare from the component's own template, 
 </x-app>
 ```
 
+## Shadow DOM
+
+Every component instance renders its markup into its own open shadow root. That boundary is what isolates the component: outside rules can't reach in, its rules can't leak out, and each instance has its own ids.
+
+- **CSS rules don't cross it**; inherited values (custom properties, `font`, `color`) do.
+- **Query the instance's own markup through `drx.component.root`** — each instance has its own root, so two instances never find each other's elements.
+- **Events from inside are retargeted** at document level; use `event.composedPath()` there.
+
+```html drx
+<x-app>
+    <x-component name="field">
+        <script type="application/typescript">
+            export default DRX.defineComponent(drx => class {
+                focusInput() { (drx.component.root.getElementById('input') as HTMLInputElement).focus(); }
+            });
+        </script>
+        <p><input id="input"> <button onclick="focusInput()">Focus</button></p>
+    </x-component>
+
+    <x-component-instance component="field"></x-component-instance>
+    <x-component-instance component="field"></x-component-instance>
+</x-app>
+```
+
+## Styling
+
+A component is styled only by its own `<style>`, which is what makes it safe to reuse: app and page rules never reach its markup, and its rules never leak out.
+
+| Reaches a component's markup | |
+| --- | --- |
+| The component's own `<style>` | Yes |
+| App and page `<style>` rules | No |
+| Inherited values from where it's placed: custom properties, `font`, `color` | Yes |
+| CSS a library injects into the document `<head>` | Yes |
+
+- Use the app's tokens (`var(--accent)`) to match its design without depending on its classes.
+- Set `font-family` on the component's own elements to keep its font wherever it's used; otherwise it inherits the font of its surroundings.
+- `@font-face` and `@property` in a component's style work, so a component can bring its own font.
+- `{{ }}` works in a component's style with its locals, including properties: `.badge { background: {{tone()}}; }`.
+- Declare the `@keyframes` a component uses in its own style.
+- `:root`, `html` and `body` match nothing in a component's style.
+- A component is rendered as `display: contents`; give its markup a root element to control its own layout.
+
+```html drx
+<x-app>
+    <style>
+        :root { --accent: #0f766e; }
+        body { font-family: Georgia, serif; }
+        .label { color: red; }
+    </style>
+
+    <x-component name="badge">
+        <style>
+            .badge { font-family: system-ui, sans-serif; }
+            .label { color: var(--accent); font-weight: 600; }
+        </style>
+        <span class="badge"><span class="label">Component: own font, app token, not the app's red</span></span>
+    </x-component>
+
+    <p class="label">App label: red, inherited font</p>
+    <x-component-instance component="badge"></x-component-instance>
+</x-app>
+```
+
 ## Scripting
 
 `<x-component>`'s script is instantiated once per `<x-component-instance>` that resolves to it. A component is fully isolated: it never receives the enclosing app's or page's state — anything it needs must be declared on the component itself (its own `<x-variable>`, `<x-property>`, `<x-event>`, `<x-service>`, `<x-api>`) or passed in as a prop.
@@ -91,6 +155,8 @@ interface Drx {
             reset(): void;
             /** Validates the current value against the variable's declared type; each error carries a message and a path. */
             validate(): [value: any | undefined, errors: { message: string; path: string }[]];
+            /** Calls back with the current value immediately and on every change; returns an unsubscribe function. Subscriptions end automatically when the owner unmounts. */
+            subscribe(callback: (value: any) => void): () => void;
         }>;
         /** The declared <x-property> values passed in by the consumer, keyed by name. Read-only. */
         props: Record<string, () => any>;
@@ -143,7 +209,7 @@ A button's `onclick` calls a method declared directly on the component's own scr
 
         <script type="application/typescript">
             export default DRX.defineComponent(drx => class {
-                increment() { drx.component.variables.count.set(drx.component.variables.count.get() + 1); }
+                increment() { drx.component.variables.count.set(value => value + 1); }
             });
         </script>
 

@@ -1,4 +1,4 @@
-import { $Id, $Tson, State, type TsonResult } from '@vorplex/core';
+import { $Id, $Tson, Scope, Signal, State, type TsonResult } from '@vorplex/core';
 import { DrxDocumentState, DrxScope } from '../drx';
 import { DrxDom } from '../drx-dom';
 import { DrxType } from './type';
@@ -16,6 +16,7 @@ export interface VariableApi<T = any> {
     set(update: T | ((value: T) => T)): void;
     reset(): void;
     validate(): TsonResult<T>;
+    subscribe(callback: (value: T) => void): () => void;
 }
 
 export const DrxVariable = {
@@ -47,6 +48,11 @@ export const DrxVariable = {
         return { locals, states };
     },
     createApi(variables: DrxVariable[], states: Map<string, State<any>>, scope: DrxScope, documentState: DrxDocumentState): Record<string, VariableApi> {
+        const subscriptions = new Set<Scope>();
+        if (Scope.current) Signal.cleanup(() => {
+            for (const subscription of subscriptions) subscription.dispose();
+            subscriptions.clear();
+        });
         return variables.reduce((api, variable) => {
             const state = states.get(variable.id)!;
             return Object.assign(api, {
@@ -54,7 +60,18 @@ export const DrxVariable = {
                     get: () => state.value,
                     set: (update: any) => state.set(update),
                     reset: () => state.set(variable.value),
-                    validate: () => $Tson.parse(DrxType.resolve(scope, variable.type, documentState)).parse(state.value)
+                    validate: () => $Tson.parse(DrxType.resolve(scope, variable.type, documentState)).parse(state.value),
+                    subscribe: (callback: (value: any) => void) => {
+                        const subscription = Signal.root(() => Signal.effect(() => {
+                            const value = state.signal();
+                            Signal.untrack(() => callback(value));
+                        }));
+                        subscriptions.add(subscription);
+                        return () => {
+                            subscription.dispose();
+                            subscriptions.delete(subscription);
+                        };
+                    }
                 } satisfies VariableApi
             });
         }, {} as Record<string, VariableApi>);
