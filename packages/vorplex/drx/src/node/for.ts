@@ -56,6 +56,7 @@ export const DrxFor = {
             entry => item.track ? $Value.get(entry.value, item.track) : entry.key,
             entry => {
                 const itemHost = DrxDom.createHost(host, NodeType.For);
+                host.appendChild(itemHost);
                 const locals: Record<string, any> = { [item.as]: entry.proxy.value };
                 if (item.index) locals[item.index] = entry.proxy.index;
                 if (item.key) locals[item.key] = entry.proxy.key;

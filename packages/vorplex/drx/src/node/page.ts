@@ -72,7 +72,7 @@ export const DrxPage = {
                 apis: DrxApi.createApi(state, { type: 'app' }),
                 services: DrxScripting.instantiateServices(appContext.app.serviceIds, state, context.bundle, appContext.serviceInstances, { type: 'app' }),
                 router: DrxRouter.createApi(container.ownerDocument.defaultView, appContext.router.route, context.locals.router),
-                pages: DrxPage.createApi(appContext.app.pageIds, appContext),
+                pages: DrxPage.createApi(appContext.app.pageIds, appContext, container.ownerDocument),
                 modal: context.locals.modal
             };
             const PageClass = DrxScripting.instantiate(context.bundle, page.id, pageDrx);
@@ -119,14 +119,14 @@ export const DrxPage = {
             Signal.cleanup(() => host.remove());
         });
     },
-    createApi(pageIds: string[], appContext: AppRenderContext): Record<string, any> {
+    createApi(pageIds: string[], appContext: AppRenderContext, document: Document): Record<string, any> {
         const state = appContext.state;
         return pageIds.reduce((api, id) => {
             const page = state.pages[id];
             return Object.assign(api, {
                 [page.name]: {
                     showModal: (options: { data?: any } = {}) => {
-                        return ModalManager.open((modalContainer, modal) => {
+                        return ModalManager.open(document, (modalContainer, modal) => {
                             const context: RenderContext = {
                                 ...appContext,
                                 locals: { ...appContext.locals, modal }

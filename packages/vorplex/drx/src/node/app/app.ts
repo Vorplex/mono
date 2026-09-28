@@ -127,7 +127,7 @@ export const DrxApp = {
                 apis: DrxApi.createApi(state, { type: 'app' }),
                 services: DrxScripting.instantiateServices(app.serviceIds, state, bundle, appContext.serviceInstances, { type: 'app' }),
                 router: DrxRouter.createApi(view, router.route),
-                pages: DrxPage.createApi(app.pageIds, appContext)
+                pages: DrxPage.createApi(app.pageIds, appContext, container.ownerDocument)
             };
             const AppClass = DrxScripting.instantiate(bundle, app.id, appDrx);
             const instance = AppClass ? new AppClass() : undefined;

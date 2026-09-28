@@ -555,7 +555,14 @@
         <script>
             (function () {
                 var DOCS_ROOT = new URL('.', location.href).href;
-                var DRX_RUNTIME = new URLSearchParams(location.search).get('drx') || 'https://cdn.jsdelivr.net/npm/@vorplex/drx@latest/dist/standalone/drx.js';
+                var DRX_LATEST = 'https://cdn.jsdelivr.net/npm/@vorplex/drx@latest/dist/standalone/drx.js';
+                var DRX_RUNTIME = new URLSearchParams(location.search).get('drx') || DRX_LATEST;
+                var runtimeResolved = new URLSearchParams(location.search).has('drx') ? Promise.resolve() : (async function () {
+                    try {
+                        var response = await fetch('https://data.jsdelivr.com/v1/packages/npm/@vorplex/drx/resolved');
+                        DRX_RUNTIME = 'https://cdn.jsdelivr.net/npm/@vorplex/drx@' + (await response.json()).version + '/dist/standalone/drx.js';
+                    } catch (error) { }
+                })();
                 if (location.hostname === 'localhost') new EventSource('/esbuild').addEventListener('change', function () { location.reload(); });
 
                 var contentInner = document.getElementById('content-inner');
@@ -897,7 +904,8 @@
                             '</head><body>' + source + '</body></html>';
                     }
 
-                    function run() {
+                    async function run() {
+                        await runtimeResolved;
                         resetConsole();
                         iframe.srcdoc = buildDocument(getValue());
                     }
@@ -991,10 +999,10 @@
                     disposeActiveEditors();
                     contentInner.className = 'loading';
                     contentInner.textContent = 'Loading…';
-                    fetchText(path).then(function (md) {
+                    Promise.all([fetchText(path), runtimeResolved]).then(function (results) {
                         currentDocPath = path;
                         contentInner.className = '';
-                        contentInner.innerHTML = marked.parse(md);
+                        contentInner.innerHTML = marked.parse(results[0].split(DRX_LATEST).join(DRX_RUNTIME));
                         Object.keys(codeSources).forEach(function (id) {
                             var slot = contentInner.querySelector('[data-code="' + id + '"]');
                             var entry = codeSources[id];

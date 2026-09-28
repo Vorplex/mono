@@ -14,7 +14,7 @@ interface ModalFrame {
 }
 
 export const ModalManager = {
-    open(mount: (container: Node, api: ModalApi) => void, options: { data?: any } = {}): Promise<any> {
+    open(document: Document, mount: (container: Node, api: ModalApi) => void, options: { data?: any } = {}): Promise<any> {
         return new Promise(resolve => {
             const host = document.createElement('dialog');
             host.className = 'x-modal';

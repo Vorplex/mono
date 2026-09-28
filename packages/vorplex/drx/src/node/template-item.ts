@@ -135,6 +135,7 @@ export const DrxTemplate = {
         const host = document.createElement(NodeType.Element);
         host.style.display = 'contents';
         host.setAttribute('data-drx-id', item.id);
+        container.appendChild(host);
         Signal.effect(() => {
             const result = context.render(item, context.root.proxy);
             if (result === null) return;
