@@ -58,20 +58,31 @@ export const DrxRouterRoute = {
             group.routes(routes => [...routes, item]);
             Signal.cleanup(() => group.routes(routes => routes.filter(route => route !== item)));
         }
-        Signal.effect(() => {
-            const path = context.routeRest ?? context.nearest.app.router.route();
-            const match = item.route == null
+        const match = Signal.memo(() => {
+            const rest = context.routeRest ? context.routeRest() : context.nearest.app.router.route();
+            if (rest == null) return null;
+            const path = DrxRouter.normalize(rest);
+            const result = item.route == null
                 ? !group?.ready() || group.routes().some(route => DrxRouterRoute.match(route, path)) ? null : { params: {}, rest: path }
                 : DrxRouterRoute.match(item, path);
-            if (!match) return;
+            if (!result) return null;
+            const [pathname] = path.trim().split(/[?#]/, 1);
+            const base = `/${$Path.join(context.locals.router?.base ?? '/', pathname.slice(0, pathname.length - result.rest.length))}`;
+            return { params: { ...result.params }, rest: result.rest, base };
+        });
+        const mounted = Signal.memo(() => {
+            const current = match();
+            return current && { params: current.params, base: current.base };
+        });
+        Signal.effect(() => {
+            const current = mounted();
+            if (!current) return;
             const params = context.locals.router?.params?.() ?? {};
-            const pathname = path.trim().split(/[?#]/, 1)[0];
-            const base = `/${$Path.join(context.locals.router?.base ?? '/', pathname.slice(0, pathname.length - match.rest.length))}`;
             const routeContext: RenderContext = {
                 ...RenderContext.withLocals(context, {
-                    router: DrxRouter.createLocal(context.nearest.app.router.route, { ...params, ...match.params }, container.ownerDocument.defaultView, base)
+                    router: DrxRouter.createLocal(context.nearest.app.router.route, { ...params, ...current.params }, container.ownerDocument.defaultView, current.base)
                 }),
-                routeRest: match.rest,
+                routeRest: () => match()?.rest,
                 routeGroup: DrxRouterRoute.createGroup()
             };
             DrxTemplate.mount(host, item.template, routeContext);

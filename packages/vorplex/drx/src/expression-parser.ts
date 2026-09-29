@@ -24,6 +24,7 @@ export const DrxExpressionParser = {
                 continue;
             }
             const value = DrxExpressionParser.evaluate(segment.value, locals);
+            if (typeof value === 'function') throw new Error(`"{{${segment.value.trim()}}}" is a signal or function and should be called: {{${segment.value.trim()}()}}`);
             values.push(value);
         }
         if (values.length === 1) return values[0];

@@ -30,7 +30,7 @@ export class $Router {
         const regex = $Router.getRouteRegex(route);
         const result = regex.exec(url.trim().split(/[?#]/, 1)[0]);
         if (!result) return null;
-        return result.groups ?? {};
+        return { ...result.groups };
     }
 
     public static matchPrefix(route: string, path: string): { params: Record<string, string>; rest: string } | null {
@@ -39,7 +39,7 @@ export class $Router {
         const regex = new RegExp(`^${source}(?=/|$)`, 'i');
         const result = regex.exec(value);
         if (!result) return null;
-        return { params: result.groups ?? {}, rest: value.slice(result[0].length) };
+        return { params: { ...result.groups }, rest: value.slice(result[0].length) };
     }
 
     public static getParameters(route: string): RouteParameter[] {
@@ -69,17 +69,13 @@ export class $Router {
     }
 
     public static getRouteRegexSource(route: string): string {
-        const variables = $Router.getParameters(route);
-        for (const variable of variables) {
-            if (variable.rest) {
-                route = route.replace(`{...${variable.name}}`, `(?<${variable.name}>(?:.*))`);
-            } else if (variable.optional) {
-                route = route.replace(`{${variable.name}?}`, `(?<${variable.name}>(?:[^/]+)?)`);
-            } else {
-                route = route.replace(`{${variable.name}}`, `(?<${variable.name}>(?:[^/]+))`);
-            }
-        }
-        return route;
+        return route
+            .replace(/[.*+^$()|[\]\\](?![^{]*\})/g, '\\$&')
+            .replace(/\/\{\.{3}(\w+)\}/g, '(?:/(?<$1>.*))?')
+            .replace(/\/\{(\w+)\?\}/g, '(?:/(?<$1>[^/]*))?')
+            .replace(/\{\.{3}(\w+)\}/g, '(?<$1>.*)')
+            .replace(/\{(\w+)\?\}/g, '(?<$1>[^/]*)')
+            .replace(/\{(\w+)\}/g, '(?<$1>[^/]+)');
     }
 
     public static getQueryParameters(url: string): Record<string, string> {

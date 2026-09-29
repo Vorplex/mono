@@ -1,10 +1,10 @@
-import { Signal, State } from '@vorplex/core';
+import { Getter, Signal, State } from '@vorplex/core';
 import { DrxDocumentState } from './drx';
 import { DrxApp } from './node/app/app';
 import { DrxComponent } from './node/component/component';
 import { DrxPage } from './node/page';
-import type { DrxRouterRoute } from './node/router/router-route';
 import { RouterLocal } from './node/router/router';
+import type { DrxRouterRoute } from './node/router/router-route';
 
 export enum RenderContextType {
     App = 'app',
@@ -30,7 +30,7 @@ export interface RenderContextBase {
     locals: Record<string, any>;
     state: DrxDocumentState;
     bundle: string;
-    routeRest?: string;
+    routeRest?: Getter<string>;
     routeGroup?: RouteGroup;
 }
 

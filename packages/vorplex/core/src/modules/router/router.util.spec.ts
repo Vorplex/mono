@@ -70,9 +70,11 @@ describe($Router.name, () => {
     });
 
     describe($Router.match.name, () => {
-        function test(args: { it: string; pattern: string; value: string; expected: Record<string, string> }) {
-            const result = $Router.match(args.pattern, args.value);
-            expect(result).toEqual(args.expected);
+        function test(args: { it: string; pattern: string; value: string; expected: Record<string, string> | null }) {
+            it(args.it, () => {
+                const result = $Router.match(args.pattern, args.value);
+                expect(result).toEqual(args.expected);
+            });
         }
 
         test({
@@ -102,6 +104,48 @@ describe($Router.name, () => {
             expected: {
                 id: '',
             },
+        });
+        test({
+            it: 'should match a missing optional parameter without its slash',
+            pattern: '/users/{id}/{tab?}',
+            value: '/users/7',
+            expected: { id: '7', tab: undefined },
+        });
+        test({
+            it: 'should match a present optional parameter',
+            pattern: '/users/{id}/{tab?}',
+            value: '/users/7/settings',
+            expected: { id: '7', tab: 'settings' },
+        });
+        test({
+            it: 'should match a rest parameter across segments',
+            pattern: '/files/{...path}',
+            value: '/files/a/b/c.txt',
+            expected: { path: 'a/b/c.txt' },
+        });
+        test({
+            it: 'should match a missing rest parameter',
+            pattern: '/files/{...path}',
+            value: '/files',
+            expected: { path: undefined },
+        });
+        test({
+            it: 'should match a parameter inside a segment',
+            pattern: '/files/report-{year}.pdf',
+            value: '/files/report-2026.pdf',
+            expected: { year: '2026' },
+        });
+        test({
+            it: 'should treat literal characters literally',
+            pattern: '/v1.0/items',
+            value: '/v1x0/items',
+            expected: null,
+        });
+        test({
+            it: 'should match literal special characters',
+            pattern: '/search/(all)+',
+            value: '/search/(all)+',
+            expected: {},
         });
     });
 

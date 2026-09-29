@@ -89,8 +89,12 @@ export const DrxExpressionDisplay = {
     //   "{{ { name: user.name } }}"           -> "{{...}}"                       (nested braces -- matched as one segment, not a simple reference)
     //   "Hello {{user.name}}!"                -> "Hello {{user.name}}!"          (surrounding literal text is untouched)
     mask(content: string): string {
-        return $String.matchDelimited(content, ['{{', '}}'])
-            .map(segment => segment.type === 'text' ? segment.value : formatExpression(segment.value))
-            .join('');
+        try {
+            return $String.matchDelimited(content, ['{{', '}}'])
+                .map(segment => segment.type === 'text' ? segment.value : formatExpression(segment.value))
+                .join('');
+        } catch {
+            return content;
+        }
     }
 };
