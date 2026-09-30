@@ -40,6 +40,7 @@ export const DrxTemplate = {
                 NodeType.Page,
                 NodeType.Packages,
                 NodeType.DependencyTree,
+                NodeType.PwaMetadata,
                 NodeType.Variable,
                 NodeType.Type,
                 NodeType.Service,
