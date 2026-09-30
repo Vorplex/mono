@@ -11,7 +11,6 @@ import { DrxElse } from './if/else';
 import { DrxElseIf } from './if/else-if';
 import { DrxIf } from './if/if';
 import { NodeType } from './node-type';
-import { DrxPage } from './page';
 import { DrxPageContainer } from './page-container';
 import { DrxRouterRoute } from './router/router-route';
 import { DrxText } from './text';
@@ -130,7 +129,6 @@ export const DrxTemplate = {
             if (item.type === NodeType.PageContainer) return DrxPageContainer.preview(target, item.id, context);
             if (item.type === NodeType.Icon) return DrxIcon.preview(target, item.id, context);
             if (item.type === NodeType.RouterRoute) return DrxRouterRoute.preview(target, item.id, context);
-            if (item.type === NodeType.Page) return DrxPage.preview(target, item.id, context);
             return DrxElement.preview(target, item.id, context);
         };
         if (!context.render) return renderDefault(container);
