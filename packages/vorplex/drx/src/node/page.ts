@@ -104,20 +104,19 @@ export const DrxPage = {
             });
         });
     },
-    preview(container: Node, id: string, context: PreviewContext): Scope {
-        return Signal.scope(() => {
-            const host = document.createElement(NodeType.Page);
-            host.style.display = 'contents';
-            host.setAttribute('data-drx-id', id);
-            container.appendChild(host);
-            const shadow = host.attachShadow({ mode: 'open' });
-            StyleSheet.attach(container.ownerDocument, () => context.root.proxy.app.style());
-            DocumentStyles.mirror(shadow);
-            StyleSheet.adopt(shadow, () => context.root.proxy.app.style(), () => context.root.proxy.pages[id].style(), ...context.styleSheets);
-            StyleSheet.registerDocumentRules(shadow.ownerDocument, id, () => context.root.proxy.pages[id].style());
-            DrxTemplate.preview(shadow, () => context.root.proxy.pages[id].template(), context);
-            Signal.cleanup(() => host.remove());
-        });
+    preview(container: Node, id: string, context: PreviewContext): Node {
+        const host = document.createElement(NodeType.Page);
+        host.style.display = 'contents';
+        host.setAttribute('data-drx-id', id);
+        container.appendChild(host);
+        const shadow = host.attachShadow({ mode: 'open' });
+        StyleSheet.attach(container.ownerDocument, () => context.root.proxy.app.style());
+        DocumentStyles.mirror(shadow);
+        StyleSheet.adopt(shadow, () => context.root.proxy.app.style(), () => context.root.proxy.pages[id].style(), ...context.styleSheets);
+        StyleSheet.registerDocumentRules(shadow.ownerDocument, id, () => context.root.proxy.pages[id].style());
+        DrxTemplate.preview(shadow, () => context.root.proxy.pages[id].template(), context);
+        Signal.cleanup(() => host.remove());
+        return host;
     },
     createApi(pageIds: string[], appContext: AppRenderContext, document: Document): Record<string, any> {
         const state = appContext.state;
