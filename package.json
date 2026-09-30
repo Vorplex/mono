@@ -6,9 +6,10 @@
         "clean": "git clean -fdX",
         "build": "pnpm -r --filter \"./packages/vorplex/**\" build",
         "test": "pnpm -r --filter \"./packages/vorplex/**\" test",
-        "version": "npx tsx .github/scripts/version.ts",
-        "package-list": "npx tsx .github/scripts/package-list.mts",
-        "purge-cdn": "npx tsx .github/scripts/purge-cdn.mts",
+        "version": "npx tsx .scripts/version.ts",
+        "publish": "pnpm build && pnpm --filter \"./packages/vorplex/**\" publish --recursive --access public --no-git-checks",
+        "package-list": "npx tsx .scripts/package-list.mts",
+        "purge-cdn": "npx tsx .scripts/purge-cdn.mts",
         "serve:drx": "npx tsx packages/vorplex/drx/standalone/serve.mts"
     },
     "devDependencies": {
