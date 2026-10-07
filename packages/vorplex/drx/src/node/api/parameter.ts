@@ -1,6 +1,5 @@
-import { $Id } from '@vorplex/core';
-import { DrxDocumentState } from '../../drx';
-import { DrxDom } from '../../drx-dom';
+import { DrxDom } from '../../dom';
+import type { DrxDocumentState } from '../../document';
 import { NodeType } from '../node-type';
 
 export interface DrxApiParameter {
@@ -10,22 +9,20 @@ export interface DrxApiParameter {
     description?: string;
 }
 
-export const DrxApiParameter = {
-    from(parent: Element, state: DrxDocumentState): DrxApiParameter[] {
-        const elements = Array.from(parent.querySelectorAll(`:scope > ${NodeType.ApiParameter}`));
-        return elements.map(element => DrxApiParameter.parse(element, state));
-    },
-    parse(element: Element, state: DrxDocumentState): DrxApiParameter {
+export const DrxApiParameter = class {
+
+    public static parse(element: Element, state: DrxDocumentState): DrxApiParameter {
         const parameter: DrxApiParameter = {
-            id: DrxDom.getAttribute(element, 'id') ?? $Id.guid(),
+            id: DrxDom.getId(element),
             name: DrxDom.getRequiredAttribute(element, 'name'),
             required: DrxDom.getBooleanAttribute(element, 'required'),
             description: DrxDom.getAttribute(element, 'description')
         };
         state.apiParameters[parameter.id] = parameter;
         return parameter;
-    },
-    to(parameter: DrxApiParameter): Element {
+    }
+
+    public static to(parameter: DrxApiParameter): Element {
         const element = document.createElement(NodeType.ApiParameter);
         DrxDom.setAttribute(element, 'id', parameter.id);
         DrxDom.setAttribute(element, 'name', parameter.name);
@@ -33,4 +30,5 @@ export const DrxApiParameter = {
         if (parameter.description) DrxDom.setAttribute(element, 'description', parameter.description);
         return element;
     }
-};
+
+}

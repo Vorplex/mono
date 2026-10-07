@@ -1,7 +1,7 @@
-import { $Id } from '@vorplex/core';
-import { DrxDocumentState } from '../../drx';
-import { DrxDom } from '../../drx-dom';
+import { DrxDom } from '../../dom';
+import type { DrxDocumentState } from '../../document';
 import { NodeType } from '../node-type';
+import type { DrxTemplateItem } from '../template-item';
 import { DrxApiBody } from './body';
 import { DrxApiHeader } from './header';
 import { DrxApiParameter } from './parameter';
@@ -18,18 +18,15 @@ export interface DrxApiEndpoint {
     responseId?: string;
 }
 
-export const DrxApiEndpoint = {
-    from(parent: Element, state: DrxDocumentState): DrxApiEndpoint[] {
-        const elements = Array.from(parent.querySelectorAll(`:scope > ${NodeType.ApiEndpoint}`));
-        return elements.map(element => DrxApiEndpoint.parse(element, state));
-    },
-    parse(element: Element, state: DrxDocumentState): DrxApiEndpoint {
-        const parameters = DrxApiParameter.from(element, state);
-        const headers = DrxApiHeader.from(element, state);
-        const body = DrxApiBody.from(element, state);
-        const response = DrxApiResponse.from(element, state);
+export const DrxApiEndpoint = class {
+
+    public static parse(element: Element, state: DrxDocumentState): DrxApiEndpoint {
+        const parameters = DrxDom.parseChildren(element, NodeType.ApiParameter, child => DrxApiParameter.parse(child, state));
+        const headers = DrxDom.parseChildren(element, NodeType.ApiHeader, child => DrxApiHeader.parse(child, state));
+        const body = DrxDom.parseChildren(element, NodeType.ApiBody, child => DrxApiBody.parse(child, state))[0];
+        const response = DrxDom.parseChildren(element, NodeType.ApiResponse, child => DrxApiResponse.parse(child, state))[0];
         const endpoint: DrxApiEndpoint = {
-            id: DrxDom.getAttribute(element, 'id') ?? $Id.guid(),
+            id: DrxDom.getId(element),
             name: DrxDom.getRequiredAttribute(element, 'name'),
             path: DrxDom.getRequiredAttribute(element, 'path'),
             method: (DrxDom.getAttribute(element, 'method') ?? 'GET').toUpperCase(),
@@ -40,8 +37,9 @@ export const DrxApiEndpoint = {
         };
         state.apiEndpoints[endpoint.id] = endpoint;
         return endpoint;
-    },
-    to(endpoint: DrxApiEndpoint, state: DrxDocumentState): Element {
+    }
+
+    public static to(endpoint: DrxApiEndpoint, state: DrxDocumentState): Element {
         const element = document.createElement(NodeType.ApiEndpoint);
         DrxDom.setAttribute(element, 'id', endpoint.id);
         DrxDom.setAttribute(element, 'name', endpoint.name);
@@ -53,4 +51,14 @@ export const DrxApiEndpoint = {
         if (endpoint.responseId) element.appendChild(DrxApiResponse.to(state.apiResponses[endpoint.responseId]));
         return element;
     }
-};
+
+    public static children(endpoint: DrxApiEndpoint): DrxTemplateItem[] {
+        return [
+            ...endpoint.parameterIds.map(id => ({ type: NodeType.ApiParameter, id })),
+            ...endpoint.headerIds.map(id => ({ type: NodeType.ApiHeader, id })),
+            ...(endpoint.bodyId ? [{ type: NodeType.ApiBody, id: endpoint.bodyId }] : []),
+            ...(endpoint.responseId ? [{ type: NodeType.ApiResponse, id: endpoint.responseId }] : [])
+        ];
+    }
+
+}

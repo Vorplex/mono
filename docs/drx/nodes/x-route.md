@@ -1,6 +1,6 @@
 # \<x-route>
 
-Renders its children whenever `route` matches the current URL (partial/prefix by default). A route without a `route` attribute is the fallback: it renders when no other route at the same routing level matches. Paths are matched leniently: `#notes`, `#/notes` and `#/notes/` are the same path. Use it for deep-linkable, browser-navigable content instead of a plain variable driving which content shows.
+Renders its children whenever `route` matches the current URL (partial/prefix by default). A route without a `route` attribute is the fallback: it renders when no other route at the same routing level matches. Paths are matched leniently: `#notes`, `#/notes` and `#/notes/` are the same path, letter case is ignored, and anything after `?` is ignored. Use it for deep-linkable, browser-navigable content instead of a plain variable driving which content shows.
 
 ```html
 <x-route>
@@ -8,10 +8,35 @@ Renders its children whenever `route` matches the current URL (partial/prefix by
 </x-route>
 ```
 
-| Attribute | Description                                             |
-| --------- | -------------------------------------------------------- |
-| route?    | Route pattern to match, may include `{param}` segments. Omit it for the fallback route |
+| Attribute | Description                                                                                                                                                                                                        |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| route?    | Route pattern to match, may include `{param}`, optional `{param?}` and catch-all `{...param}` parameters — see [Route patterns](#route-patterns). Omit it for the fallback route                                   |
 | exact?    | Match only when nothing is left over after `route` — no prefix matching, and nothing remains for a nested `<x-route>`. Needed for `route="/"` to mean just the root, since plain `/` otherwise matches every path. |
+
+## Route patterns
+
+| Pattern                    | Matches                               | `router.params`                                |
+| -------------------------- | ------------------------------------- | ---------------------------------------------- |
+| `/posts/{id}`              | `/posts/42`                           | `id` is `'42'`                                 |
+| `/users/{id}/{tab?}`       | `/users/7` and `/users/7/settings`    | `tab` is `undefined` or `'settings'`           |
+| `/docs/{...path}`          | `/docs` and `/docs/guides/routing.md` | `path` is `undefined` or `'guides/routing.md'` |
+| `/files/report-{year}.pdf` | `/files/report-2026.pdf`              | `year` is `'2026'`                             |
+| `/posts`                   | `/Posts` and `/posts?sort=new`        | none                                           |
+
+```html drx
+<x-app>
+    <a href="#/users/7">User 7</a> <a href="#/users/7/settings">User 7 settings</a> <a href="#/docs/guides/routing.md">Guide</a> <a href="#/files/report-2026.pdf">Report</a>
+    <x-route route="/users/{id}/{tab?}" exact>
+        <p>User {{router.params.id()}}, tab {{router.params.tab() ?? 'none'}}</p>
+    </x-route>
+    <x-route route="/files/report-{year}.pdf" exact>
+        <p>Report for {{router.params.year()}}</p>
+    </x-route>
+    <x-route route="/docs/{...path}">
+        <p>Doc {{router.params.path() ?? 'none'}}</p>
+    </x-route>
+</x-app>
+```
 
 ## Examples
 

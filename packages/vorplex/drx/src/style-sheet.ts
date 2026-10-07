@@ -6,27 +6,30 @@ interface DocumentRules {
     count: number;
 }
 
-const documentRules = new Map<Document, Map<string, DocumentRules>>();
+export class DrxStyleSheet {
 
-export const StyleSheet = {
-    create(realm: Window, css: Getter<string | undefined>): CSSStyleSheet {
+    private static readonly documentRules = new Map<Document, Map<string, DocumentRules>>();
+
+    public static create(realm: Window, css: Getter<string | undefined>): CSSStyleSheet {
         const sheet = new (realm as unknown as { CSSStyleSheet: typeof CSSStyleSheet }).CSSStyleSheet();
         Signal.effect(() => sheet.replaceSync(css() ?? ''));
         return sheet;
-    },
-    adopt(shadow: ShadowRoot | Document, ...sheets: (Getter<string> | CSSStyleSheet)[]): void {
+    }
+
+    public static adopt(shadow: ShadowRoot | Document, ...sheets: (Getter<string> | CSSStyleSheet)[]): void {
         const view = 'defaultView' in shadow ? shadow.defaultView : shadow.ownerDocument.defaultView;
-        shadow.adoptedStyleSheets = sheets.map(entry => typeof entry === 'function' ? StyleSheet.create(view, entry) : entry);
-    },
-    attach(document: Document, css: Getter<string | undefined>): void {
-        const sheet = StyleSheet.create(document.defaultView, css);
+        shadow.adoptedStyleSheets = sheets.map(entry => typeof entry === 'function' ? DrxStyleSheet.create(view, entry) : entry);
+    }
+
+    public static attach(document: Document, sheet: CSSStyleSheet): void {
         document.adoptedStyleSheets = [...document.adoptedStyleSheets, sheet];
         Signal.cleanup(() => document.adoptedStyleSheets = document.adoptedStyleSheets.filter(entry => entry !== sheet));
-    },
-    registerDocumentRules(document: Document, key: string, css: Getter<string | undefined>): void {
+    }
+
+    public static registerDocumentRules(document: Document, key: string, css: Getter<string | undefined>): void {
         const realm = document.defaultView as unknown as { CSSStyleSheet: typeof CSSStyleSheet; CSSFontFaceRule: typeof CSSFontFaceRule; CSSPropertyRule: typeof CSSPropertyRule };
-        const registry = documentRules.get(document) ?? new Map<string, DocumentRules>();
-        documentRules.set(document, registry);
+        const registry = this.documentRules.get(document) ?? new Map<string, DocumentRules>();
+        this.documentRules.set(document, registry);
         const entry = registry.get(key) ?? { sheet: new realm.CSSStyleSheet(), count: 0 };
         registry.set(key, entry);
         entry.count++;
@@ -52,4 +55,5 @@ export const StyleSheet = {
             registry.delete(key);
         });
     }
-};
+
+}

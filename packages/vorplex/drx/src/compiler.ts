@@ -1,8 +1,8 @@
 import { $Id, $String, $Value } from '@vorplex/core';
 import { version } from '../package.json';
-import { DrxDocumentState } from './drx';
-import { ICON_SHEET_URL } from './icon-sheet';
-import { DrxScriptBundler } from './script-bundler';
+import { DrxBundler } from './bundler';
+import type { DrxDocumentState } from './document';
+import { DrxIconSheet } from './icon-sheet';
 
 export interface DrxCompiledFile {
     path: string;
@@ -10,13 +10,14 @@ export interface DrxCompiledFile {
     contentType: string;
 }
 
-export const DrxCompiler = {
-    async compile(state: DrxDocumentState): Promise<DrxCompiledFile[]> {
+export const DrxCompiler = class {
+
+    public static async compile(state: DrxDocumentState): Promise<DrxCompiledFile[]> {
         const runtimeUrl = `https://cdn.jsdelivr.net/npm/@vorplex/drx@${version}/dist/standalone`;
         state = $Value.clone(state);
         const [bundle, icons, runtime] = await Promise.all([
-            DrxScriptBundler.bundle(state),
-            fetch(ICON_SHEET_URL).then(response => response.text()),
+            DrxBundler.bundle(state),
+            fetch(DrxIconSheet.url).then(response => response.text()),
             fetch(`${runtimeUrl}/runtime.js`).then(response => response.text())
         ]);
         const text = (path: string, contentType: string, content: string): DrxCompiledFile => ({ path, contentType, data: new TextEncoder().encode(content) })
@@ -65,4 +66,5 @@ export const DrxCompiler = {
         }
         return files;
     }
-};
+
+}

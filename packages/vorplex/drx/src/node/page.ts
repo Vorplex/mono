@@ -1,16 +1,6 @@
-import { $Id, Scope, Signal } from '@vorplex/core';
-import { DocumentStyles } from '../document-styles';
-import { DrxDocumentState } from '../drx';
-import { DrxDom } from '../drx-dom';
-import { DrxExpressionParser } from '../expression-parser';
-import { ModalManager } from '../modal-manager';
-import { PreviewContext } from '../preview-context';
-import { AppRenderContext, PageRenderContext, RenderContext, RenderContextType } from '../render-context';
-import { DrxScripting } from '../scripting';
-import { StyleSheet } from '../style-sheet';
-import { DrxApi } from './api/api';
+import { DrxDom } from '../dom';
+import type { DrxDocumentState } from '../document';
 import { NodeType } from './node-type';
-import { DrxRouter } from './router/router';
 import { DrxTemplate, DrxTemplateItem } from './template-item';
 import { DrxVariable } from './variable';
 
@@ -23,25 +13,23 @@ export interface DrxPage {
     template: DrxTemplateItem[];
 }
 
-export const DrxPage = {
-    from(parent: Element, state: DrxDocumentState): DrxPage[] {
-        const elements = Array.from(parent.querySelectorAll(`:scope > ${NodeType.Page}`));
-        return elements.map(element => DrxPage.parse(element, state));
-    },
-    parse(element: Element, state: DrxDocumentState): DrxPage {
-        const variables = DrxVariable.from(element, state);
+export const DrxPage = class {
+
+    public static parse(element: Element, state: DrxDocumentState): DrxPage {
+        const variables = DrxDom.parseChildren(element, NodeType.Variable, child => DrxVariable.parse(child, state));
         const page: DrxPage = {
-            id: DrxDom.getAttribute(element, 'id') ?? $Id.guid(),
+            id: DrxDom.getId(element),
             name: DrxDom.getRequiredAttribute(element, 'name'),
             script: DrxDom.getScript(element),
             style: DrxDom.getStyle(element),
             variableIds: variables.map(variable => variable.id),
-            template: DrxTemplate.from(element, state)
+            template: DrxTemplate.parse(element, state)
         };
         state.pages[page.id] = page;
         return page;
-    },
-    to(page: DrxPage, state: DrxDocumentState): Element {
+    }
+
+    public static to(page: DrxPage, state: DrxDocumentState): Element {
         const element = document.createElement(NodeType.Page);
         DrxDom.setAttribute(element, 'id', page.id);
         DrxDom.setAttribute(element, 'name', page.name);
@@ -50,91 +38,13 @@ export const DrxPage = {
         for (const id of page.variableIds) element.appendChild(DrxVariable.to(state.variables[id]));
         for (const child of DrxTemplate.to(page.template, state)) element.appendChild(child);
         return element;
-    },
-    mount(container: Node, page: DrxPage, context: RenderContext): Scope {
-        return Signal.scope(() => {
-            const host = document.createElement(NodeType.Page);
-            host.style.display = 'contents';
-            container.appendChild(host);
-            const shadow = host.attachShadow({ mode: 'open' });
-            const appContext = context.nearest.app;
-            const state = appContext.state;
-            DocumentStyles.mirror(shadow);
-            const variables = page.variableIds.map(id => state.variables[id]);
-            const { locals: variableLocals, states: variableStates } = DrxVariable.instantiate(variables);
-            const appVariables = appContext.app.variableIds.map(id => state.variables[id]);
-            const pageDrx = {
-                app: {
-                    variables: DrxVariable.createApi(appVariables, appContext.variableStates, { type: 'app' }, state),
-                    get instance() { return appContext.instance; }
-                },
-                page: { variables: DrxVariable.createApi(variables, variableStates, { type: 'app' }, state), root: shadow },
-                apis: DrxApi.createApi(state, { type: 'app' }),
-                services: DrxScripting.instantiateServices(appContext.app.serviceIds, state, context.bundle, appContext.serviceInstances, { type: 'app' }),
-                router: DrxRouter.createApi(container.ownerDocument.defaultView, appContext.router.route, context.locals.router),
-                pages: DrxPage.createApi(appContext.app.pageIds, appContext, container.ownerDocument),
-                modal: context.locals.modal
-            };
-            const PageClass = DrxScripting.instantiate(context.bundle, page.id, pageDrx);
-            const instance = PageClass ? new PageClass() : undefined;
-            const pageContext: PageRenderContext = {
-                type: RenderContextType.Page,
-                parent: context,
-                nearest: context.nearest,
-                locals: {
-                    ...context.locals,
-                    ...DrxScripting.getFunctionLocals(instance),
-                    ...variableLocals
-                },
-                state,
-                bundle: context.bundle,
-                page,
-                variables: variableStates,
-                routeRest: context.routeRest,
-                routeGroup: context.routeGroup
-            };
-            pageContext.nearest = { ...context.nearest, page: pageContext };
-            StyleSheet.adopt(shadow, () => DrxExpressionParser.parse(appContext.app.style ?? '', appContext.locals), () => DrxExpressionParser.parse(page.style ?? '', pageContext.locals));
-            StyleSheet.registerDocumentRules(shadow.ownerDocument, page.id, () => DrxExpressionParser.parse(page.style ?? '', pageContext.locals));
-            DrxTemplate.mount(shadow, page.template, pageContext);
-            instance?.onMount?.();
-            Signal.cleanup(() => {
-                instance?.onUnmount?.();
-                host.remove();
-            });
-        });
-    },
-    preview(container: Node, id: string, context: PreviewContext): Node {
-        const host = document.createElement(NodeType.Page);
-        host.style.display = 'contents';
-        host.setAttribute('data-drx-id', id);
-        container.appendChild(host);
-        const shadow = host.attachShadow({ mode: 'open' });
-        StyleSheet.attach(container.ownerDocument, () => context.root.proxy.app.style());
-        DocumentStyles.mirror(shadow);
-        StyleSheet.adopt(shadow, () => context.root.proxy.app.style(), () => context.root.proxy.pages[id].style(), ...context.styleSheets);
-        StyleSheet.registerDocumentRules(shadow.ownerDocument, id, () => context.root.proxy.pages[id].style());
-        DrxTemplate.preview(shadow, () => context.root.proxy.pages[id].template(), context);
-        Signal.cleanup(() => host.remove());
-        return host;
-    },
-    createApi(pageIds: string[], appContext: AppRenderContext, document: Document): Record<string, any> {
-        const state = appContext.state;
-        return pageIds.reduce((api, id) => {
-            const page = state.pages[id];
-            return Object.assign(api, {
-                [page.name]: {
-                    showModal: (options: { data?: any } = {}) => {
-                        return ModalManager.open(document, (modalContainer, modal) => {
-                            const context: RenderContext = {
-                                ...appContext,
-                                locals: { ...appContext.locals, modal }
-                            };
-                            DrxPage.mount(modalContainer, page, context);
-                        }, options);
-                    }
-                }
-            });
-        }, {} as Record<string, any>);
     }
-};
+
+    public static children(page: DrxPage): DrxTemplateItem[] {
+        return [
+            ...page.variableIds.map(id => ({ type: NodeType.Variable, id })),
+            ...page.template
+        ];
+    }
+
+}

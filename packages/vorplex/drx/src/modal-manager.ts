@@ -13,8 +13,9 @@ interface ModalFrame {
     result?: any;
 }
 
-export const ModalManager = {
-    open(document: Document, mount: (container: Node, api: ModalApi) => void, options: { data?: any } = {}): Promise<any> {
+export const DrxModalManager = class {
+
+    public static open(document: Document, mount: (host: HTMLDialogElement, api: ModalApi) => void, options: { data?: any } = {}): Promise<any> {
         return new Promise(resolve => {
             const host = document.createElement('dialog');
             host.className = 'x-modal';
@@ -53,5 +54,6 @@ export const ModalManager = {
             host.showModal();
         });
     }
-};
+
+}
 

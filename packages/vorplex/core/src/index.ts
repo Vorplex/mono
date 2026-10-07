@@ -41,6 +41,7 @@ export * from './modules/math/point';
 export * from './modules/math/polygon';
 export * from './modules/math/rect';
 export * from './modules/math/size';
+export * from './modules/module-loader/module-loader.util';
 export * from './modules/number/number.util';
 export * from './modules/object/object.util';
 export * from './modules/path/path.util';

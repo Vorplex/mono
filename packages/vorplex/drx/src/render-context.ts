@@ -1,69 +1,63 @@
-import { Getter, Signal, State } from '@vorplex/core';
-import { DrxDocumentState } from './drx';
-import { DrxApp } from './node/app/app';
-import { DrxComponent } from './node/component/component';
-import { DrxPage } from './node/page';
-import { RouterLocal } from './node/router/router';
+import { Context, Getter, Signal, State } from '@vorplex/core';
+import type { DrxApp } from './node/app/app';
+import type { DrxComponent } from './node/component/component';
+import { NodeType } from './node/node-type';
+import type { DrxPage } from './node/page';
+import type { DrxRouterLocal } from './router';
 import type { DrxRouterRoute } from './node/router/router-route';
-
-export enum RenderContextType {
-    App = 'app',
-    Page = 'page',
-    Component = 'component'
-}
 
 export interface RouteGroup {
     routes: Signal<DrxRouterRoute[]>;
     ready: Signal<boolean>;
 }
 
-export interface NearestRenderContext {
-    app?: AppRenderContext;
-    page?: PageRenderContext;
-    component?: ComponentRenderContext;
+export interface DrxRouteScope {
+    rest?: Getter<string | undefined>;
+    group: RouteGroup;
 }
 
-export interface RenderContextBase {
-    type: RenderContextType;
-    parent?: RenderContext;
-    nearest: NearestRenderContext;
+export interface DrxHostBase {
+    root: ShadowRoot;
     locals: Record<string, any>;
-    state: DrxDocumentState;
-    bundle: string;
-    routeRest?: Getter<string>;
-    routeGroup?: RouteGroup;
-}
-
-export interface AppRenderContext extends RenderContextBase {
-    type: RenderContextType.App;
-    app: DrxApp;
-    variableStates: Map<string, State<any>>;
-    serviceInstances: Map<string, any>;
-    router: RouterLocal;
+    variables: Map<string, State<any>>;
     instance?: any;
 }
 
-export interface PageRenderContext extends RenderContextBase {
-    type: RenderContextType.Page;
+export interface DrxApplicationHost extends DrxHostBase {
+    type: NodeType.App;
+    app: DrxApp;
+    services: Map<string, any>;
+    router?: DrxRouterLocal;
+    style?: CSSStyleSheet;
+}
+
+export interface DrxPageHost extends DrxHostBase {
+    type: NodeType.Page;
     page: DrxPage;
-    variables: Map<string, State<any>>;
 }
 
-export interface ComponentRenderContext extends RenderContextBase {
-    type: RenderContextType.Component;
+export interface DrxComponentHost extends DrxHostBase {
+    type: NodeType.Component;
     component: DrxComponent;
-    variables: Map<string, State<any>>;
+    instanceId?: string;
+    parent?: DrxComponentHost;
+    parentLocals: Record<string, any>;
     properties: Map<string, State<any>>;
-    serviceInstances: Map<string, any>;
+    services: Map<string, any>;
 }
 
-export type RenderContext = AppRenderContext | PageRenderContext | ComponentRenderContext;
+export type DrxHost = DrxApplicationHost | DrxPageHost | DrxComponentHost;
 
-export const RenderContext = {
-    withLocals<T extends RenderContext>(parent: T, locals: Record<string, any> = {}): T {
-        return {
-            ...parent,
-            locals: { ...parent.locals, ...locals }
-        };
-    }
+export const DrxRenderContext = class {
+
+    public static readonly host = Context.create<DrxHost>();
+
+    public static readonly application = Context.create<DrxApplicationHost>();
+
+    public static readonly component = Context.create<DrxComponentHost>();
+
+    public static readonly locals = Context.create<Record<string, any>>({});
+
+    public static readonly route = Context.create<DrxRouteScope>();
+
 };

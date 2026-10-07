@@ -1,13 +1,6 @@
 import { DependencyTree } from '@vorplex/compiler';
-import { $Id, Scope, Signal } from '@vorplex/core';
-import { DrxDocumentState } from '../../drx';
-import { DrxDom } from '../../drx-dom';
-import { DrxExpressionParser } from '../../expression-parser';
-import { PreviewContext } from '../../preview-context';
-import { AppRenderContext, RenderContextType } from '../../render-context';
-import { DocumentStyles } from '../../document-styles';
-import { DrxScripting } from '../../scripting';
-import { StyleSheet } from '../../style-sheet';
+import { DrxDom } from '../../dom';
+import type { DrxDocumentState } from '../../document';
 import { DrxApi } from '../api/api';
 import { DrxAsset } from '../asset';
 import { DrxComponent } from '../component/component';
@@ -15,8 +8,6 @@ import { DrxDependencyTree } from '../dependency-tree';
 import { NodeType } from '../node-type';
 import { DrxPackages } from '../packages';
 import { DrxPage } from '../page';
-import { DrxRouter } from '../router/router';
-import { DrxRouterRoute } from '../router/router-route';
 import { DrxService } from '../service';
 import { DrxTemplate, DrxTemplateItem } from '../template-item';
 import { DrxType } from '../type';
@@ -41,27 +32,24 @@ export interface DrxApp {
     template: DrxTemplateItem[];
 }
 
-export const DrxApp = {
-    from(document: HTMLDocument, state: DrxDocumentState): DrxApp {
-        const element = document.body.querySelector(`:scope > ${NodeType.App}`);
-        return DrxApp.parse(element, state);
-    },
-    parse(element: Element, state: DrxDocumentState): DrxApp {
-        const pages = DrxPage.from(element, state);
-        const variables = DrxVariable.from(element, state);
-        const services = DrxService.from(element, state);
-        const assets = DrxAsset.from(element, state);
-        const components = DrxComponent.from(element, state);
-        const types = DrxType.from(element, state);
-        const apis = DrxApi.from(element, state);
+export const DrxApp = class {
+
+    public static parse(element: Element, state: DrxDocumentState): DrxApp {
+        const pages = DrxDom.parseChildren(element, NodeType.Page, child => DrxPage.parse(child, state));
+        const variables = DrxDom.parseChildren(element, NodeType.Variable, child => DrxVariable.parse(child, state));
+        const services = DrxDom.parseChildren(element, NodeType.Service, child => DrxService.parse(child, state));
+        const assets = DrxDom.parseChildren(element, NodeType.Asset, child => DrxAsset.parse(child, state));
+        const components = DrxDom.parseChildren(element, NodeType.Component, child => DrxComponent.parse(child, state));
+        const types = DrxDom.parseChildren(element, NodeType.Type, child => DrxType.parse(child, state));
+        const apis = DrxDom.parseChildren(element, NodeType.Api, child => DrxApi.parse(child, state));
         return {
-            id: DrxDom.getAttribute(element, 'id') ?? $Id.guid(),
+            id: DrxDom.getId(element),
             name: DrxDom.getAttribute(element, 'name'),
             script: DrxDom.getScript(element),
             style: DrxDom.getStyle(element),
-            packages: DrxPackages.from(element),
-            dependencyTree: DrxDependencyTree.from(element),
-            pwaMetadata: DrxPwaMetadata.from(element),
+            packages: DrxDom.parseChildren(element, NodeType.Packages, child => DrxPackages.parse(child))[0],
+            dependencyTree: DrxDom.parseChildren(element, NodeType.DependencyTree, child => DrxDependencyTree.parse(child))[0],
+            pwaMetadata: DrxDom.parseChildren(element, NodeType.PwaMetadata, child => DrxPwaMetadata.parse(child))[0],
             pageIds: pages.map(page => page.id),
             variableIds: variables.map(variable => variable.id),
             serviceIds: services.map(service => service.id),
@@ -69,10 +57,11 @@ export const DrxApp = {
             componentIds: components.map(component => component.id),
             typeIds: types.map(type => type.id),
             apiIds: apis.map(api => api.id),
-            template: DrxTemplate.from(element, state)
+            template: DrxTemplate.parse(element, state)
         };
-    },
-    to(app: DrxApp, state: DrxDocumentState): Element {
+    }
+
+    public static to(app: DrxApp, state: DrxDocumentState): Element {
         const element = document.createElement(NodeType.App);
         DrxDom.setAttribute(element, 'id', app.id);
         if (app.name) DrxDom.setAttribute(element, 'name', app.name);
@@ -90,76 +79,19 @@ export const DrxApp = {
         for (const id of app.pageIds) element.appendChild(DrxPage.to(state.pages[id], state));
         for (const child of DrxTemplate.to(app.template, state)) element.appendChild(child);
         return element;
-    },
-    mount(container: Node, app: DrxApp, state: DrxDocumentState, bundle: string): Scope {
-        return Signal.root(() => {
-            const view = container.ownerDocument.defaultView;
-            const router = DrxRouter.mount(view);
-            const host = document.createElement(NodeType.App);
-            host.style.display = 'contents';
-            container.appendChild(host);
-            const shadow = host.attachShadow({ mode: 'open' });
-            DocumentStyles.mirror(shadow);
-            const variables = app.variableIds.map(id => state.variables[id]);
-            const { locals: variableLocals, states: variableStates } = DrxVariable.instantiate(variables);
-            const appContext: AppRenderContext = {
-                type: RenderContextType.App,
-                nearest: {},
-                locals: {
-                    asset: DrxAsset.toLocal(app.assetIds, state),
-                    ...variableLocals,
-                    router
-                },
-                state,
-                bundle,
-                app,
-                variableStates,
-                serviceInstances: new Map(),
-                router,
-                routeGroup: DrxRouterRoute.createGroup()
-            };
-            appContext.nearest = { app: appContext };
-
-            const appDrx = {
-                app: {
-                    variables: DrxVariable.createApi(variables, variableStates, { type: 'app' }, state)
-                },
-                apis: DrxApi.createApi(state, { type: 'app' }),
-                services: DrxScripting.instantiateServices(app.serviceIds, state, bundle, appContext.serviceInstances, { type: 'app' }),
-                router: DrxRouter.createApi(view, router.route),
-                pages: DrxPage.createApi(app.pageIds, appContext, container.ownerDocument)
-            };
-            const AppClass = DrxScripting.instantiate(bundle, app.id, appDrx);
-            const instance = AppClass ? new AppClass() : undefined;
-            appContext.instance = instance;
-            appContext.locals = {
-                ...appContext.locals,
-                ...DrxScripting.getFunctionLocals(instance),
-                ...variableLocals
-            };
-            StyleSheet.attach(container.ownerDocument, () => DrxExpressionParser.parse(app.style ?? '', appContext.locals));
-            StyleSheet.adopt(shadow, () => DrxExpressionParser.parse(app.style ?? '', appContext.locals));
-            DrxTemplate.mount(shadow, app.template, appContext);
-            appContext.routeGroup.ready(true);
-            instance?.onMount?.();
-            Signal.cleanup(() => {
-                instance?.onUnmount?.();
-                host.remove();
-            });
-        });
-    },
-    preview(container: Node, context: PreviewContext): Scope {
-        return Signal.scope(() => {
-            StyleSheet.attach(container.ownerDocument, () => context.root.proxy.app.style());
-            const host = document.createElement(NodeType.App);
-            host.style.display = 'contents';
-            host.setAttribute('data-drx-id', context.root.proxy.app.id());
-            container.appendChild(host);
-            const shadow = host.attachShadow({ mode: 'open' });
-            DocumentStyles.mirror(shadow);
-            StyleSheet.adopt(shadow, () => context.root.proxy.app.style(), ...context.styleSheets);
-            DrxTemplate.preview(shadow, () => context.root.proxy.app.template(), context);
-            Signal.cleanup(() => host.remove());
-        });
     }
-};
+
+    public static children(app: DrxApp): DrxTemplateItem[] {
+        return [
+            ...app.pageIds.map(id => ({ type: NodeType.Page, id })),
+            ...app.componentIds.map(id => ({ type: NodeType.Component, id })),
+            ...app.variableIds.map(id => ({ type: NodeType.Variable, id })),
+            ...app.serviceIds.map(id => ({ type: NodeType.Service, id })),
+            ...app.assetIds.map(id => ({ type: NodeType.Asset, id })),
+            ...app.typeIds.map(id => ({ type: NodeType.Type, id })),
+            ...app.apiIds.map(id => ({ type: NodeType.Api, id })),
+            ...app.template
+        ];
+    }
+
+}

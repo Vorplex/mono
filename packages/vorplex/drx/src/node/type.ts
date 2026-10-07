@@ -1,6 +1,6 @@
-import { $Id, $Tson, MapAdaptor, TsonDefinition } from '@vorplex/core';
-import { DrxDocumentState, DrxScope } from '../drx';
-import { DrxDom } from '../drx-dom';
+import { $Tson, MapAdaptor, TsonDefinition } from '@vorplex/core';
+import { DrxDom } from '../dom';
+import type { DrxDocumentState, DrxScope } from '../document';
 import { NodeType } from './node-type';
 
 export interface DrxType {
@@ -9,28 +9,27 @@ export interface DrxType {
     type: TsonDefinition;
 }
 
-export const DrxType = {
-    from(parent: Element, state: DrxDocumentState): DrxType[] {
-        const elements = Array.from(parent.querySelectorAll(`:scope > ${NodeType.Type}`));
-        return elements.map(element => DrxType.parse(element, state));
-    },
-    parse(element: Element, state: DrxDocumentState): DrxType {
+export const DrxType = class {
+
+    public static parse(element: Element, state: DrxDocumentState): DrxType {
         const type: DrxType = {
-            id: DrxDom.getAttribute(element, 'id') ?? $Id.guid(),
+            id: DrxDom.getId(element),
             name: DrxDom.getRequiredAttribute(element, 'name'),
             type: DrxDom.getJsonContent(element)
         };
         state.types[type.id] = type;
         return type;
-    },
-    to(type: DrxType): Element {
+    }
+
+    public static to(type: DrxType): Element {
         const element = document.createElement(NodeType.Type);
         DrxDom.setAttribute(element, 'id', type.id);
         DrxDom.setAttribute(element, 'name', type.name);
         DrxDom.setJsonContent(element, type.type);
         return element;
-    },
-    resolve(scope: DrxScope, name: string, state: DrxDocumentState): TsonDefinition {
+    }
+
+    public static resolve(scope: DrxScope, name: string, state: DrxDocumentState): TsonDefinition {
         const defaultTypeName = name as TsonDefinition['type'];
         if ($Tson.definitions.includes(defaultTypeName)) return $Tson.getDefaultDefinition(defaultTypeName);
         const owner = scope.type === 'app' ? state.app : state.components[scope.componentId];
@@ -39,4 +38,5 @@ export const DrxType = {
         if (!resolved) return $Tson.any();
         return $Tson.resolveRefs(resolved, refName => DrxType.resolve(scope, refName, state));
     }
-};
+
+}

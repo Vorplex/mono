@@ -1,61 +1,63 @@
-import { Awaitable } from '../../types/awaitable.type';
+import { Scope } from '../signal/scopes/scope';
+import { Getter, Setter, Signal } from '../signal/signal';
 
-export type Context<T> = {
-    (): T;
-    (value: T): Disposable & AsyncDisposable & { value: T };
-    (factory: (current: T) => T): Disposable & AsyncDisposable & { value: T };
-    <R>(value: T, callback: (value: T) => Awaitable<R>): Awaitable<R>;
-    <R>(factory: (current: T) => T, callback: (value: T) => Awaitable<R>): Awaitable<R>;
+export type ContextValue<T = any> = {
+    readonly context: Context<T>;
+    readonly value: Getter<T> | Signal<T>;
 };
 
-function create<T = any>(value?: T): Context<T> {
-    const stack = [value];
-    return <R>(...args: [value?: T | ((current: T) => T), callback?: (value: T) => Awaitable<R>]): T | Awaitable<R> | (Disposable & AsyncDisposable & { value: T }) => {
-        if (args.length === 0) return stack[stack.length - 1];
-        const value = typeof args[0] === 'function' ? (args[0] as (current: T) => T)(stack[stack.length - 1]) : args[0];
-        stack.push(value);
-        if (args.length === 1) {
-            let disposed: boolean;
-            const dispose = () => {
-                if (disposed) return;
-                disposed = true;
-                stack.pop();
-            };
-            return {
-                value: value,
-                [Symbol.dispose]() { dispose(); },
-                async [Symbol.asyncDispose]() { dispose(); }
-            };
-        }
-        try {
-            const result = args[1](value);
-            if (result instanceof Promise) return result.finally(() => stack.pop());
-            stack.pop();
-            return result;
-        } catch (error) {
-            stack.pop();
-            throw error;
-        }
-    };
+export interface Context<T> extends Getter<T>, Setter<T> {
+    as(value: T | Getter<T> | Signal<T>): ContextValue<T>;
+    use<R>(value: T | Getter<T> | Signal<T>, callback: () => R): R;
+    signal(): Getter<T> | Signal<T>;
 }
 
-function use<T>(callback: () => Promise<T>, ...contexts: (Disposable & AsyncDisposable)[]): Promise<T>
-function use<T>(callback: () => T, ...contexts: (Disposable & AsyncDisposable)[]): T
-function use<T>(callback: () => Awaitable<T>, ...contexts: (Disposable & AsyncDisposable)[]): Awaitable<T> {
-    const stack = new DisposableStack();
-    contexts.forEach(context => stack.use(context));
-    try {
-        const result = callback();
-        if (result instanceof Promise) return result.finally(() => stack.dispose());
-        stack.dispose();
-        return result;
-    } catch (error) {
-        stack.dispose();
-        throw error;
+class ContextClass {
+
+    private static readonly values = new WeakMap<Scope, Map<Context<any>, Getter<any> | Signal<any>>>();
+
+    public static create<T = any>(): Context<T>;
+    public static create<T>(defaultValue: T): Context<T>;
+    public static create<T = any>(defaultValue?: T): Context<T> {
+        const root = Signal.create<T>(defaultValue);
+        const resolve = (): Getter<T> | Signal<T> => {
+            for (let scope = Scope.current; scope; scope = scope.context) {
+                const binding = this.values.get(scope)?.get(context);
+                if (binding) return binding;
+            }
+            return root;
+        };
+        const context = Object.assign(
+            (...args: [] | [T | ((current: T) => T)]) => {
+                const binding = resolve();
+                if (args.length === 0) return binding();
+                return binding(args[0] as T);
+            },
+            {
+                as: (value: T | Getter<T> | Signal<T>): ContextValue<T> => ({
+                    context,
+                    value: typeof value === 'function' ? value as Getter<T> : Signal.create(value)
+                }),
+                use: <R>(value: T | Getter<T> | Signal<T>, callback: () => R): R => Context.use([context.as(value)], callback),
+                signal: resolve
+            }
+        ) as Context<T>;
+        return context;
     }
+
+    public static use<R>(contexts: readonly ContextValue[], callback: () => R): R {
+        let result!: R;
+        Signal.scope(() => {
+            const store = new Map<Context<any>, Getter<any> | Signal<any>>();
+            for (const binding of contexts) {
+                store.set(binding.context, binding.value);
+            }
+            Context.values.set(Scope.current, store);
+            result = callback();
+        });
+        return result;
+    }
+
 }
 
-export const Context = {
-    create,
-    use
-};
+export const Context = ContextClass;

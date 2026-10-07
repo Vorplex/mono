@@ -1,9 +1,6 @@
-import { $Id, $Value, EntityAdaptor, Signal } from '@vorplex/core';
-import { DrxDocumentState } from '../drx';
-import { DrxDom } from '../drx-dom';
-import { DrxExpressionParser } from '../expression-parser';
-import { PreviewContext } from '../preview-context';
-import { RenderContext } from '../render-context';
+import { $Id, $Value, EntityAdaptor } from '@vorplex/core';
+import { DrxDom } from '../dom';
+import type { DrxDocumentState } from '../document';
 import { NodeType } from './node-type';
 import { DrxTemplate, DrxTemplateItem } from './template-item';
 import { DrxText } from './text';
@@ -16,55 +13,36 @@ export interface DrxElement {
     template: DrxTemplateItem[];
 }
 
-export const DrxElement = {
-    parse(element: Element, state: DrxDocumentState): DrxTemplateItem {
+export const DrxElement = class {
+
+    public static parse(element: Element, state: DrxDocumentState): DrxTemplateItem {
         const item: DrxElement = {
-            id: $Id.guid(),
+            id: DrxDom.getAttribute(element, 'x-id') ?? $Id.guid(),
             type: NodeType.Element,
             tag: element.localName,
-            attributes: element.getAttributeNames().reduce((attributes, name) => Object.assign(attributes, { [name]: element.getAttribute(name) }), {}),
-            template: DrxTemplate.from(element, state)
+            attributes: DrxDom.getAttributes(element, 'x-id'),
+            template: DrxTemplate.parse(element, state)
         };
         state.elements[item.id] = item;
         return { id: item.id, type: item.type };
-    },
-    to(item: DrxElement, state: DrxDocumentState): Element {
+    }
+
+    public static to(item: DrxElement, state: DrxDocumentState): Element {
         const element = document.createElement(item.tag);
+        DrxDom.setAttribute(element, 'x-id', item.id);
         for (const [name, value] of Object.entries(item.attributes)) DrxDom.setAttribute(element, name, value);
         for (const child of DrxTemplate.to(item.template, state)) element.appendChild(child);
         return element;
-    },
-    mount(container: Node, item: DrxElement, context: RenderContext): void {
-        const element = DrxDom.createElement(container, item.tag);
-        container.appendChild(element);
-        Signal.cleanup(() => element.remove());
-        if (!('html' in item.attributes)) DrxTemplate.mount(element, item.template, context);
-        DrxExpressionParser.bindAttributes(element, item.attributes, context.locals);
-    },
-    preview(container: Node, id: string, context: PreviewContext): Node {
-        const anchor = document.createComment(id);
-        container.appendChild(anchor);
-        Signal.effect(() => {
-            const tag = context.root.proxy.elements[id].tag();
-            const element = DrxDom.createElement(container, tag);
-            anchor.after(element);
-            Signal.effect(() => {
-                const attributes = context.root.proxy.elements[id].attributes();
-                DrxExpressionParser.applyPreviewAttributes(element, { ...attributes, 'data-drx-id': id }, context);
-            });
-            DrxTemplate.preview(element, () => context.root.proxy.elements[id].template(), context);
-            Signal.cleanup(() => element.remove());
-        });
-        Signal.cleanup(() => anchor.remove());
-        return anchor;
-    },
-    getText(element: DrxElement, state: DrxDocumentState): string | undefined {
+    }
+
+    public static getText(element: DrxElement, state: DrxDocumentState): string | undefined {
         if (element.template.length === 0) return '';
         const [only] = element.template;
         if (element.template.length === 1 && only.type === NodeType.Text) return state.texts[only.id].content;
         return undefined;
-    },
-    setText(element: DrxElement, state: DrxDocumentState, value: string): DrxDocumentState {
+    }
+
+    public static setText(element: DrxElement, state: DrxDocumentState, value: string): DrxDocumentState {
         const [only] = element.template;
         if (element.template.length === 1 && only.type === NodeType.Text) {
             return $Value.set(state, s => s.texts[only.id].content, value);
@@ -73,4 +51,9 @@ export const DrxElement = {
         const withText = { ...state, texts: EntityAdaptor.create(state.texts, text) };
         return $Value.set(withText, s => s.elements[element.id].template, [{ id: text.id, type: NodeType.Text }]);
     }
-};
+
+    public static children(item: DrxElement): DrxTemplateItem[] {
+        return item.template;
+    }
+
+}

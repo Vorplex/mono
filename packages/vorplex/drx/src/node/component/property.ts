@@ -1,6 +1,5 @@
-import { $Id } from '@vorplex/core';
-import { DrxDocumentState } from '../../drx';
-import { DrxDom } from '../../drx-dom';
+import { DrxDom } from '../../dom';
+import type { DrxDocumentState } from '../../document';
 import { NodeType } from '../node-type';
 
 export interface DrxComponentProperty {
@@ -9,25 +8,24 @@ export interface DrxComponentProperty {
     type: string;
 }
 
-export const DrxComponentProperty = {
-    from(parent: Element, state: DrxDocumentState): DrxComponentProperty[] {
-        const elements = Array.from(parent.querySelectorAll(`:scope > ${NodeType.ComponentProperty}`));
-        return elements.map(element => DrxComponentProperty.parse(element, state));
-    },
-    parse(element: Element, state: DrxDocumentState): DrxComponentProperty {
+export const DrxComponentProperty = class {
+
+    public static parse(element: Element, state: DrxDocumentState): DrxComponentProperty {
         const property: DrxComponentProperty = {
-            id: DrxDom.getAttribute(element, 'id') ?? $Id.guid(),
+            id: DrxDom.getId(element),
             name: DrxDom.getRequiredAttribute(element, 'name'),
             type: DrxDom.getAttribute(element, 'type') ?? 'any'
         };
         state.componentProperties[property.id] = property;
         return property;
-    },
-    to(property: DrxComponentProperty): Element {
+    }
+
+    public static to(property: DrxComponentProperty): Element {
         const element = document.createElement(NodeType.ComponentProperty);
         DrxDom.setAttribute(element, 'id', property.id);
         DrxDom.setAttribute(element, 'name', property.name);
         DrxDom.setAttribute(element, 'type', property.type);
         return element;
     }
-};
+
+}

@@ -1,26 +1,29 @@
 import { Signal } from '@vorplex/core';
 
-export const ICON_SHEET_URL = 'https://cdn.jsdelivr.net/npm/lucide-static/sprite.svg';
+export class DrxIconSheet {
 
-const symbols = Signal.create<Map<string, Element>>();
-let loading: Promise<void> | undefined;
+    public static readonly url = 'https://cdn.jsdelivr.net/npm/lucide-static/sprite.svg';
 
-export const IconSheet = {
-    load(url: string = ICON_SHEET_URL): Promise<void> {
-        if (!loading) {
-            loading = (async () => {
+    private static readonly symbols = Signal.create<Map<string, Element>>();
+
+    private static loading: Promise<void> | undefined;
+
+    public static load(url: string = this.url): Promise<void> {
+        if (!this.loading) {
+            this.loading = (async () => {
                 const response = await fetch(url);
                 const text = await response.text();
                 const sheet = new DOMParser().parseFromString(text, 'image/svg+xml');
                 const map = new Map<string, Element>();
                 for (const symbol of Array.from(sheet.querySelectorAll('symbol'))) map.set(symbol.id, symbol);
-                symbols(map);
+                this.symbols(map);
             })();
         }
-        return loading;
-    },
-    apply(svg: SVGElement, name: string): void {
-        const symbol = symbols()?.get(name);
+        return this.loading;
+    }
+
+    public static apply(svg: SVGElement, name: string): void {
+        const symbol = this.symbols()?.get(name);
         if (!symbol) {
             svg.replaceChildren(...[]);
             return;
@@ -41,4 +44,5 @@ export const IconSheet = {
         }
         svg.replaceChildren(...Array.from(symbol.childNodes).map(child => child.cloneNode(true)));
     }
-};
+
+}

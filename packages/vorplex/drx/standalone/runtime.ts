@@ -1,11 +1,12 @@
-import { type DrxDocumentState } from '../src/drx';
-import { DrxDom } from '../src/drx-dom';
-import { IconSheet } from '../src/icon-sheet';
-import { DrxApp } from '../src/node/app/app';
+import { Signal } from '@vorplex/core';
+import type { DrxDocumentState } from '../src/document';
+import { DrxDom } from '../src/dom';
+import { DrxIconSheet } from '../src/icon-sheet';
+import { DrxRenderer } from '../src/renderer';
 
 export async function bootstrap(paths: { bundle: string, state: string, icons: string }) {
     await DrxDom.bootstrap(document.body, async () => {
-        IconSheet.load(paths.icons);
+        DrxIconSheet.load(paths.icons);
         const [state, bundle]: [DrxDocumentState, string] = await Promise.all([
             fetch(paths.state).then(response => response.json()),
             fetch(paths.bundle).then(response => response.text())
@@ -19,6 +20,6 @@ export async function bootstrap(paths: { bundle: string, state: string, icons: s
                 })
                 .catch(() => { });
         }
-        return DrxApp.mount(document.body, state.app, state, bundle);
+        return new DrxRenderer(Signal.create(state), { bundle }).render(document.body);
     });
 }

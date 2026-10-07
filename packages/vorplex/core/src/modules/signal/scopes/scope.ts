@@ -5,6 +5,7 @@ export class Scope {
     private cleanups: (() => void)[] = [];
     public readonly children = new Set<Scope>();
     public readonly depth: number;
+    public readonly context = Scope.current;
     public disposed = false;
 
     constructor(public readonly func: () => void, public readonly parent: Scope | null) {

@@ -1,7 +1,5 @@
-import { $Id, $Tson, Scope, Signal, State, type TsonResult } from '@vorplex/core';
-import { DrxDocumentState, DrxScope } from '../drx';
-import { DrxDom } from '../drx-dom';
-import { DrxType } from './type';
+import { DrxDom } from '../dom';
+import type { DrxDocumentState } from '../document';
 import { NodeType } from './node-type';
 
 export interface DrxVariable {
@@ -11,69 +9,26 @@ export interface DrxVariable {
     value?: any;
 }
 
-export interface VariableApi<T = any> {
-    get(): T;
-    set(update: T | ((value: T) => T)): void;
-    reset(): void;
-    validate(): TsonResult<T>;
-    subscribe(callback: (value: T) => void): () => void;
-}
+export const DrxVariable = class {
 
-export const DrxVariable = {
-    from(parent: Element, state: DrxDocumentState): DrxVariable[] {
-        const elements = Array.from(parent.querySelectorAll(`:scope > ${NodeType.Variable}`));
-        return elements.map(element => DrxVariable.parse(element, state));
-    },
-    parse(element: Element, state: DrxDocumentState): DrxVariable {
+    public static parse(element: Element, state: DrxDocumentState): DrxVariable {
         const variable: DrxVariable = {
-            id: DrxDom.getAttribute(element, 'id') ?? $Id.guid(),
+            id: DrxDom.getId(element),
             name: DrxDom.getRequiredAttribute(element, 'name'),
             type: DrxDom.getAttribute(element, 'type') ?? 'any',
             value: DrxDom.getJsonContent(element)
         };
         state.variables[variable.id] = variable;
         return variable;
-    },
-    to(variable: DrxVariable): Element {
+    }
+
+    public static to(variable: DrxVariable): Element {
         const element = document.createElement(NodeType.Variable);
         DrxDom.setAttribute(element, 'id', variable.id);
         DrxDom.setAttribute(element, 'name', variable.name);
         DrxDom.setAttribute(element, 'type', variable.type);
         if (variable.value != null) DrxDom.setJsonContent(element, variable.value);
         return element;
-    },
-    instantiate(variables: DrxVariable[]): { locals: Record<string, any>; states: Map<string, State<any>> } {
-        const states = new Map(variables.map(variable => [variable.id, new State(variable.value)] as const));
-        const locals = variables.reduce((locals, variable) => Object.assign(locals, { [variable.name]: states.get(variable.id).signal.proxy }), {} as Record<string, any>);
-        return { locals, states };
-    },
-    createApi(variables: DrxVariable[], states: Map<string, State<any>>, scope: DrxScope, documentState: DrxDocumentState): Record<string, VariableApi> {
-        const subscriptions = new Set<Scope>();
-        if (Scope.current) Signal.cleanup(() => {
-            for (const subscription of subscriptions) subscription.dispose();
-            subscriptions.clear();
-        });
-        return variables.reduce((api, variable) => {
-            const state = states.get(variable.id)!;
-            return Object.assign(api, {
-                [variable.name]: {
-                    get: () => state.value,
-                    set: (update: any) => state.set(update),
-                    reset: () => state.set(variable.value),
-                    validate: () => $Tson.parse(DrxType.resolve(scope, variable.type, documentState)).parse(state.value),
-                    subscribe: (callback: (value: any) => void) => {
-                        const subscription = Signal.root(() => Signal.effect(() => {
-                            const value = state.signal();
-                            Signal.untrack(() => callback(value));
-                        }));
-                        subscriptions.add(subscription);
-                        return () => {
-                            subscription.dispose();
-                            subscriptions.delete(subscription);
-                        };
-                    }
-                } satisfies VariableApi
-            });
-        }, {} as Record<string, VariableApi>);
     }
-};
+
+}

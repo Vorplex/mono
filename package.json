@@ -1,13 +1,13 @@
 {
     "private": true,
     "name": "mono",
-    "version": "1.0.20",
+    "version": "1.0.21",
     "scripts": {
         "clean": "git clean -fdX",
         "build": "pnpm -r --filter \"./packages/vorplex/**\" build",
         "test": "pnpm -r --filter \"./packages/vorplex/**\" test",
         "version": "npx tsx .scripts/version.ts",
-        "publish": "pnpm build && pnpm --filter \"./packages/vorplex/**\" publish --recursive --access public --no-git-checks",
+        "publish": "pnpm build && npm login && pnpm --filter \"./packages/vorplex/**\" publish --recursive --access public --no-git-checks",
         "package-list": "npx tsx .scripts/package-list.mts",
         "purge-cdn": "npx tsx .scripts/purge-cdn.mts",
         "serve:drx": "npx tsx packages/vorplex/drx/standalone/serve.mts"

@@ -1,10 +1,6 @@
 import { DependencyTree } from '@vorplex/compiler';
-import { $Id, Scope, Signal } from '@vorplex/core';
-import { PreviewContext } from '../../preview-context';
-import { DrxDocumentState } from '../../drx';
-import { DocumentStyles } from '../../document-styles';
-import { DrxDom } from '../../drx-dom';
-import { StyleSheet } from '../../style-sheet';
+import { DrxDom } from '../../dom';
+import type { DrxDocumentState } from '../../document';
 import { DrxApi } from '../api/api';
 import { DrxAsset } from '../asset';
 import { DrxDependencyTree } from '../dependency-tree';
@@ -35,27 +31,24 @@ export interface DrxComponent {
     template: DrxTemplateItem[];
 }
 
-export const DrxComponent = {
-    from(parent: Element, state: DrxDocumentState): DrxComponent[] {
-        const elements = Array.from(parent.querySelectorAll(`:scope > ${NodeType.Component}`));
-        return elements.map(element => DrxComponent.parse(element, state));
-    },
-    parse(element: Element, state: DrxDocumentState): DrxComponent {
-        const variables = DrxVariable.from(element, state);
-        const services = DrxService.from(element, state);
-        const assets = DrxAsset.from(element, state);
-        const types = DrxType.from(element, state);
-        const properties = DrxComponentProperty.from(element, state);
-        const events = DrxComponentEvent.from(element, state);
-        const apis = DrxApi.from(element, state);
-        const children = DrxComponent.from(element, state);
+export const DrxComponent = class {
+
+    public static parse(element: Element, state: DrxDocumentState): DrxComponent {
+        const variables = DrxDom.parseChildren(element, NodeType.Variable, child => DrxVariable.parse(child, state));
+        const services = DrxDom.parseChildren(element, NodeType.Service, child => DrxService.parse(child, state));
+        const assets = DrxDom.parseChildren(element, NodeType.Asset, child => DrxAsset.parse(child, state));
+        const types = DrxDom.parseChildren(element, NodeType.Type, child => DrxType.parse(child, state));
+        const properties = DrxDom.parseChildren(element, NodeType.ComponentProperty, child => DrxComponentProperty.parse(child, state));
+        const events = DrxDom.parseChildren(element, NodeType.ComponentEvent, child => DrxComponentEvent.parse(child, state));
+        const apis = DrxDom.parseChildren(element, NodeType.Api, child => DrxApi.parse(child, state));
+        const children = DrxDom.parseChildren(element, NodeType.Component, child => DrxComponent.parse(child, state));
         const component: DrxComponent = {
-            id: DrxDom.getAttribute(element, 'id') ?? $Id.guid(),
+            id: DrxDom.getId(element),
             name: DrxDom.getRequiredAttribute(element, 'name'),
             script: DrxDom.getScript(element),
             style: DrxDom.getStyle(element),
-            packages: DrxPackages.from(element),
-            dependencyTree: DrxDependencyTree.from(element),
+            packages: DrxDom.parseChildren(element, NodeType.Packages, child => DrxPackages.parse(child))[0],
+            dependencyTree: DrxDom.parseChildren(element, NodeType.DependencyTree, child => DrxDependencyTree.parse(child))[0],
             variableIds: variables.map(variable => variable.id),
             serviceIds: services.map(service => service.id),
             assetIds: assets.map(asset => asset.id),
@@ -64,12 +57,13 @@ export const DrxComponent = {
             eventIds: events.map(event => event.id),
             apiIds: apis.map(api => api.id),
             componentIds: children.map(child => child.id),
-            template: DrxTemplate.from(element, state)
+            template: DrxTemplate.parse(element, state)
         };
         state.components[component.id] = component;
         return component;
-    },
-    to(component: DrxComponent, state: DrxDocumentState): Element {
+    }
+
+    public static to(component: DrxComponent, state: DrxDocumentState): Element {
         const element = document.createElement(NodeType.Component);
         DrxDom.setAttribute(element, 'id', component.id);
         DrxDom.setAttribute(element, 'name', component.name);
@@ -87,20 +81,20 @@ export const DrxComponent = {
         for (const id of component.componentIds) element.appendChild(DrxComponent.to(state.components[id], state));
         for (const child of DrxTemplate.to(component.template, state)) element.appendChild(child);
         return element;
-    },
-    preview(container: Node, id: string, context: PreviewContext): Scope {
-        return Signal.scope(() => {
-            const host = document.createElement(NodeType.Component);
-            host.style.display = 'contents';
-            host.setAttribute('data-drx-id', id);
-            container.appendChild(host);
-            const shadow = host.attachShadow({ mode: 'open' });
-            StyleSheet.attach(container.ownerDocument, () => context.root.proxy.app.style());
-            DocumentStyles.mirror(shadow);
-            StyleSheet.adopt(shadow, () => context.root.proxy.components[id].style(), ...context.styleSheets);
-            StyleSheet.registerDocumentRules(shadow.ownerDocument, id, () => context.root.proxy.components[id].style());
-            DrxTemplate.preview(shadow, () => context.root.proxy.components[id].template(), { ...context, componentId: id });
-            Signal.cleanup(() => host.remove());
-        });
     }
-};
+
+    public static children(component: DrxComponent): DrxTemplateItem[] {
+        return [
+            ...component.componentIds.map(id => ({ type: NodeType.Component, id })),
+            ...component.variableIds.map(id => ({ type: NodeType.Variable, id })),
+            ...component.serviceIds.map(id => ({ type: NodeType.Service, id })),
+            ...component.assetIds.map(id => ({ type: NodeType.Asset, id })),
+            ...component.typeIds.map(id => ({ type: NodeType.Type, id })),
+            ...component.apiIds.map(id => ({ type: NodeType.Api, id })),
+            ...component.propertyIds.map(id => ({ type: NodeType.ComponentProperty, id })),
+            ...component.eventIds.map(id => ({ type: NodeType.ComponentEvent, id })),
+            ...component.template
+        ];
+    }
+
+}

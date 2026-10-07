@@ -1,8 +1,9 @@
 import { Compiler, JsDelivr, NPM, type DependencyTree } from '@vorplex/compiler';
-import { DrxDocumentState } from './drx';
+import type { DrxDocumentState } from './document';
 
-export const DrxScriptBundler = {
-    async bundle(state: DrxDocumentState): Promise<string> {
+export const DrxBundler = class {
+
+    public static async bundle(state: DrxDocumentState): Promise<string> {
         const entries: {
             id: string;
             path: string;
@@ -49,4 +50,5 @@ export const DrxScriptBundler = {
         };
         return await Compiler.compile({ files, entryFilePath: entryPath });
     }
-};
+
+}

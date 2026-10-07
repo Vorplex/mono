@@ -1,11 +1,6 @@
-import { $Id, Scope, Signal } from '@vorplex/core';
-import { DrxDocumentState } from '../drx';
-import { DrxDom } from '../drx-dom';
-import { DrxExpressionParser } from '../expression-parser';
-import { PreviewContext } from '../preview-context';
-import { RenderContext } from '../render-context';
+import { DrxDom } from '../dom';
+import type { DrxDocumentState } from '../document';
 import { NodeType } from './node-type';
-import { DrxPage } from './page';
 import { DrxTemplateItem } from './template-item';
 
 export interface DrxPageContainer {
@@ -14,55 +9,23 @@ export interface DrxPageContainer {
     page: string;
 }
 
-export const DrxPageContainer = {
-    from(parent: Element, state: DrxDocumentState): DrxTemplateItem[] {
-        const elements = Array.from(parent.querySelectorAll(`:scope > ${NodeType.PageContainer}`));
-        return elements.map(element => DrxPageContainer.parse(element, state));
-    },
-    parse(element: Element, state: DrxDocumentState): DrxTemplateItem {
+export const DrxPageContainer = class {
+
+    public static parse(element: Element, state: DrxDocumentState): DrxTemplateItem {
         const item: DrxPageContainer = {
-            id: DrxDom.getAttribute(element, 'id') ?? $Id.guid(),
+            id: DrxDom.getId(element),
             type: NodeType.PageContainer,
             page: DrxDom.getRequiredAttribute(element, 'page')
         };
         state.pageContainers[item.id] = item;
         return { id: item.id, type: item.type };
-    },
-    to(item: DrxPageContainer): Element {
+    }
+
+    public static to(item: DrxPageContainer): Element {
         const element = document.createElement(NodeType.PageContainer);
         DrxDom.setAttribute(element, 'id', item.id);
         DrxDom.setAttribute(element, 'page', item.page);
         return element;
-    },
-    mount(container: Node, item: DrxPageContainer, context: RenderContext): Scope {
-        return Signal.scope(() => {
-            DrxExpressionParser.bind(item.page, context.locals, pageName => {
-                const appContext = context.nearest.app!;
-                const page = appContext.app.pageIds.map(id => appContext.state.pages[id]).find(page => page.name === pageName);
-                if (!page) throw new Error(`Unknown page "${pageName}"`);
-                const pageContext = {
-                    ...context,
-                    locals: {
-                        ...appContext.locals,
-                        router: context.locals.router
-                    }
-                };
-                DrxPage.mount(container, page, pageContext);
-            });
-        });
-    },
-    preview(container: Node, id: string, context: PreviewContext): Node {
-        const host = document.createElement(NodeType.PageContainer);
-        host.style.display = 'contents';
-        host.setAttribute('data-drx-id', id);
-        container.appendChild(host);
-        Signal.effect(() => {
-            const name = context.root.proxy.pageContainers[id].page();
-            const pageId = context.root.proxy.app.pageIds().find(pageId => context.root.proxy.pages[pageId].name() === name);
-            if (!pageId) return;
-            DrxPage.preview(host, pageId, context);
-        });
-        Signal.cleanup(() => host.remove());
-        return host;
     }
-};
+
+}

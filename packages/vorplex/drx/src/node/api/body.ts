@@ -1,6 +1,6 @@
-import { $Id, TsonDefinition } from '@vorplex/core';
-import { DrxDocumentState } from '../../drx';
-import { DrxDom } from '../../drx-dom';
+import { TsonDefinition } from '@vorplex/core';
+import { DrxDom } from '../../dom';
+import type { DrxDocumentState } from '../../document';
 import { NodeType } from '../node-type';
 
 export interface DrxApiBody {
@@ -8,23 +8,22 @@ export interface DrxApiBody {
     definition: TsonDefinition;
 }
 
-export const DrxApiBody = {
-    from(parent: Element, state: DrxDocumentState): DrxApiBody | undefined {
-        const element = DrxDom.getNode(parent, NodeType.ApiBody);
-        return element ? DrxApiBody.parse(element, state) : undefined;
-    },
-    parse(element: Element, state: DrxDocumentState): DrxApiBody {
+export const DrxApiBody = class {
+
+    public static parse(element: Element, state: DrxDocumentState): DrxApiBody {
         const body: DrxApiBody = {
-            id: DrxDom.getAttribute(element, 'id') ?? $Id.guid(),
+            id: DrxDom.getId(element),
             definition: DrxDom.getJsonContent(element) ?? { type: 'any' }
         };
         state.apiBodies[body.id] = body;
         return body;
-    },
-    to(body: DrxApiBody): Element {
+    }
+
+    public static to(body: DrxApiBody): Element {
         const element = document.createElement(NodeType.ApiBody);
         DrxDom.setAttribute(element, 'id', body.id);
         DrxDom.setJsonContent(element, body.definition);
         return element;
     }
-};
+
+}
