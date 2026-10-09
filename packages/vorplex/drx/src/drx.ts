@@ -1,4 +1,4 @@
-import { $Path, Awaitable } from '@vorplex/core';
+import { $Object, $Path, Awaitable } from '@vorplex/core';
 import { DrxDocument, DrxDocumentState } from './document';
 import { DrxDom } from './dom';
 import { DrxApp } from './node/app/app';
@@ -43,10 +43,10 @@ export const DRX = class {
 
     public static from(dom: Document): DrxDocument {
         const state = DrxDocumentState.new();
-        return new DrxDocument({
+        return new DrxDocument($Object.removeUndefinedProperties({
             ...state,
             app: DrxApp.parse(dom.body.querySelector(`:scope > ${NodeType.App}`), state)
-        });
+        }));
     }
 
 }

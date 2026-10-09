@@ -65,4 +65,10 @@ export class $Object {
         return value;
     }
 
+    public static removeUndefinedProperties<T>(value: T): T {
+        if (Array.isArray(value)) return value.map(item => $Object.removeUndefinedProperties(item)) as T;
+        if (value === null || typeof value !== 'object') return value;
+        return Object.fromEntries(Object.entries(value).filter(([, item]) => item !== undefined).map(([key, item]) => [key, $Object.removeUndefinedProperties(item)])) as T;
+    }
+
 }

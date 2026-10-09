@@ -24,7 +24,7 @@ export const DrxTemplate = class {
         const items: DrxTemplateItem[] = [];
         for (const node of Array.from(parent.childNodes)) {
             if (node.nodeType === Node.TEXT_NODE) {
-                if (/^\s*$/.test(node.textContent ?? '') && node.textContent.includes('\n')) continue;
+                if (!DrxText.isSignificant(node)) continue;
                 items.push(DrxText.parse(node, state));
                 continue;
             }

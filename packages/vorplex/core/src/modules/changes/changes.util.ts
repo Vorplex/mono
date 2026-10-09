@@ -254,7 +254,7 @@ export class $Changes {
 
             const result = { ...base };
             for (const [key, value] of Object.entries(changes)) {
-                if (value === $Changes.deleted) {
+                if (value === $Changes.deleted || value === undefined) {
                     delete result[key];
                 } else {
                     result[key] = $Changes.apply(result[key] !== undefined ? result[key] : null, value);
