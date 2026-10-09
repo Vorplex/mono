@@ -54,12 +54,16 @@ None. `onMount()`/`onUnmount()` are never called on a service instance and shoul
 ```ts
 interface Drx {
     /** Every <x-api> declared on the same owner (app or component), keyed by name. */
-    apis: Record<string, Record<string, {
-        request(options?: { parameters?: Record<string, string>; headers?: Record<string, string>; body?: any }): Promise<{
-            raw: Response;
-            value(): Promise<any>;
+    apis: Record<string, {
+        /** The api's base url. */
+        url: string;
+        endpoints: Record<string, {
+            request(options?: { parameters?: Record<string, string>; headers?: Record<string, string>; body?: any }): Promise<{
+                raw: Response;
+                value(): Promise<any>;
+            }>;
         }>;
-    }>>;
+    }>;
 
     /** Every sibling <x-service> declared on the same owner (app or component), keyed by name. */
     services: Record<string, Record<string, (...args: any[]) => any>>;
@@ -170,7 +174,7 @@ Calls a `<x-service>` declared inside the component itself, from the component's
         <script type="application/typescript">
             export default DRX.defineService(drx => class {
                 async logTodos() {
-                    const response = await drx.apis.todoApi.list.request();
+                    const response = await drx.apis.todoApi.endpoints.list.request();
                     console.log(await response.value());
                 }
             });

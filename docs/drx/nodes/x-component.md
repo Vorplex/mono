@@ -167,12 +167,16 @@ interface Drx {
     };
 
     /** Every <x-api> declared on this component itself -- never the enclosing app's. */
-    apis: Record<string, Record<string, {
-        request(options?: { parameters?: Record<string, string>; headers?: Record<string, string>; body?: any }): Promise<{
-            raw: Response;
-            value(): Promise<any>;
+    apis: Record<string, {
+        /** The api's base url. */
+        url: string;
+        endpoints: Record<string, {
+            request(options?: { parameters?: Record<string, string>; headers?: Record<string, string>; body?: any }): Promise<{
+                raw: Response;
+                value(): Promise<any>;
+            }>;
         }>;
-    }>>;
+    }>;
 
     /** Every <x-service> declared on this component itself -- never the enclosing app's. */
     services: Record<string, Record<string, (...args: any[]) => any>>;

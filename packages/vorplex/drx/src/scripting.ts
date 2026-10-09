@@ -1,7 +1,7 @@
-import { $String, $Tson, ModuleLoader, Scope, Signal, State, type TsonResult } from '@vorplex/core';
+import { $Reflection, $String, $Tson, ModuleLoader, Scope, Signal, State, type TsonResult } from '@vorplex/core';
 import type { DrxDocumentState, DrxScope } from './document';
-import { DrxVariable } from './node/variable';
 import { DrxType } from './node/type';
+import { DrxVariable } from './node/variable';
 
 export interface DrxVariableApi<T = any> {
     get(): T;
@@ -22,16 +22,25 @@ export interface DrxApiRequestResult {
     value(): Promise<any>;
 }
 
+export interface DrxApiEndpointClient {
+    request(options?: DrxApiRequestOptions): Promise<DrxApiRequestResult>;
+}
+
+export interface DrxApiClient {
+    url: string;
+    endpoints: Record<string, DrxApiEndpointClient>;
+}
+
 export class DrxScripting {
 
     private static createScriptDefault(define: string): string {
         return $String.dedent(`
         export default DRX.${define}(drx => class {
             onMount() {
-    
+
             }
             onUnmount() {
-    
+
             }
         });
     `);
@@ -71,13 +80,13 @@ export class DrxScripting {
             .reduce((methods, name) => Object.assign(methods, { [name]: instance[name].bind(instance) }), {});
     }
 
-    public static instantiateServices(serviceIds: string[], state: DrxDocumentState, module: Record<string, any> | undefined, instances = new Map<string, any>(), scope: DrxScope): Record<string, any> {
+    public static instantiateServices(serviceIds: string[], state: DrxDocumentState, module: Record<string, any> | undefined, instances = new Map<string, any>(), scope: DrxScope, realm: typeof globalThis): Record<string, any> {
         const api: Record<string, any> = {};
         for (const serviceId of serviceIds) {
             const service = state.services[serviceId];
             Object.defineProperty(api, service.name, { get: () => instances.get(serviceId), enumerable: true });
         }
-        const apis = DrxScripting.createApiClients(state, scope);
+        const apis = DrxScripting.createApiClients(state, scope, realm);
         for (const serviceId of serviceIds) {
             if (instances.has(serviceId)) continue;
             const service = state.services[serviceId];
@@ -123,12 +132,12 @@ export class DrxScripting {
         }, {} as Record<string, DrxVariableApi>);
     }
 
-    public static createApiClients(state: DrxDocumentState, scope: DrxScope): Record<string, Record<string, { request(options?: DrxApiRequestOptions): Promise<DrxApiRequestResult> }>> {
+    public static createApiClients(state: DrxDocumentState, scope: DrxScope, realm: typeof globalThis): Record<string, DrxApiClient> {
         const apiIds = scope.type === 'app' ? state.app.apiIds : state.components[scope.componentId].apiIds;
-        const api: Record<string, Record<string, { request(options?: DrxApiRequestOptions): Promise<DrxApiRequestResult> }>> = {};
+        const api: Record<string, DrxApiClient> = {};
         for (const apiId of apiIds) {
             const definition = state.apis[apiId];
-            const endpoints: Record<string, { request(options?: DrxApiRequestOptions): Promise<DrxApiRequestResult> }> = {};
+            const endpoints: Record<string, DrxApiEndpointClient> = {};
             for (const endpointId of definition.endpointIds) {
                 const endpoint = state.apiEndpoints[endpointId];
                 endpoints[endpoint.name] = {
@@ -150,18 +159,32 @@ export class DrxScripting {
                             return encodeURIComponent(parameters[name]);
                         });
                         const url = new URL(definition.url + path);
-                        const body = endpoint.bodyId ? state.apiBodies[endpoint.bodyId] : undefined;
-                        if (!body) {
-                            for (const [name, value] of Object.entries(parameters)) {
-                                if (!usedParameters.has(name)) url.searchParams.set(name, value);
+                        for (const [name, value] of Object.entries(parameters)) {
+                            if (!usedParameters.has(name)) url.searchParams.set(name, value);
+                        }
+                        const definedBody = endpoint.bodyId ? state.apiBodies[endpoint.bodyId] : undefined;
+                        let body: BodyInit;
+                        if (definedBody && options.body !== undefined) {
+                            const value = options.body;
+                            const encoding = definedBody.encoding ?? 'json';
+                            if (typeof value === 'string' || [realm.FormData, realm.URLSearchParams, realm.Blob, realm.ArrayBuffer].some(type => $Reflection.instanceOf(value, type))) {
+                                body = value;
+                            } else if (encoding === 'json') {
+                                body = JSON.stringify(value);
+                                headers['Content-Type'] ??= 'application/json';
+                            } else {
+                                const target = encoding === 'form-data' ? new realm.FormData() : new realm.URLSearchParams();
+                                for (const [name, entry] of Object.entries(value ?? {})) {
+                                    for (const item of Array.isArray(entry) ? entry : [entry]) {
+                                        if (item == null) continue;
+                                        if ($Reflection.instanceOf(item, realm.Blob)) (target as FormData).append(name, item as Blob);
+                                        else target.append(name, typeof item === 'object' ? JSON.stringify(item) : String(item));
+                                    }
+                                }
+                                body = target;
                             }
                         }
-                        if (body && options.body !== undefined) headers['Content-Type'] ??= 'application/json';
-                        const raw = await fetch(url.toString(), {
-                            method: endpoint.method,
-                            headers,
-                            body: body && options.body !== undefined ? JSON.stringify(options.body) : undefined
-                        });
+                        const raw = await fetch(url.toString(), { method: endpoint.method, headers, body });
                         let value: any;
                         let resolved = false;
                         return {
@@ -184,7 +207,7 @@ export class DrxScripting {
                     }
                 };
             }
-            api[definition.name] = endpoints;
+            api[definition.name] = { url: definition.url, endpoints };
         }
         return api;
     }

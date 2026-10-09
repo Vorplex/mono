@@ -370,8 +370,8 @@ export class DrxRenderer {
         host.router = DrxRouter.mount(view);
         this.instantiateHost(host, host.app.id, host.app.variableIds, { asset: this.createAssetLocals(host.app.assetIds), router: host.router }, variables => ({
             app: { variables: DrxScripting.createVariableApis(variables, host.variables, { type: 'app' }, state) },
-            apis: DrxScripting.createApiClients(state, { type: 'app' }),
-            services: DrxScripting.instantiateServices(host.app.serviceIds, state, this.loadScripts(), host.services, { type: 'app' }),
+            apis: DrxScripting.createApiClients(state, { type: 'app' }, this.realm),
+            services: DrxScripting.instantiateServices(host.app.serviceIds, state, this.loadScripts(), host.services, { type: 'app' }, this.realm),
             router: DrxRouter.createApi(view, host.router.route),
             pages: this.createPagesApi(host)
         }));
@@ -387,8 +387,8 @@ export class DrxRenderer {
                 get instance() { return application.instance; }
             },
             page: { variables: DrxScripting.createVariableApis(variables, host.variables, { type: 'app' }, state), root: host.root },
-            apis: DrxScripting.createApiClients(state, { type: 'app' }),
-            services: DrxScripting.instantiateServices(application.app.serviceIds, state, this.loadScripts(), application.services, { type: 'app' }),
+            apis: DrxScripting.createApiClients(state, { type: 'app' }, this.realm),
+            services: DrxScripting.instantiateServices(application.app.serviceIds, state, this.loadScripts(), application.services, { type: 'app' }, this.realm),
             router: DrxRouter.createApi(view, application.router.route, host.locals.router),
             pages: this.createPagesApi(application),
             modal: host.locals.modal
@@ -427,8 +427,8 @@ export class DrxRenderer {
                 events,
                 root: host.root
             },
-            apis: DrxScripting.createApiClients(state, scope),
-            services: DrxScripting.instantiateServices(host.component.serviceIds, state, this.loadScripts(), host.services, scope)
+            apis: DrxScripting.createApiClients(state, scope, this.realm),
+            services: DrxScripting.instantiateServices(host.component.serviceIds, state, this.loadScripts(), host.services, scope, this.realm)
         }), inputs);
     }
 
