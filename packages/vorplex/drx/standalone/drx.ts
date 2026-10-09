@@ -1,7 +1,5 @@
-import { DRX } from '../src/drx';
 import { DrxDom } from '../src/dom';
-import { DrxRenderer } from '../src/renderer';
-import { DrxBundler } from '../src/bundler';
+import { DRX } from '../src/drx';
 
 async function bootstrap() {
     const source = document.body.innerHTML;
@@ -10,8 +8,7 @@ async function bootstrap() {
         const drxDocument = await DRX.load(source, {
             import: (path) => fetch(base + path).then((response) => response.text()),
         });
-        const bundle = await DrxBundler.bundle(drxDocument.state.value);
-        return new DrxRenderer(drxDocument.state.signal, { bundle }).render(document.body);
+        await drxDocument.render(document.body);
     });
 }
 

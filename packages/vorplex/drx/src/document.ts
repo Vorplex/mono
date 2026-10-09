@@ -1,4 +1,6 @@
-import { $Array, $Id, $Tson, EntityAdaptor, EntityMap, State, TsonDefinition } from '@vorplex/core';
+import { $Array, $Id, $Tson, EntityAdaptor, EntityMap, Scope, Signal, State, TsonDefinition } from '@vorplex/core';
+import { DrxBundler } from './bundler';
+import { DrxDom } from './dom';
 import { DrxExpression } from './expression';
 import { DrxApi } from './node/api/api';
 import type { DrxApiBody } from './node/api/body';
@@ -27,6 +29,7 @@ import { DrxTemplateItem, DrxTemplateNode, DrxTemplateTargetType } from './node/
 import type { DrxText } from './node/text';
 import { DrxType } from './node/type';
 import type { DrxVariable } from './node/variable';
+import { DrxRenderer, type DrxRenderTarget } from './renderer';
 import { DrxValidation, type DrxProblem } from './validation';
 
 export type DrxScope =
@@ -116,6 +119,15 @@ export class DrxDocument {
 
     public validate(): DrxProblem[] {
         return DrxValidation.validate(this.state.value);
+    }
+
+    public async render(parent: Element, options: { bundle?: string; target?: DrxRenderTarget } = {}): Promise<Scope | undefined> {
+        return DrxDom.bootstrap(parent, async () => {
+            const state = this.state.value;
+            const bundle = options.bundle ?? await DrxBundler.bundle(state);
+            const renderer = new DrxRenderer(Signal.create(state), { bundle });
+            return renderer.render(parent, options.target);
+        });
     }
 
     public toString(): string {
