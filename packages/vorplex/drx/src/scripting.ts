@@ -91,7 +91,7 @@ export class DrxScripting {
         for (const serviceId of serviceIds) {
             if (instances.has(serviceId)) continue;
             const service = state.services[serviceId];
-            const ServiceClass = DrxScripting.instantiate(module, service.id, { variables: app?.variables, apis, services: api, libraries });
+            const ServiceClass = DrxScripting.instantiate(module, service.id, { app, apis, services: api, libraries });
             instances.set(serviceId, ServiceClass ? new ServiceClass() : undefined);
         }
         return api;
