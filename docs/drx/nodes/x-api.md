@@ -24,15 +24,15 @@ Against the public [JSONPlaceholder](https://jsonplaceholder.typicode.com) API:
 
 ```html drx
 <x-app>
-    <x-type name="Todo">{ "type": "object", "properties": { "userId": { "type": "number" }, "id": { "type": "number" }, "title": { "type": "string" }, "completed": { "type": "boolean" } } }</x-type>
+    <x-type name="todo">{ "type": "object", "properties": { "userId": { "type": "number" }, "id": { "type": "number" }, "title": { "type": "string" }, "completed": { "type": "boolean" } } }</x-type>
 
     <x-api name="jsonPlaceholder" url="https://jsonplaceholder.typicode.com">
         <x-endpoint name="list" path="/todos" method="GET">
-            <x-response>{ "type": "array", "itemDefinition": { "type": "ref", "id": "Todo" } }</x-response>
+            <x-response>{ "type": "array", "itemDefinition": { "type": "ref", "id": "todo" } }</x-response>
         </x-endpoint>
         <x-endpoint name="create" path="/todos" method="POST">
             <x-body>{ "type": "object", "properties": { "userId": { "type": "number" }, "title": { "type": "string" }, "completed": { "type": "boolean" } } }</x-body>
-            <x-response>{ "type": "ref", "id": "Todo" }</x-response>
+            <x-response>{ "type": "ref", "id": "todo" }</x-response>
         </x-endpoint>
         <x-endpoint name="remove" path="/todos/{id}" method="DELETE">
             <x-parameter name="id" required="true"></x-parameter>
@@ -103,5 +103,5 @@ With `form-data` or `urlencoded`, the object passed as `body` is converted to `F
 Holds an inline [TSON](../core/tson/index.html) definition, the same JSON-content shape as `<x-type>`, used to validate the response body. Defaults to `{ "type": "any" }` when empty. Its definition may itself be a `{ "type": "ref", "id": "..." }` pointing at a named `<x-type>` declared on the enclosing app or component, if the shape is meant to be shared.
 
 ```html
-<x-response>{ "type": "ref", "id": "Todo" }</x-response>
+<x-response>{ "type": "ref", "id": "todo" }</x-response>
 ```

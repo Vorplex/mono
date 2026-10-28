@@ -1,5 +1,5 @@
 import { $Reflection, $String, $Tson, ModuleLoader, Scope, Signal, State, type TsonResult } from '@vorplex/core';
-import type { DrxDocumentState, DrxScope } from './document';
+import type { DrxScope } from './document';
 import { DrxType } from './node/type';
 import { DrxVariable } from './node/variable';
 
@@ -80,17 +80,18 @@ export class DrxScripting {
             .reduce((methods, name) => Object.assign(methods, { [name]: instance[name].bind(instance) }), {});
     }
 
-    public static instantiateServices(serviceIds: string[], state: DrxDocumentState, module: Record<string, any> | undefined, instances = new Map<string, any>(), scope: DrxScope, realm: typeof globalThis): Record<string, any> {
+    public static instantiateServices(serviceIds: string[], scope: DrxScope, module: Record<string, any> | undefined, instances: Map<string, any>, realm: typeof globalThis, libraries: Record<string, any>, app?: { variables: Record<string, DrxVariableApi> }): Record<string, any> {
+        const state = scope.document.state.value;
         const api: Record<string, any> = {};
         for (const serviceId of serviceIds) {
             const service = state.services[serviceId];
             Object.defineProperty(api, service.name, { get: () => instances.get(serviceId), enumerable: true });
         }
-        const apis = DrxScripting.createApiClients(state, scope, realm);
+        const apis = DrxScripting.createApiClients(scope, realm);
         for (const serviceId of serviceIds) {
             if (instances.has(serviceId)) continue;
             const service = state.services[serviceId];
-            const ServiceClass = DrxScripting.instantiate(module, service.id, { apis, services: api });
+            const ServiceClass = DrxScripting.instantiate(module, service.id, { variables: app?.variables, apis, services: api, libraries });
             instances.set(serviceId, ServiceClass ? new ServiceClass() : undefined);
         }
         return api;
@@ -102,7 +103,7 @@ export class DrxScripting {
         return { locals, states };
     }
 
-    public static createVariableApis(variables: DrxVariable[], states: Map<string, State<any>>, scope: DrxScope, documentState: DrxDocumentState): Record<string, DrxVariableApi> {
+    public static createVariableApis(variables: DrxVariable[], states: Map<string, State<any>>, scope: DrxScope): Record<string, DrxVariableApi> {
         const subscriptions = new Set<Scope>();
         if (Scope.current) Signal.cleanup(() => {
             for (const subscription of subscriptions) subscription.dispose();
@@ -115,7 +116,7 @@ export class DrxScripting {
                     get: () => state.value,
                     set: (update: any) => state.set(update),
                     reset: () => state.set(variable.value),
-                    validate: () => $Tson.parse(DrxType.resolve(scope, variable.type, documentState)).parse(state.value),
+                    validate: () => $Tson.parse(DrxType.resolve(scope, variable.type)).parse(state.value),
                     subscribe: (callback: (value: any) => void) => {
                         const subscription = Signal.root(() => Signal.effect(() => {
                             const value = state.signal();
@@ -132,7 +133,8 @@ export class DrxScripting {
         }, {} as Record<string, DrxVariableApi>);
     }
 
-    public static createApiClients(state: DrxDocumentState, scope: DrxScope, realm: typeof globalThis): Record<string, DrxApiClient> {
+    public static createApiClients(scope: DrxScope, realm: typeof globalThis): Record<string, DrxApiClient> {
+        const state = scope.document.state.value;
         const apiIds = scope.type === 'app' ? state.app.apiIds : state.components[scope.componentId].apiIds;
         const api: Record<string, DrxApiClient> = {};
         for (const apiId of apiIds) {
@@ -193,7 +195,7 @@ export class DrxScripting {
                                 if (!resolved) {
                                     const response = endpoint.responseId ? state.apiResponses[endpoint.responseId] : undefined;
                                     const json = await raw.json();
-                                    const definition = response ? $Tson.resolveRefs(response.definition, name => DrxType.resolve(scope, name, state)) : $Tson.any();
+                                    const definition = response ? $Tson.resolveRefs(response.definition, name => DrxType.resolve(scope, name)) : $Tson.any();
                                     const [parsed, errors] = $Tson.parse(definition).parse(json);
                                     if (errors.length > 0) {
                                         throw new Error(`Endpoint response did not satisfy its declared type for endpoint "${endpoint.name}"`);

@@ -20,6 +20,7 @@
 - [Locals](concepts/locals.md)
 - [Expressions](concepts/expressions.md)
 - [Templates](concepts/templates.md)
+- [Naming](concepts/naming.md)
 
 ## Nodes
 
@@ -38,6 +39,7 @@ See [Expressions](concepts/expressions.md) for attribute syntax and expression f
 - [\<x-service>](nodes/x-service.md)
 - [\<x-asset>](nodes/x-asset.md)
 - [\<x-packages>](nodes/x-packages.md)
+- [\<x-libraries>](nodes/x-libraries.md)
 - [\<x-dependency-tree>](nodes/x-dependency-tree.md)
 - [\<x-pwa-metadata>](nodes/x-pwa-metadata.md)
 - [\<x-api>](nodes/x-api.md)

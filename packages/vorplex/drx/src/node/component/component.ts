@@ -1,11 +1,9 @@
-import { DependencyTree } from '@vorplex/compiler';
+import type { DrxDocumentState, DrxScope } from '../../document';
 import { DrxDom } from '../../dom';
-import type { DrxDocumentState } from '../../document';
 import { DrxApi } from '../api/api';
 import { DrxAsset } from '../asset';
-import { DrxDependencyTree } from '../dependency-tree';
+import { DrxLibraries } from '../libraries';
 import { NodeType } from '../node-type';
-import { DrxPackages } from '../packages';
 import { DrxService } from '../service';
 import { DrxTemplate, DrxTemplateItem } from '../template-item';
 import { DrxType } from '../type';
@@ -18,8 +16,6 @@ export interface DrxComponent {
     name: string;
     script?: string;
     style?: string;
-    packages?: Record<string, string>;
-    dependencyTree?: DependencyTree;
     variableIds: string[];
     serviceIds: string[];
     assetIds: string[];
@@ -47,8 +43,6 @@ export const DrxComponent = class {
             name: DrxDom.getRequiredAttribute(element, 'name'),
             script: DrxDom.getScript(element),
             style: DrxDom.getStyle(element),
-            packages: DrxDom.parseChildren(element, NodeType.Packages, child => DrxPackages.parse(child))[0],
-            dependencyTree: DrxDom.parseChildren(element, NodeType.DependencyTree, child => DrxDependencyTree.parse(child))[0],
             variableIds: variables.map(variable => variable.id),
             serviceIds: services.map(service => service.id),
             assetIds: assets.map(asset => asset.id),
@@ -67,8 +61,6 @@ export const DrxComponent = class {
         const element = document.createElement(NodeType.Component);
         DrxDom.setAttribute(element, 'id', component.id);
         DrxDom.setAttribute(element, 'name', component.name);
-        if (component.packages) element.appendChild(DrxPackages.to(component.packages));
-        if (component.dependencyTree) element.appendChild(DrxDependencyTree.to(component.dependencyTree));
         DrxDom.createScript(element, component.script);
         DrxDom.createStyle(element, component.style);
         for (const id of component.typeIds) element.appendChild(DrxType.to(state.types[id]));
@@ -81,6 +73,21 @@ export const DrxComponent = class {
         for (const id of component.componentIds) element.appendChild(DrxComponent.to(state.components[id], state));
         for (const child of DrxTemplate.to(component.template, state)) element.appendChild(child);
         return element;
+    }
+
+    public static getChain(state: DrxDocumentState, componentId: string): DrxComponent[] {
+        const chain: DrxComponent[] = [];
+        for (let component = state.components[componentId]; component; component = Object.values(state.components).find(parent => parent.componentIds.includes(component.id))) chain.push(component);
+        return chain;
+    }
+
+    public static find(scope: DrxScope, name: string): { component: DrxComponent; scope: DrxScope } | undefined {
+        const target = DrxLibraries.resolve(scope, name);
+        if (!target) return undefined;
+        const state = target.scope.document.state.value;
+        const owners = target.scope.type === 'app' ? [state.app] : [...DrxComponent.getChain(state, target.scope.componentId), state.app];
+        const component = owners.flatMap(owner => owner.componentIds.map(id => state.components[id])).find(component => component?.name === target.name);
+        return component && { component, scope: target.scope };
     }
 
     public static children(component: DrxComponent): DrxTemplateItem[] {

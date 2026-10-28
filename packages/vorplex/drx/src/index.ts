@@ -1,6 +1,4 @@
 // **/*.ts
-export * from './bundler';
-export * from './compiler';
 export * from './document-styles';
 export * from './document';
 export * from './dom';
@@ -20,6 +18,7 @@ export * from './node/dependency-tree';
 export * from './node/element';
 export * from './node/for';
 export * from './node/icon';
+export * from './node/libraries';
 export * from './node/node-type';
 export * from './node/packages';
 export * from './node/page-container';

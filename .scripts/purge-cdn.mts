@@ -2,6 +2,7 @@ const paths = [
     '@vorplex/drx@latest',
     '@vorplex/drx@latest/+esm',
     '@vorplex/drx@latest/dist/standalone/drx.js',
+    '@vorplex/drx@latest/dist/standalone/drx.module.js',
     '@vorplex/drx@latest/dist/standalone/runtime.js',
     '@vorplex/drx@latest/dist/standalone/pwa-service-worker.js'
 ];

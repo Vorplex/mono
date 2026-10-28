@@ -12,6 +12,16 @@ export const builds = {
         minify: true,
         sourcemap: false,
     },
+    module: {
+        entryPoints: ["./standalone/drx.module.ts"],
+        outfile: "./dist/standalone/drx.module.js",
+        bundle: true,
+        platform: "browser",
+        format: "esm",
+        target: "es2020",
+        minify: true,
+        sourcemap: false,
+    },
     runtime: {
         entryPoints: ["./standalone/runtime.ts"],
         outfile: "./dist/standalone/runtime.js",

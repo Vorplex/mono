@@ -2,6 +2,8 @@ coverage
 node_modules
 dist
 out
+test-results
+playwright-report
 tsconfig.build.tsbuildinfo
 *.crt
 *.key

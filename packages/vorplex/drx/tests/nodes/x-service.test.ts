@@ -121,7 +121,7 @@ test.describe('<x-service>', () => {
                     <script type="application/typescript">
                         export default DRX.defineService(drx => class {
                             async logTodos() {
-                                const response = await drx.apis.todoApi.list.request();
+                                const response = await drx.apis.todoApi.endpoints.list.request();
                                 console.log('todos ' + JSON.stringify(await response.value()));
                             }
                         });

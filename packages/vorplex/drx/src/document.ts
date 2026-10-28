@@ -1,6 +1,6 @@
-import { $Array, $Id, $Tson, EntityAdaptor, EntityMap, Scope, Signal, State, TsonDefinition } from '@vorplex/core';
-import { DrxBundler } from './bundler';
-import { DrxDom } from './dom';
+import { $Array, $Id, $MimeType, $Path, $String, $Tson, EntityAdaptor, EntityMap, Signal, State, TsonDefinition } from '@vorplex/core';
+import { version } from '../package.json';
+import type { DrxImport } from './drx';
 import { DrxExpression } from './expression';
 import { DrxApi } from './node/api/api';
 import type { DrxApiBody } from './node/api/body';
@@ -9,7 +9,7 @@ import type { DrxApiHeader } from './node/api/header';
 import type { DrxApiParameter } from './node/api/parameter';
 import type { DrxApiResponse } from './node/api/response';
 import { DrxApp } from './node/app/app';
-import type { DrxAsset } from './node/asset';
+import { DrxAsset } from './node/asset';
 import { DrxComponent } from './node/component/component';
 import type { DrxComponentEvent } from './node/component/event';
 import type { DrxComponentInstance } from './node/component/instance';
@@ -20,6 +20,7 @@ import type { DrxIcon } from './node/icon';
 import { DrxElse } from './node/if/else';
 import { DrxElseIf } from './node/if/else-if';
 import { DrxIf } from './node/if/if';
+import { DrxLibraries } from './node/libraries';
 import { NodeType } from './node/node-type';
 import { DrxPage } from './node/page';
 import type { DrxPageContainer } from './node/page-container';
@@ -29,12 +30,10 @@ import { DrxTemplateItem, DrxTemplateNode, DrxTemplateTargetType } from './node/
 import type { DrxText } from './node/text';
 import { DrxType } from './node/type';
 import type { DrxVariable } from './node/variable';
-import { DrxRenderer, type DrxRenderTarget } from './renderer';
-import { DrxValidation, type DrxProblem } from './validation';
 
 export type DrxScope =
-    | { type: 'app' }
-    | { type: 'component'; componentId: string };
+    | { document: DrxDocument; type: 'app' }
+    | { document: DrxDocument; type: 'component'; componentId: string };
 
 export interface DrxDocumentState {
     app: DrxApp;
@@ -109,24 +108,81 @@ export const DrxDocumentState = class {
 
 }
 
+export interface DrxSerializedDocument {
+    app: DrxDocumentState;
+    libraries: Record<string, DrxDocumentState>;
+}
+
 export class DrxDocument {
 
     public readonly state: State<DrxDocumentState>;
+    public readonly libraries: State<Record<string, DrxDocument>>;
+    private readonly fileUrls: State<Record<string, string>>;
 
     constructor(state: DrxDocumentState) {
         this.state = new State<DrxDocumentState>(state);
+        this.libraries = new State<Record<string, DrxDocument>>({});
+        this.fileUrls = new State<Record<string, string>>({});
     }
 
-    public validate(): DrxProblem[] {
-        return DrxValidation.validate(this.state.value);
+    public getLibraryDocuments(): Record<string, DrxDocument> {
+        const documents: Record<string, DrxDocument> = {};
+        const visit = (document: DrxDocument) => {
+            for (const [name, declared] of Object.entries(document.state.value.app.libraries ?? {})) {
+                const library = document.libraries.value[name];
+                const url = DrxLibraries.getEntryUrl(declared);
+                if (!library || library === this || documents[url]) continue;
+                documents[url] = library;
+                visit(library);
+            }
+        };
+        visit(this);
+        return documents;
     }
 
-    public async render(parent: Element, options: { bundle?: string; target?: DrxRenderTarget } = {}): Promise<Scope | undefined> {
-        return DrxDom.bootstrap(parent, async () => {
-            const state = this.state.value;
-            const bundle = options.bundle ?? await DrxBundler.bundle(state);
-            const renderer = new DrxRenderer(Signal.create(state), { bundle });
-            return renderer.render(parent, options.target);
+    public serialize(): DrxSerializedDocument {
+        return {
+            app: this.state.value,
+            libraries: Object.fromEntries(Object.entries(this.getLibraryDocuments()).map(([url, library]) => [url, library.state.value]))
+        };
+    }
+
+    public static deserialize(serialized: DrxSerializedDocument): DrxDocument {
+        const app = new DrxDocument(serialized.app);
+        const libraries: Record<string, DrxDocument> = Object.fromEntries(Object.entries(serialized.libraries).map(([url, state]) => [url, new DrxDocument(state)]));
+        for (const document of [app, ...Object.values(libraries)]) {
+            const linked: Record<string, DrxDocument> = {};
+            for (const [name, declared] of Object.entries(document.state.value.app.libraries ?? {})) {
+                const library = libraries[DrxLibraries.getEntryUrl(declared)];
+                if (library) linked[name] = library;
+            }
+            document.libraries.set(linked);
+        }
+        return app;
+    }
+
+    public getFileUrl(path: string): string {
+        return this.fileUrls.value[path] ?? path;
+    }
+
+    public async loadFiles(read: DrxImport): Promise<void> {
+        const fileUrls: Record<string, string> = {};
+        for (const path of Object.values(this.state.value.assets).map(asset => DrxAsset.getFilePath(asset)).filter(path => path !== undefined)) {
+            try {
+                const content = await read(path);
+                if (content !== undefined) fileUrls[path] = DrxAsset.createUrl(content, $MimeType.fromPath(path));
+            } catch {
+                continue;
+            }
+        }
+        this.fileUrls.set(fileUrls);
+    }
+
+    public assign(document: DrxDocument): void {
+        Signal.batch(() => {
+            this.libraries.set(document.libraries.value);
+            this.fileUrls.set(document.fileUrls.value);
+            this.state.set(document.state.value);
         });
     }
 
@@ -289,7 +345,8 @@ export class DrxDocument {
 
     public getLocals(target: { type: NodeType, id: string }) {
         const state = this.state.value;
-        const locals: { source: 'global' | 'app-variable' | 'page-variable' | 'component-variable' | 'component-property' | 'component-event' | 'for' | 'asset', name: string, definition: TsonDefinition, shadowed?: boolean }[] = [];
+        const locals: { source: 'global' | 'app-variable' | 'page-variable' | 'component-variable' | 'component-property' | 'component-event' | 'for' | 'asset' | 'library', name: string, definition: TsonDefinition, shadowed?: boolean }[] = [];
+        const libraryLocals = (libraries: Record<string, string> = {}) => Object.keys(libraries).map(name => ({ source: 'library' as const, name, definition: $Tson.any() }));
         if ([NodeType.Api, NodeType.Page, NodeType.Element, NodeType.For, NodeType.If, NodeType.Icon, NodeType.PageContainer, NodeType.Text, NodeType.ComponentInstance, NodeType.RouterRoute].includes(target.type)) {
             for (const asset of state.app.assetIds.map(id => state.assets[id])) {
                 locals.push({
@@ -300,19 +357,19 @@ export class DrxDocument {
             }
         }
         if ([NodeType.Element, NodeType.For, NodeType.If, NodeType.Icon, NodeType.PageContainer, NodeType.Text, NodeType.ComponentInstance, NodeType.RouterRoute].includes(target.type)) {
-            const parents: DrxTemplateItem[] = [];
-            for (const parent of this.getNodeParents(target.id)) {
-                parents.unshift(parent);
-                if (parent.type === NodeType.Component) break;
-            }
+            const ancestors = Array.from(this.getNodeParents(target.id));
+            const outermostComponent = ancestors.map(parent => parent.type).lastIndexOf(NodeType.Component);
+            const parents = (outermostComponent > -1 ? ancestors.slice(0, outermostComponent + 1) : ancestors).reverse();
+            if (outermostComponent > -1) locals.push(...libraryLocals(state.app.libraries));
             for (const parent of parents) {
                 if (parent.type === NodeType.App) {
+                    locals.push(...libraryLocals(state.app.libraries));
                     const appVariableLocals = state.app.variableIds
                         .map(id => state.variables[id])
                         .map(variable => ({
                             source: 'app-variable' as const,
                             name: variable.name,
-                            definition: DrxType.resolve({ type: 'app' }, variable.type, state)
+                            definition: DrxType.resolve({ document: this, type: 'app' }, variable.type)
                         }));
                     locals.push(...appVariableLocals);
                     locals.push({
@@ -331,17 +388,17 @@ export class DrxDocument {
                         .map(variable => ({
                             source: 'page-variable' as const,
                             name: variable.name,
-                            definition: DrxType.resolve({ type: 'app' }, variable.type, state)
+                            definition: DrxType.resolve({ document: this, type: 'app' }, variable.type)
                         }));
                     locals.push(...pageVariableLocals);
                 } else if (parent.type === NodeType.Component) {
-                    const componentScope: DrxScope = { type: 'component', componentId: parent.id };
+                    const componentScope: DrxScope = { document: this, type: 'component', componentId: parent.id };
                     const componentVariableLocals = state.components[parent.id].variableIds
                         .map(id => state.variables[id])
                         .map(variable => ({
                             source: 'component-variable' as const,
                             name: variable.name,
-                            definition: DrxType.resolve(componentScope, variable.type, state)
+                            definition: DrxType.resolve(componentScope, variable.type)
                         }));
                     locals.push(...componentVariableLocals);
                     const componentPropertyLocals = state.components[parent.id].propertyIds
@@ -349,7 +406,7 @@ export class DrxDocument {
                         .map(property => ({
                             source: 'component-property' as const,
                             name: property.name,
-                            definition: DrxType.resolve(componentScope, property.type, state)
+                            definition: DrxType.resolve(componentScope, property.type)
                         }));
                     locals.push(...componentPropertyLocals);
                     const componentEventLocals = state.components[parent.id].eventIds
@@ -378,7 +435,107 @@ export class DrxDocument {
     }
 
     public toFormattedString(): string {
-        function formatNode(node: Node, depth: number): string[] {
+        return DrxDocument.format(this.toString());
+    }
+
+    public async toFiles(read: DrxImport): Promise<Record<string, string | Uint8Array>> {
+        const state = this.state.value;
+        const files: Record<string, string | Uint8Array> = {
+            'index.html': `<script src="https://cdn.jsdelivr.net/npm/@vorplex/drx@${version}/dist/standalone/drx.js"></script>\n<x-import src="./app/app.html"></x-import>\n`
+        };
+        const createImport = (parent: Element, src: string): Element => {
+            const element = parent.ownerDocument.createElement('x-import');
+            element.setAttribute('src', `./${src}`);
+            return element;
+        };
+        const traverse = (path: string, element: Element): void => {
+            const directory = $Path.getDirectory(path);
+            const layouts: Partial<Record<NodeType, { type: 'file'; file: string } | { type: 'item'; folder: string } | { type: 'owner'; folder: string; file: string }>> = {
+                [NodeType.Packages]: { type: 'file', file: 'packages.html' },
+                [NodeType.Libraries]: { type: 'file', file: 'libraries.html' },
+                [NodeType.DependencyTree]: { type: 'file', file: 'dependency-tree.html' },
+                [NodeType.PwaMetadata]: { type: 'file', file: 'pwa.html' },
+                [NodeType.Type]: { type: 'item', folder: 'types' },
+                [NodeType.Variable]: { type: 'item', folder: 'variables' },
+                [NodeType.Asset]: { type: 'item', folder: 'assets' },
+                [NodeType.ApiEndpoint]: { type: 'item', folder: 'endpoints' },
+                [NodeType.Service]: { type: 'owner', folder: 'services', file: 'service.html' },
+                [NodeType.Api]: { type: 'owner', folder: 'apis', file: 'api.html' },
+                [NodeType.Component]: { type: 'owner', folder: 'components', file: 'component.html' },
+                [NodeType.Page]: { type: 'owner', folder: 'pages', file: 'page.html' }
+            };
+            const script = element.querySelector(':scope > script[type="application/typescript"]');
+            if (script) {
+                files[$Path.join(directory, 'script.ts')] = `${script.textContent}\n`;
+                script.replaceWith(createImport(element, 'script.ts'));
+            }
+            const style = element.querySelector(':scope > style');
+            if (style) {
+                files[$Path.join(directory, 'style.css')] = `${style.textContent}\n`;
+                style.replaceWith(createImport(element, 'style.css'));
+            }
+            for (const child of Array.from(element.children)) {
+                const layout = layouts[child.tagName as NodeType];
+                if (!layout) continue;
+                if (layout.type === 'file') {
+                    files[$Path.join(directory, layout.file)] = `${DrxDocument.format(child.outerHTML)}\n`;
+                    child.replaceWith(createImport(element, layout.file));
+                    continue;
+                }
+                const name = $String.kebabCase(child.getAttribute('name'));
+                const file = layout.type === 'owner' ? `${name}/${layout.file}` : `${name}.html`;
+                const filePath = $Path.join(directory, layout.folder, file);
+                if (child.tagName === NodeType.Asset) {
+                    const asset = state.assets[child.getAttribute('id')];
+                    const target = DrxAsset.getTargetPath(asset);
+                    if (target) {
+                        assets[target] = DrxAsset.getFilePath(asset);
+                        child.setAttribute('src', $Path.getRelativePath($Path.getDirectory(filePath), target));
+                    }
+                }
+                if (layout.type === 'owner') traverse(filePath, child);
+                else files[filePath] = `${DrxDocument.format(child.outerHTML)}\n`;
+                child.replaceWith(createImport(element, `${layout.folder}/${file}`));
+            }
+            files[path] = `${DrxDocument.format(element.outerHTML)}\n`;
+        };
+        const assets: Record<string, string> = {};
+        traverse('app/app.html', DrxApp.to(state.app, state));
+        for (const [target, path] of Object.entries(assets)) {
+            const content = await read(path);
+            if (content != null) files[target] = content;
+        }
+        return files;
+    }
+
+    public static findMissingFiles(files: Record<string, string>, options: { entry?: string, base?: string } = {}) {
+        const missing: { type: 'import' | 'asset', path: string, target: string }[] = [];
+        const visited = new Set<string>();
+        const visit = (path: string, base: string) => {
+            if (visited.has(path)) return;
+            visited.add(path);
+            const dom = new DOMParser().parseFromString(files[path], 'text/html');
+            for (const element of Array.from(dom.body.querySelectorAll('x-import'))) {
+                const src = element.getAttribute('src');
+                if (!src) continue;
+                const target = $Path.join(base, src);
+                if (!(target in files)) missing.push({ type: 'import', path, target });
+                else if (!target.endsWith('.ts') && !target.endsWith('.css')) visit(target, $Path.getDirectory(target));
+            }
+            for (const element of Array.from(dom.body.querySelectorAll(NodeType.Asset))) {
+                const src = element.getAttribute('src');
+                if (!src || !DrxAsset.isFileSource(src)) continue;
+                const target = $Path.join(base, src);
+                if (!(target in files)) missing.push({ type: 'asset', path, target });
+            }
+        };
+        const entry = options.entry ?? 'index.html';
+        if (entry in files) visit(entry, options.base ?? '');
+        return missing;
+    }
+
+    public static format(source: string): string {
+        const formatNode = (node: Node, depth: number): string[] => {
             const indent = '    ';
             const escapeText = (value: string) => value
                 .replace(/&/g, '&amp;')
@@ -468,8 +625,8 @@ export class DrxDocument {
                 : [`${indent.repeat(depth + 1)}${group.map(child => child.nodeType === Node.TEXT_NODE ? escapeText(child.textContent) : (child as Element).outerHTML).join('')}`]);
             if (children.length === 0) return [`${prefix}<${tag}${attributes}></${tag}>`];
             return [`${prefix}<${tag}${attributes}>`, ...children, `${prefix}</${tag}>`];
-        }
-        const dom = new DOMParser().parseFromString(this.toString(), 'text/html');
+        };
+        const dom = new DOMParser().parseFromString(source, 'text/html');
         const lines: string[] = [];
         for (const node of dom.body.childNodes) {
             for (const line of formatNode(node, 0)) lines.push(line);

@@ -168,6 +168,16 @@ interface Drx {
     /** Every <x-service> declared on the app, keyed by name; each value is that service's own instance. */
     services: Record<string, Record<string, (...args: any[]) => any>>;
 
+    /** Every library declared on the app, keyed by its name in <x-libraries>. Each is the library's single shared instance. */
+    libraries: Record<string, {
+        /** The library's top-level <x-variable> declarations, keyed by name -- same shape as drx.app.variables. */
+        variables: Record<string, any>;
+        /** The library's top-level <x-service> instances, keyed by name. */
+        services: Record<string, Record<string, (...args: any[]) => any>>;
+        /** The library's top-level <x-api> declarations, keyed by name -- same shape as drx.apis. */
+        apis: Record<string, any>;
+    }>;
+
     router: {
         readonly route: string;
         /** Params of the <x-route> this page is mounted under. */

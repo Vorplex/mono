@@ -34,6 +34,7 @@ export const DrxTemplate = class {
                 NodeType.App,
                 NodeType.Page,
                 NodeType.Packages,
+                NodeType.Libraries,
                 NodeType.DependencyTree,
                 NodeType.PwaMetadata,
                 NodeType.Variable,

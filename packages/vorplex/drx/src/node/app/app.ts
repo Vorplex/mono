@@ -4,6 +4,7 @@ import type { DrxDocumentState } from '../../document';
 import { DrxApi } from '../api/api';
 import { DrxAsset } from '../asset';
 import { DrxComponent } from '../component/component';
+import { DrxLibraries } from '../libraries';
 import { DrxDependencyTree } from '../dependency-tree';
 import { NodeType } from '../node-type';
 import { DrxPackages } from '../packages';
@@ -20,6 +21,7 @@ export interface DrxApp {
     script?: string;
     style?: string;
     packages?: Record<string, string>;
+    libraries?: Record<string, string>;
     dependencyTree?: DependencyTree;
     pwaMetadata?: DrxPwaMetadata;
     pageIds: string[];
@@ -48,6 +50,7 @@ export const DrxApp = class {
             script: DrxDom.getScript(element),
             style: DrxDom.getStyle(element),
             packages: DrxDom.parseChildren(element, NodeType.Packages, child => DrxPackages.parse(child))[0],
+            libraries: DrxDom.parseChildren(element, NodeType.Libraries, child => DrxLibraries.parse(child))[0],
             dependencyTree: DrxDom.parseChildren(element, NodeType.DependencyTree, child => DrxDependencyTree.parse(child))[0],
             pwaMetadata: DrxDom.parseChildren(element, NodeType.PwaMetadata, child => DrxPwaMetadata.parse(child))[0],
             pageIds: pages.map(page => page.id),
@@ -66,6 +69,7 @@ export const DrxApp = class {
         DrxDom.setAttribute(element, 'id', app.id);
         if (app.name) DrxDom.setAttribute(element, 'name', app.name);
         if (app.packages) element.appendChild(DrxPackages.to(app.packages));
+        if (app.libraries) element.appendChild(DrxLibraries.to(app.libraries));
         if (app.dependencyTree) element.appendChild(DrxDependencyTree.to(app.dependencyTree));
         if (app.pwaMetadata) element.appendChild(DrxPwaMetadata.to(app.pwaMetadata));
         DrxDom.createScript(element, app.script);

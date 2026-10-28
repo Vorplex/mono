@@ -30,6 +30,21 @@ export class $Path {
         );
     }
 
+    public static getRelativePath(from: string, to: string): string {
+        const getSegments = (path: string) => path.split(/[/\\]+/).reduce<string[]>((stack, segment) => {
+            if (segment === '' || segment === '.') return stack;
+            if (segment === '..' && stack.length && stack[stack.length - 1] !== '..') stack.pop();
+            else stack.push(segment);
+            return stack;
+        }, []);
+        const source = getSegments(from);
+        const target = getSegments(to);
+        let common = 0;
+        while (common < source.length && common < target.length - 1 && source[common] === target[common]) common++;
+        const relative = [...source.slice(common).map(() => '..'), ...target.slice(common)].join('/');
+        return relative.startsWith('..') ? relative : `./${relative}`;
+    }
+
     public static getDirectory(path: string): string {
         const index = Math.max(path.lastIndexOf('/'), path.lastIndexOf('\\'));
         if (index > -1) return path.substring(0, index);

@@ -6,35 +6,34 @@ Each level below adds locals on top of what it inherited; lower in the list wins
 
 ## App
 
-1. `asset.<name>` — plain value, read-only
-2. `router`
-   1. `route()` — signal, read-only in practice
-   2. `params.<n>()` — signal, read-only in practice
-   3. `active(path)` — plain method
-   4. `navigate(path)` — plain method
-3. app script methods — function, call only
-4. app `<x-variable>`s — signal
+1. app [`<x-libraries>`](../nodes/x-libraries.md) namespaces
+2. `asset`
+3. [`router`](../nodes/x-route.md)
+4. app script methods
+5. app `<x-variable>`s
 
 ## Page
 
 Adds on top of App:
 
-5. page script methods — function, call only
-6. page `<x-variable>`s — signal
+6. page script methods
+7. page `<x-variable>`s
 
 ## Component
 
-Isolated — App/Page locals never apply here:
+Isolated — App/Page locals never apply here. A [nested component](../nodes/x-component.md#nested-components) starts from the locals of the component instance enclosing it, then adds:
 
-1. `asset.<name>` — plain value, read-only
-2. component script methods — function, call only
-3. component `<x-variable>`s — signal
-4. `<x-property>` values — signal, read-only
-5. `<x-event>`s — function, call only (`name(payload?)` fires it)
+1. the app's [`<x-libraries>`](../nodes/x-libraries.md) namespaces
+2. `asset` — names it doesn't declare fall back to the enclosing instance's `asset`
+3. component script methods
+4. component `<x-variable>`s
+5. `<x-property>` values
+6. `<x-event>`s
 
 ## Resets
 
-- `<x-for>` adds `as`/`index`/`key` for its own body only — each a read-only signal.
+- `<x-for>` adds `as`/`index`/`key` for its own body only.
 - `<x-route>` replaces `router` for its own body only, merging in its matched params.
 - `<x-page-container>` restarts from **App**'s locals (not the embedding page's), plus whichever `router` was active.
-- `<x-component-instance>` starts a fresh **Component** list — nothing from outside carries in.
+- A page opened with [`showModal(...)`](../nodes/x-page.md) restarts from **App**'s locals, plus `modal`, before adding its own **Page** locals.
+- `<x-component-instance>` starts a fresh **Component** list — nothing from outside carries in, except the enclosing component instance's locals when the component is nested inside another.

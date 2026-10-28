@@ -1,6 +1,6 @@
 # \<x-packages>
 
-Declares npm package versions available to a script's bare imports. Use it when an app or component's `<script>` needs a third-party dependency, at most one per app/component.
+Declares npm package versions available to a script's bare imports. Use it when a `<script>` needs a third-party dependency. Only the app declares packages, at most one `<x-packages>`; every page, component and service script in the app uses them.
 
 ```html
 <x-packages></x-packages>

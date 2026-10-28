@@ -1,4 +1,4 @@
-import { $Id, $String, Awaitable } from '@vorplex/core';
+import { $Id, $Path, $String, Awaitable } from '@vorplex/core';
 import { NodeType } from './node/node-type';
 
 export const DrxDom = class {
@@ -51,7 +51,11 @@ export const DrxDom = class {
     }
 
     public static getAttributes(element: Element, ...excluded: string[]): Record<string, string> {
-        return Object.fromEntries(element.getAttributeNames().filter(name => !excluded.includes(name)).map(name => [name, element.getAttribute(name)]));
+        return Object.fromEntries(element.getAttributeNames().filter(name => name !== 'x-base' && !excluded.includes(name)).map(name => [name, element.getAttribute(name)]));
+    }
+
+    public static resolvePath(element: Element, path: string): string {
+        return $Path.join(element.closest('[x-base]')?.getAttribute('x-base') ?? '', path);
     }
 
     public static parseChildren<T>(element: Element, type: NodeType, parse: (child: Element) => T): T[] {

@@ -94,6 +94,8 @@ export * from './modules/tson/schemas/ref';
 export * from './modules/tson/schemas/schema-base';
 export * from './modules/tson/schemas/string';
 export * from './modules/tson/schemas/union';
+export * from './modules/mime-type/mime-type.util';
+export * from './modules/url/url.util';
 export * from './modules/value/value.util';
 export * from './types/awaitable.type';
 export * from './types/camel-to-kebab.type';

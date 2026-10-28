@@ -12,6 +12,7 @@ The composition root of a DRX document — exactly one per file, everything else
     </script>
     <style></style>
     <x-packages></x-packages>
+    <x-libraries></x-libraries>
     <x-dependency-tree></x-dependency-tree>
     <x-pwa-metadata></x-pwa-metadata>
     <x-type></x-type>
@@ -161,6 +162,16 @@ interface Drx {
 
     /** Every <x-service> declared on this app, keyed by name; each value is that service's own instance. */
     services: Record<string, Record<string, (...args: any[]) => any>>;
+
+    /** Every library declared on this app, keyed by its name in <x-libraries>. Each is the library's single shared instance. */
+    libraries: Record<string, {
+        /** The library's top-level <x-variable> declarations, keyed by name -- same shape as drx.app.variables. */
+        variables: Record<string, any>;
+        /** The library's top-level <x-service> instances, keyed by name. */
+        services: Record<string, Record<string, (...args: any[]) => any>>;
+        /** The library's top-level <x-api> declarations, keyed by name -- same shape as drx.apis. */
+        apis: Record<string, any>;
+    }>;
 
     router: {
         readonly route: string;

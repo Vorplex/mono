@@ -1,7 +1,7 @@
 import { expect, test } from '../fixtures/drx';
 
 const types = `
-    <x-type name="Todo">{ "type": "object", "properties": { "id": { "type": "number" }, "title": { "type": "string" } } }</x-type>
+    <x-type name="todo">{ "type": "object", "properties": { "id": { "type": "number" }, "title": { "type": "string" } } }</x-type>
 `;
 
 test.describe('<x-api>', () => {
@@ -12,13 +12,13 @@ test.describe('<x-api>', () => {
                 ${types}
                 <x-api name="todos" url="https://api.example.com">
                     <x-endpoint name="list" path="/todos">
-                        <x-response>{ "type": "array", "itemDefinition": { "type": "ref", "id": "Todo" } }</x-response>
+                        <x-response>{ "type": "array", "itemDefinition": { "type": "ref", "id": "todo" } }</x-response>
                     </x-endpoint>
                 </x-api>
                 <script type="application/typescript">
                     export default DRX.defineApp(drx => class {
                         async onMount() {
-                            const response = await drx.apis.todos.list.request();
+                            const response = await drx.apis.todos.endpoints.list.request();
                             console.log('list ' + response.raw.status + ' ' + JSON.stringify(await response.value()));
                         }
                     });
@@ -42,7 +42,7 @@ test.describe('<x-api>', () => {
                 </x-api>
                 <script type="application/typescript">
                     export default DRX.defineApp(drx => class {
-                        onMount() { drx.apis.todos.list.request({ parameters: { userId: '7' } }); }
+                        onMount() { drx.apis.todos.endpoints.list.request({ parameters: { userId: '7' } }); }
                     });
                 </script>
             </x-app>
@@ -64,13 +64,13 @@ test.describe('<x-api>', () => {
                     <x-endpoint name="create" path="/todos" method="POST">
                         <x-header name="Authorization"></x-header>
                         <x-body>{ "type": "object", "properties": { "title": { "type": "string" } } }</x-body>
-                        <x-response>{ "type": "ref", "id": "Todo" }</x-response>
+                        <x-response>{ "type": "ref", "id": "todo" }</x-response>
                     </x-endpoint>
                 </x-api>
                 <script type="application/typescript">
                     export default DRX.defineApp(drx => class {
                         async onMount() {
-                            const response = await drx.apis.todos.create.request({ headers: { Authorization: 'Bearer token' }, body: { title: 'Created' } });
+                            const response = await drx.apis.todos.endpoints.create.request({ headers: { Authorization: 'Bearer token' }, body: { title: 'Created' } });
                             console.log('created ' + JSON.stringify(await response.value()));
                         }
                     });
@@ -99,7 +99,7 @@ test.describe('<x-api>', () => {
                 </x-api>
                 <script type="application/typescript">
                     export default DRX.defineApp(drx => class {
-                        onMount() { drx.apis.todos.remove.request({ parameters: { id: '1' } }); }
+                        onMount() { drx.apis.todos.endpoints.remove.request({ parameters: { id: '1' } }); }
                     });
                 </script>
             </x-app>
@@ -125,8 +125,8 @@ test.describe('<x-api>', () => {
                 <script type="application/typescript">
                     export default DRX.defineApp(drx => class {
                         async onMount() {
-                            const parameter = await drx.apis.todos.remove.request().then(() => 'resolved', () => 'rejected');
-                            const header = await drx.apis.todos.secure.request().then(() => 'resolved', () => 'rejected');
+                            const parameter = await drx.apis.todos.endpoints.remove.request().then(() => 'resolved', () => 'rejected');
+                            const header = await drx.apis.todos.endpoints.secure.request().then(() => 'resolved', () => 'rejected');
                             console.log('missing ' + parameter + ' ' + header);
                         }
                     });
@@ -150,7 +150,7 @@ test.describe('<x-api>', () => {
                 <script type="application/typescript">
                     export default DRX.defineApp(drx => class {
                         async onMount() {
-                            const response = await drx.apis.todos.list.request();
+                            const response = await drx.apis.todos.endpoints.list.request();
                             console.log('value ' + await response.value().then(() => 'resolved', () => 'rejected'));
                         }
                     });

@@ -53,6 +53,18 @@ None. `onMount()`/`onUnmount()` are never called on a service instance and shoul
 
 ```ts
 interface Drx {
+    /** Only present on services declared directly on the app (or library) -- not on component services. */
+    app?: {
+        /** The defining document's top-level <x-variable> declarations, keyed by name. */
+        variables: Record<string, {
+            get(): any;
+            set(update: any | ((value: any) => any)): void;
+            reset(): void;
+            validate(): [value: any, errors: unknown[]];
+            subscribe(callback: (value: any) => void): () => void;
+        }>;
+    };
+
     /** Every <x-api> declared on the same owner (app or component), keyed by name. */
     apis: Record<string, {
         /** The api's base url. */
@@ -67,10 +79,18 @@ interface Drx {
 
     /** Every sibling <x-service> declared on the same owner (app or component), keyed by name. */
     services: Record<string, Record<string, (...args: any[]) => any>>;
+
+    /** Every library declared on the app, keyed by its name in <x-libraries>. */
+    libraries: Record<string, {
+        /** The library's top-level <x-variable> declarations, keyed by name. */
+        variables: Record<string, any>;
+        /** The library's top-level <x-service> instances, keyed by name. */
+        services: Record<string, Record<string, (...args: any[]) => any>>;
+        /** The library's top-level <x-api> declarations, keyed by name. */
+        apis: Record<string, any>;
+    }>;
 }
 ```
-
-A service has no `drx.app`, `drx.page`, `drx.component`, `drx.router`, or `drx.modal` — it's reached only through the methods it exposes, never the other way around.
 
 ### Calling script methods from the template
 
@@ -155,6 +175,32 @@ Calls a `<x-service>` declared inside the component itself, from the component's
             onMount() { drx.services.logger.logPrice(19.9); }
         });
     </script>
+</x-app>
+```
+
+#### A service setting an app variable
+
+`session` writes the app-level `user` variable, and the app template updates reactively without the caller handling the result.
+
+```html drx
+<x-app>
+    <x-variable name="user" type="string">"Guest"</x-variable>
+
+    <x-service name="session">
+        <script type="application/typescript">
+            export default DRX.defineService(drx => class {
+                signIn(name) { drx.app.variables.user.set(name); }
+            });
+        </script>
+    </x-service>
+
+    <script type="application/typescript">
+        export default DRX.defineApp(drx => class {
+            onMount() { drx.services.session.signIn('Ada'); }
+        });
+    </script>
+
+    <div>Signed in as {{user()}}</div>
 </x-app>
 ```
 

@@ -3,12 +3,9 @@ import { DRX } from '../src/drx';
 
 async function bootstrap() {
     const source = document.body.innerHTML;
-    const base = new URL('.', document.baseURI).href;
     await DrxDom.bootstrap(document.body, async () => {
-        const drxDocument = await DRX.load(source, {
-            import: (path) => fetch(base + path).then((response) => response.text()),
-        });
-        await drxDocument.render(document.body);
+        const drxDocument = await DRX.load(source);
+        await DRX.render(drxDocument, document.body);
     });
 }
 

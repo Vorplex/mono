@@ -1,6 +1,6 @@
 # \<x-dependency-tree>
 
-Caches the resolved dependency graph for the app or component's `<x-packages>` declarations. It's written by tooling during compilation, not hand-authored — treat its content as opaque generated output rather than something to edit directly.
+Caches the resolved dependency graph for the app's `<x-packages>` declarations. It's written by tooling during compilation, not hand-authored — treat its content as opaque generated output rather than something to edit directly.
 
 ```html
 <x-dependency-tree></x-dependency-tree>

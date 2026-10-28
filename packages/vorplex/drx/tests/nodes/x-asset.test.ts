@@ -37,6 +37,51 @@ test.describe('<x-asset>', () => {
         }
     });
 
+    test('a relative src is read through the loader, resolved against the file it is written in', async ({ drx, page }) => {
+        await drx.render(`
+            <x-app>
+                <x-asset name="root" src="./images/root.svg"></x-asset>
+                <x-import src="./parts/assets.html"></x-import>
+                <x-import src="./top.html"></x-import>
+                <p id="root">{{asset.root}}</p>
+                <p id="nested">{{asset.nested}}</p>
+                <p id="top">{{asset.top}}</p>
+            </x-app>
+        `, {
+            files: {
+                'parts/assets.html': '<x-asset name="nested" src="../images/nested.svg"></x-asset>',
+                'top.html': '<x-import src="./parts/top.html"></x-import>',
+                'parts/top.html': '<x-asset name="top" src="./top.svg"></x-asset>',
+                'images/root.svg': '<svg id="root"></svg>',
+                'images/nested.svg': '<svg id="nested"></svg>',
+                'parts/top.svg': '<svg id="top"></svg>'
+            }
+        });
+        const read = async (id: string) => page.evaluate(async src => {
+            const response = await fetch(src);
+            return { type: response.headers.get('content-type'), text: await response.text() };
+        }, await drx.node(id).textContent());
+        {
+            await drx.node('root').expect.toHaveText(/^blob:/);
+            expect(await read('root')).toEqual({ type: 'image/svg+xml', text: '<svg id="root"></svg>' });
+            expect(await read('nested')).toEqual({ type: 'image/svg+xml', text: '<svg id="nested"></svg>' });
+            expect(await read('top')).toEqual({ type: 'image/svg+xml', text: '<svg id="top"></svg>' });
+        }
+    });
+
+    test('a relative src whose file is missing is left unresolved', async ({ drx }) => {
+        await drx.render(`
+            <x-app>
+                <x-asset name="missing" src="./missing.svg"></x-asset>
+                <p id="missing">{{asset.missing}}</p>
+            </x-app>
+        `);
+        const missing = drx.node('missing');
+        {
+            await missing.expect.toHaveText('./missing.svg');
+        }
+    });
+
     test('a component resolves its own assets', async ({ drx }) => {
         await drx.render(`
             <x-app>

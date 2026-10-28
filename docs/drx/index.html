@@ -380,6 +380,21 @@
                 text-transform: uppercase;
                 letter-spacing: .03em;
             }
+            .pg-tab {
+                font: inherit;
+                color: inherit;
+                text-transform: none;
+                letter-spacing: normal;
+                background: none;
+                border: 0;
+                border-bottom: 2px solid transparent;
+                padding: 10px 6px 8px;
+                cursor: pointer;
+            }
+            .pg-tab.active {
+                color: #25272b;
+                border-bottom-color: currentColor;
+            }
 
             .pg-refresh {
                 flex: none;
@@ -555,12 +570,12 @@
         <script>
             (function () {
                 var DOCS_ROOT = new URL('.', location.href).href;
-                var DRX_LATEST = 'https://cdn.jsdelivr.net/npm/@vorplex/drx@latest/dist/standalone/drx.js';
+                var DRX_LATEST = 'https://cdn.jsdelivr.net/npm/@vorplex/drx@latest/dist/standalone/drx.module.js';
                 var DRX_RUNTIME = new URLSearchParams(location.search).get('drx') || DRX_LATEST;
                 var runtimeResolved = new URLSearchParams(location.search).has('drx') ? Promise.resolve() : (async function () {
                     try {
                         var response = await fetch('https://data.jsdelivr.com/v1/packages/npm/@vorplex/drx/resolved');
-                        DRX_RUNTIME = 'https://cdn.jsdelivr.net/npm/@vorplex/drx@' + (await response.json()).version + '/dist/standalone/drx.js';
+                        DRX_RUNTIME = 'https://cdn.jsdelivr.net/npm/@vorplex/drx@' + (await response.json()).version + '/dist/standalone/drx.module.js';
                     } catch (error) { }
                 })();
                 if (location.hostname === 'localhost') new EventSource('/esbuild').addEventListener('change', function () { location.reload(); });
@@ -570,6 +585,7 @@
                 var currentDocPath = 'index.md';
                 var codeSources = {};
                 var codeCounter = 0;
+                var lastRunnableId = null;
                 var monaco = null;
                 var activeEditors = [];
 
@@ -580,6 +596,8 @@
                         case 'js': case 'javascript': return 'javascript';
                         case 'json': return 'json';
                         case 'css': return 'css';
+                        case 'svg': case 'xml': return 'xml';
+                        case 'drx': return 'html';
                         default: return 'plaintext';
                     }
                 }
@@ -721,11 +739,18 @@
                 var renderer = new marked.Renderer();
 
                 renderer.code = function (code, infostring) {
-                    var parts = (infostring || '').trim().toLowerCase().split(/\s+/);
+                    var info = (infostring || '').trim();
+                    var parts = info.toLowerCase().split(/\s+/);
                     var lang = parts[0] || 'text';
+                    var file = (info.match(/(?:^|\s)file=(\S+)/) || [])[1];
+                    if (file && parts.indexOf('drx') !== -1 && lastRunnableId && codeSources[lastRunnableId]) {
+                        codeSources[lastRunnableId].files[file] = code;
+                        return '';
+                    }
                     var isRunnableExample = lang === 'html' && parts.indexOf('drx') !== -1;
                     var id = 'code-' + (codeCounter++);
-                    codeSources[id] = { code: code, lang: lang, runnable: isRunnableExample };
+                    codeSources[id] = { code: code, lang: lang, runnable: isRunnableExample, files: {} };
+                    if (isRunnableExample) lastRunnableId = id;
                     var cls = isRunnableExample ? 'playground-slot' : 'code-slot';
                     return '<div class="' + cls + '" data-code="' + id + '"></div>';
                 };
@@ -746,12 +771,12 @@
 
                 // ---- interactive example: editor + preview with an address bar and console ----
 
-                function mountPlayground(slot, code) {
+                function mountPlayground(slot, code, files) {
                     var wrap = document.createElement('div');
                     wrap.className = 'playground';
                     wrap.innerHTML =
                         '<div class="pg-pane pg-editor">' +
-                        '<div class="pg-editor-header">index.html</div>' +
+                        '<div class="pg-editor-header"></div>' +
                         '<div class="pg-editor-mount"></div>' +
                         '</div>' +
                         '<div class="pg-pane pg-preview">' +
@@ -815,9 +840,35 @@
                         }
                     }
 
+                    var sources = Object.assign({ 'index.html': code }, files || {});
+                    var paths = Object.keys(sources);
+                    var currentPath = 'index.html';
+                    var header = wrap.querySelector('.pg-editor-header');
+                    var tabs = [];
+                    if (paths.length === 1) {
+                        header.textContent = 'index.html';
+                    } else {
+                        paths.forEach(function (path) {
+                            var tab = document.createElement('button');
+                            tab.type = 'button';
+                            tab.className = 'pg-tab' + (path === currentPath ? ' active' : '');
+                            tab.dataset.path = path;
+                            tab.textContent = path;
+                            tab.addEventListener('click', function () { selectTab(path); });
+                            header.appendChild(tab);
+                            tabs.push(tab);
+                        });
+                    }
+                    var models = {};
+                    if (monaco) {
+                        paths.forEach(function (path) {
+                            models[path] = monaco.editor.createModel(sources[path], monacoLanguage(path.split('.').pop()));
+                            activeEditors.push(models[path]);
+                        });
+                    }
+
                     var editor = monaco ? monaco.editor.create(editorMount, {
-                        value: code,
-                        language: 'html',
+                        model: models['index.html'],
                         theme: 'vs',
                         automaticLayout: true,
                         minimap: { enabled: false },
@@ -847,9 +898,43 @@
                         editorMount.appendChild(fallbackTextarea);
                     }
 
-                    function getValue() { return editor ? editor.getValue() : fallbackTextarea.value; }
+                    function getSource(path) {
+                        if (editor) return models[path].getValue();
+                        return path === currentPath ? fallbackTextarea.value : sources[path];
+                    }
 
-                    function buildDocument(source) {
+                    function getFiles() {
+                        var result = {};
+                        paths.forEach(function (path) { if (path !== 'index.html') result[path] = getSource(path); });
+                        return result;
+                    }
+
+                    function selectTab(path) {
+                        if (!editor) {
+                            sources[currentPath] = fallbackTextarea.value;
+                            fallbackTextarea.value = sources[path];
+                        } else {
+                            editor.setModel(models[path]);
+                        }
+                        currentPath = path;
+                        tabs.forEach(function (tab) { tab.classList.toggle('active', tab.dataset.path === path); });
+                    }
+
+                    function buildDocument(source, files) {
+                        var loader =
+                            'import { DRX } from ' + JSON.stringify(new URL(DRX_RUNTIME, DOCS_ROOT).href) + ';' +
+                            'var source = ' + JSON.stringify(source).replace(/</g, '\\u003c') + ';' +
+                            'var files = ' + JSON.stringify(files || {}).replace(/</g, '\\u003c') + ';' +
+                            'var root = "https://drx.playground/";' +
+                            'function has(path) { return Object.prototype.hasOwnProperty.call(files, path); }' +
+                            'async function read(path) {' +
+                            '  var local = path.indexOf(root) === 0 ? path.slice(root.length) : path;' +
+                            '  if (has(local)) return files[local];' +
+                            '  if (local !== path || !/^[a-z][a-z0-9+.-]*:/i.test(path)) return undefined;' +
+                            '  var response = await fetch(path);' +
+                            '  return response.ok ? new Uint8Array(await response.arrayBuffer()) : undefined;' +
+                            '}' +
+                            'await DRX.render(await DRX.load(source, read), document.body);';
                         var bridge =
                             '(function () {' +
                             '  try { if (!location.hash) location.hash = "/"; } catch (e) {}' +
@@ -899,15 +984,15 @@
                             '})();';
                         return '<!doctype html><html><head><meta charset="utf-8">' +
                             '<style>html{color-scheme:light}body{margin:0;padding:16px;background:#fff;color:#25272b;font:14px/1.6 system-ui}</style>' +
-                            '<script src="' + DRX_RUNTIME + '"><\/script>' +
                             '<script>' + bridge + '<\/script>' +
-                            '</head><body>' + source + '</body></html>';
+                            '<script type="module">' + loader + '<\/script>' +
+                            '</head><body></body></html>';
                     }
 
                     async function run() {
                         await runtimeResolved;
                         resetConsole();
-                        iframe.srcdoc = buildDocument(getValue());
+                        iframe.srcdoc = buildDocument(getSource('index.html'), getFiles());
                     }
 
                     var debounceTimer;
@@ -1007,7 +1092,7 @@
                             var slot = contentInner.querySelector('[data-code="' + id + '"]');
                             var entry = codeSources[id];
                             if (!slot) { delete codeSources[id]; return; }
-                            if (entry.runnable) mountPlayground(slot, entry.code);
+                            if (entry.runnable) mountPlayground(slot, entry.code, entry.files);
                             else mountCodeBlock(slot, entry.code, entry.lang);
                             delete codeSources[id];
                         });

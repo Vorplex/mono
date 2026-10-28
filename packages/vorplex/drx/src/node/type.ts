@@ -1,12 +1,19 @@
-import { $Tson, MapAdaptor, TsonDefinition } from '@vorplex/core';
-import { DrxDom } from '../dom';
+import { $Tson, TsonDefinition } from '@vorplex/core';
 import type { DrxDocumentState, DrxScope } from '../document';
+import { DrxDom } from '../dom';
+import { DrxComponent } from './component/component';
+import { DrxLibraries } from './libraries';
 import { NodeType } from './node-type';
 
 export interface DrxType {
     id: string;
     name: string;
     type: TsonDefinition;
+}
+
+export interface DrxResolvedType {
+    type: DrxType;
+    scope: DrxScope;
 }
 
 export const DrxType = class {
@@ -29,14 +36,21 @@ export const DrxType = class {
         return element;
     }
 
-    public static resolve(scope: DrxScope, name: string, state: DrxDocumentState): TsonDefinition {
+    public static find(scope: DrxScope, name: string): DrxResolvedType | undefined {
+        const target = DrxLibraries.resolve(scope, name);
+        if (!target) return undefined;
+        const state = target.scope.document.state.value;
+        const owners = target.scope.type === 'app' ? [state.app] : DrxComponent.getChain(state, target.scope.componentId);
+        const type = owners.flatMap(owner => owner.typeIds.map(id => state.types[id])).find(type => type?.name === target.name);
+        return type && { type, scope: target.scope };
+    }
+
+    public static resolve(scope: DrxScope, name: string): TsonDefinition {
         const defaultTypeName = name as TsonDefinition['type'];
         if ($Tson.definitions.includes(defaultTypeName)) return $Tson.getDefaultDefinition(defaultTypeName);
-        const owner = scope.type === 'app' ? state.app : state.components[scope.componentId];
-        const types = MapAdaptor.fromArray(owner.typeIds.map(id => state.types[id]), record => [record.name, record.type]);
-        const resolved = types[name];
+        const resolved = DrxType.find(scope, name);
         if (!resolved) return $Tson.any();
-        return $Tson.resolveRefs(resolved, refName => DrxType.resolve(scope, refName, state));
+        return $Tson.resolveRefs(resolved.type.type, refName => DrxType.resolve(resolved.scope, refName));
     }
 
 }

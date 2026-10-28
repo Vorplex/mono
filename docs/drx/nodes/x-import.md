@@ -13,7 +13,7 @@ Splices another file's content in at the tag's position, resolved before compila
 A `.drx` file splices in as markup; a `.ts` file becomes an inline `<script type="application/typescript">`; a `.css` file becomes an inline `<style>`.
 
 ## Example
-```html
+```html drx
 <x-app>
     <x-import src="./header.drx"></x-import>
     <x-import src="./app.ts"></x-import>
@@ -21,4 +21,19 @@ A `.drx` file splices in as markup; a `.ts` file becomes an inline `<script type
 
     <h1>Home</h1>
 </x-app>
+```
+
+```html drx file=header.drx
+<header>Shared header from header.drx</header>
+```
+
+```ts drx file=app.ts
+export default DRX.defineApp(drx => class {
+    onMount() { console.log('app.ts is the app script'); }
+});
+```
+
+```css drx file=app.css
+header { padding: 8px; background: #f1f5f9; }
+h1 { color: #0f766e; }
 ```

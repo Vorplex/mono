@@ -266,6 +266,51 @@ test.describe('<x-component>', () => {
         }
     });
 
+    test('nested components inherit everything declared on enclosing components', async ({ drx }) => {
+        await drx.render(`
+            <x-app>
+                <x-component name="outer">
+                    <x-variable name="count" type="number">1</x-variable>
+                    <x-asset name="logo" src="https://example.com/logo.png"></x-asset>
+                    <x-service name="logger">
+                        <script type="application/typescript">
+                            export default DRX.defineService(drx => class {
+                                log(message) { console.log('outer ' + message); }
+                            });
+                        </script>
+                    </x-service>
+                    <x-component name="inner">
+                        <script type="application/typescript">
+                            export default DRX.defineComponent(drx => class {
+                                onMount() { drx.services.logger.log('from inner with count ' + drx.component.variables.count.get()); }
+                            });
+                        </script>
+                        <button id="inner" onclick="count(value => value + 1)">Inner {{count()}}</button>
+                        <img id="logo" src="{{asset.logo}}">
+                    </x-component>
+                    <p id="outer">Outer {{count()}}</p>
+                    <x-component-instance component="inner"></x-component-instance>
+                </x-component>
+                <x-component-instance component="outer"></x-component-instance>
+            </x-app>
+        `);
+        const inner = drx.node('inner');
+        const logo = drx.node('logo');
+        const outer = drx.node('outer');
+        {
+            await inner.expect.toHaveText('Inner 1');
+            await logo.expect.toHaveAttribute('src', 'https://example.com/logo.png');
+            await outer.expect.toHaveText('Outer 1');
+            await drx.logged('outer from inner with count 1');
+        }
+        await inner.click();
+        {
+            await inner.expect.toHaveText('Inner 2');
+            await logo.expect.toHaveAttribute('src', 'https://example.com/logo.png');
+            await outer.expect.toHaveText('Outer 2');
+        }
+    });
+
     test('its style can declare its own keyframes and properties', async ({ drx }) => {
         await drx.render(`
             <x-app>

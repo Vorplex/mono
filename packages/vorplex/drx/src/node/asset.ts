@@ -1,10 +1,11 @@
+import { $Id, $Path, $Url } from '@vorplex/core';
 import { DrxDom } from '../dom';
 import type { DrxDocumentState } from '../document';
 import { NodeType } from './node-type';
 
 export type DrxAssetSource =
     | { type: 'external'; url: string }
-    | { type: 'internal'; content: string; mimeType?: string };
+    | { type: 'inline'; content: string; mimeType?: string };
 
 export interface DrxAsset {
     id: string;
@@ -14,19 +15,40 @@ export interface DrxAsset {
 
 class DrxAssetClass {
 
-    private static readonly resolvedUrls = new Map<string, string>();
+    private static readonly urls = new Map<string, string>();
+
+    public static isFileSource(src: string): boolean {
+        return !!src && !$Url.isAbsolute(src) && !/^[/#?]/.test(src) && !src.includes('{{');
+    }
+
+    public static getFilePath(asset: DrxAsset): string | undefined {
+        if (asset?.source.type !== 'external' || !DrxAsset.isFileSource(asset.source.url)) return undefined;
+        return asset.source.url;
+    }
+
+    public static getTargetPath(asset: DrxAsset): string | undefined {
+        const path = DrxAsset.getFilePath(asset);
+        return path && `assets/${asset.id}${$Path.getExtension(path) ?? ''}`;
+    }
+
+    public static createUrl(content: string | Uint8Array, mimeType: string): string {
+        const key = `${mimeType}:${$Id.hash(typeof content === 'string' ? content : new TextDecoder('latin1').decode(content))}`;
+        if (!DrxAsset.urls.has(key)) DrxAsset.urls.set(key, URL.createObjectURL(new Blob([content as BlobPart], { type: mimeType })));
+        return DrxAsset.urls.get(key);
+    }
+
     public static parse(element: Element, state: DrxDocumentState): DrxAsset {
-        const url = DrxDom.getAttribute(element, 'src');
+        const src = DrxDom.getAttribute(element, 'src');
         const asset: DrxAsset = {
             id: DrxDom.getId(element),
             name: DrxDom.getRequiredAttribute(element, 'name'),
-            source: url
+            source: src
                 ? {
                     type: 'external',
-                    url
+                    url: DrxAsset.isFileSource(src) ? DrxDom.resolvePath(element, src) : src
                 }
                 : {
-                    type: 'internal',
+                    type: 'inline',
                     content: DrxDom.getContent(element),
                     mimeType: DrxDom.getAttribute(element, 'type')
                 }

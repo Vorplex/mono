@@ -2,6 +2,7 @@ export enum NodeType {
     App = 'X-APP',
     Page = 'X-PAGE',
     Packages = 'X-PACKAGES',
+    Libraries = 'X-LIBRARIES',
     DependencyTree = 'X-DEPENDENCY-TREE',
     PwaMetadata = 'X-PWA-METADATA',
     Variable = 'X-VARIABLE',

@@ -8,6 +8,7 @@ export const HttpResponseCodes = {
     Forbidden: 403,
     NotFound: 404,
     MethodNotAllowed: 405,
+    Conflict: 409,
     UnsupportedMediaType: 415,
     Locked: 423,
     InternalServerError: 500,
