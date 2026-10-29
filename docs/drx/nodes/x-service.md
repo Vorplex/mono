@@ -210,7 +210,7 @@ Calls a `<x-service>` declared inside the component itself, from the component's
 
 ```html drx
 <x-app>
-    <x-api name="todoApi" url="https://api.example.com">
+    <x-api name="todoApi" url="https://jsonplaceholder.typicode.com">
         <x-endpoint name="list" path="/todos" method="GET">
             <x-response type="array"></x-response>
         </x-endpoint>
