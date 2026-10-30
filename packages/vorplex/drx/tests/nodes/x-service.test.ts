@@ -139,7 +139,7 @@ test.describe('<x-service>', () => {
         }
     });
 
-    test('has only apis and services and is never mounted', async ({ drx }) => {
+    test('has apis, services and app and is never mounted', async ({ drx }) => {
         await drx.render(`
             <x-app>
                 <x-service name="probe">
@@ -162,7 +162,7 @@ test.describe('<x-service>', () => {
             </x-app>
         `);
         {
-            await drx.logged('service access object,object,undefined,undefined,undefined,undefined,undefined');
+            await drx.logged('service access object,object,object,undefined,undefined,undefined,undefined');
             await drx.logged('app mounted object');
             expect(drx.logs).not.toContain('service mounted');
         }

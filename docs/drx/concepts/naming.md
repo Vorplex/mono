@@ -5,7 +5,7 @@ Every `name` you declare is camelCase: a lowercase letter followed by letters an
 | Applies to                                                                                                                                  |                                                                   |
 | ------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
 | `<x-page>`, `<x-component>`, `<x-variable>`, `<x-type>`, `<x-service>`, `<x-asset>`, `<x-api>`, `<x-endpoint>`, `<x-property>`, `<x-event>` | Yes                                                               |
-| Library names in `<x-libraries>`                                                                                                            | Yes                                                               |
+| `<x-library>` names                                                                                                                         | Yes                                                               |
 | `<x-parameter>` and `<x-header>` names                                                                                                      | No -- they are sent over the wire as written, e.g. `Content-Type` |
 | `<x-icon>` names                                                                                                                            | No -- they name a built-in icon, e.g. `chevron-down`              |
 

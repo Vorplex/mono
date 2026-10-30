@@ -1,5 +1,6 @@
 export enum NodeType {
     App = 'X-APP',
+    Library = 'X-LIBRARY',
     Page = 'X-PAGE',
     Packages = 'X-PACKAGES',
     Libraries = 'X-LIBRARIES',

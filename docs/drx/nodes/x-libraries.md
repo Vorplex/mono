@@ -1,19 +1,19 @@
 # \<x-libraries>
 
-Declares other DRX apps this app uses as libraries, each under a name of your choosing. Use it to share components, types, variables, services, apis and assets across apps from a single source instead of copying them. Only the app declares libraries, at most one `<x-libraries>`; every page and component in the app uses them.
+Declares the DRX libraries an app or library uses. Use it to share components, types, variables, services, apis and assets across apps from a single source instead of copying them. Only the top level declares libraries, at most one `<x-libraries>`; every page and component uses them.
 
 ```html
 <x-libraries></x-libraries>
 ```
 
-No attributes, content is a JSON object of library name to absolute URL.
+No attributes, content is a JSON array of absolute library URLs.
 
 The playgrounds on this page serve their extra files at `https://drx.playground/`, so the `ui/index.html` tab is the library at `https://drx.playground/ui/`.
 
 ## Example
 ```html drx
 <x-app>
-    <x-libraries>{ "ui": "https://drx.playground/ui/" }</x-libraries>
+    <x-libraries>["https://drx.playground/ui/"]</x-libraries>
 
     <x-variable name="tone" type="ui.tone">"info"</x-variable>
 
@@ -28,7 +28,7 @@ The playgrounds on this page serve their extra files at `https://drx.playground/
 ```
 
 ```html drx file=ui/index.html
-<x-app>
+<x-library name="ui">
     <x-type name="tone">{ "type": "enum", "flags": ["info", "success", "danger"] }</x-type>
     <x-variable name="clicks" type="number">0</x-variable>
 
@@ -52,17 +52,18 @@ The playgrounds on this page serve their extra files at `https://drx.playground/
             <x-component-instance component="badge" label="The library's own badge" tone="success"></x-component-instance>
         </div>
     </x-component>
-
-    <h1>UI library</h1>
-    <x-component-instance component="badge" label="Showcase"></x-component-instance>
-</x-app>
+</x-library>
 ```
 
 ## Libraries
 
-A library is an ordinary DRX app. Its own template, script, pages and `<x-pwa-metadata>` are never used by a consumer, which makes them the place to showcase and test the library's components when the library is opened on its own.
+A library is a `<x-library>` instead of an `<x-app>`. It declares types, variables, services, apis, assets, components, packages and its own libraries, but no template, pages, script or PWA metadata. Its `name` is required, [camelCase](../concepts/naming.md), and is the name every consumer uses it by.
 
-| A consumer can use | From the library app's top level                                          |
+```html
+<x-library name="ui"></x-library>
+```
+
+| A consumer can use | From the library's top level                                              |
 | ------------------ | ------------------------------------------------------------------------- |
 | Components         | `<x-component-instance component="ui.button">`                            |
 | Types              | `type="ui.priority"`, or `{ "type": "ref", "id": "ui.priority" }` in TSON |
@@ -72,9 +73,10 @@ A library is an ordinary DRX app. Its own template, script, pages and `<x-pwa-me
 | Assets             | `ui.asset.logo`                                                           |
 
 - **Only the top level is exported.** Components, types and the rest declared inside a library component stay private to that component.
-- **One instance.** A library's variables and services exist once per running app, however many pages and components use it. `ui.theme()` is the same signal everywhere.
-- **Library components resolve inside the library.** A library component that uses `button` gets the library's `button`, never one declared by the consumer, and `icons.star` uses the library's own `<x-libraries>`, never the consumer's.
-- **Plain names never reach a library.** `component="button"` only finds the consumer's own components; a library member always needs its namespace.
+- **One instance.** A library's variables and services exist once per running app, however many pages, components and other libraries use it. `ui.theme()` is the same signal everywhere.
+- **A library resolves inside itself.** Inside a library, `component="button"` gets the library's own `button`, never one declared by the consumer, and `icons.star` uses the library's own `<x-libraries>`, never the consumer's.
+- **Plain names never reach a library.** `component="button"` only finds the consumer's own components; a library member always needs the library name.
+- **Library names are unique.** Every library loaded into an app, directly or through another library, needs a different name. A second library with a name that's already loaded is reported and never loaded.
 
 ## Scope
 
@@ -82,7 +84,7 @@ A library declared on the app is usable everywhere in it: the app's template and
 
 ```html drx
 <x-app>
-    <x-libraries>{ "ui": "https://drx.playground/ui/" }</x-libraries>
+    <x-libraries>["https://drx.playground/ui/"]</x-libraries>
 
     <x-component name="card">
         <x-component name="title">
@@ -96,12 +98,12 @@ A library declared on the app is usable everywhere in it: the app's template and
 ```
 
 ```html drx file=ui/index.html
-<x-app>
+<x-library name="ui">
     <x-component name="badge">
         <x-property name="label" type="string"></x-property>
         <span style="padding: 2px 10px; border-radius: 999px; background: #dbeafe;">{{label()}}</span>
     </x-component>
-</x-app>
+</x-library>
 ```
 
 ## URLs
@@ -110,21 +112,21 @@ A library declared on the app is usable everywhere in it: the app's template and
 - **A URL is a folder or an `.html` file.** A folder loads its `index.html`.
 - **A query string carries over** to the library's own imports and relative assets on the same host, so `?ref=main` or an access token reaches every file of the library.
 - **The URL is the version.** `@1.2.0`, a git tag or a commit in the URL pins it; `@latest`, a branch or a local folder follows the latest. DRX never interprets versions.
-- **Each URL loads once.** Two names, or two owners, pointing at the same URL share it.
+- **Each URL loads once.** Two owners pointing at the same URL share it.
 - **Relative asset URLs resolve against the library file that declares them**, so a library can ship its own files. See [`<x-asset>`](x-asset.md).
 
 ## Scripting
 
-Scripts reach a library's variables, services and apis through `drx.libraries.<name>`, available to the app, its pages, components and services.
+Scripts reach a library's variables, services and apis through `drx.libraries.<name>`, available to the app, its pages, components and services. A library's own top-level services reach the library's variables through `drx.library`, where an app's services use `drx.app`.
 
 ```html drx
 <x-app>
-    <x-libraries>{ "ui": "https://drx.playground/ui/" }</x-libraries>
+    <x-libraries>["https://drx.playground/ui/"]</x-libraries>
     <script type="application/typescript">
         export default DRX.defineApp(drx => class {
             onMount() {
                 drx.libraries.ui.variables.greeting.set('Hello from the app');
-                console.log(drx.libraries.ui.services.formatter.shout(drx.libraries.ui.variables.greeting.get()));
+                console.log(drx.libraries.ui.services.formatter.shout());
             }
         });
     </script>
@@ -133,18 +135,18 @@ Scripts reach a library's variables, services and apis through `drx.libraries.<n
 ```
 
 ```html drx file=ui/index.html
-<x-app>
+<x-library name="ui">
     <x-variable name="greeting" type="string">"Hello"</x-variable>
     <x-service name="formatter">
         <script type="application/typescript">
             export default DRX.defineService(drx => class {
-                shout(text: string) { return text.toUpperCase() + '!'; }
+                shout() { return drx.library.variables.greeting.get().toUpperCase() + '!'; }
             });
         </script>
     </x-service>
-</x-app>
+</x-library>
 ```
 
 ## Names
 
-A library name must be [camelCase](../concepts/naming.md) and must not clash with an app variable. `asset`, `router` and `modal` are reserved.
+A library's name must not clash with an app variable. `asset`, `router` and `modal` are reserved.

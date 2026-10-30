@@ -27,6 +27,7 @@
 See [Expressions](concepts/expressions.md) for attribute syntax and expression forms.
 
 - [\\<x-app>](nodes/x-app.md)
+- [\<x-library>](nodes/x-libraries.md#libraries)
 - [\<x-import>](nodes/x-import.md)
 - [\<x-page>](nodes/x-page.md)
 - [\<x-page-container>](nodes/x-page-container.md)

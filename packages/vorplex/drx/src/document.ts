@@ -1,4 +1,4 @@
-import { $Array, $Id, $MimeType, $Path, $String, $Tson, EntityAdaptor, EntityMap, Signal, State, TsonDefinition } from '@vorplex/core';
+import { $Array, $Id, $Path, $String, $Tson, $Url, EntityAdaptor, EntityMap, IEntity, State, TsonDefinition } from '@vorplex/core';
 import { version } from '../package.json';
 import type { DrxImport } from './drx';
 import { DrxExpression } from './expression';
@@ -20,7 +20,7 @@ import type { DrxIcon } from './node/icon';
 import { DrxElse } from './node/if/else';
 import { DrxElseIf } from './node/if/else-if';
 import { DrxIf } from './node/if/if';
-import { DrxLibraries } from './node/libraries';
+import { DrxLibraries, type DrxLibrary } from './node/libraries';
 import { NodeType } from './node/node-type';
 import { DrxPage } from './node/page';
 import type { DrxPageContainer } from './node/page-container';
@@ -32,44 +32,50 @@ import { DrxType } from './node/type';
 import type { DrxVariable } from './node/variable';
 
 export type DrxScope =
-    | { document: DrxDocument; type: 'app' }
-    | { document: DrxDocument; type: 'component'; componentId: string };
+    | { type: 'app' }
+    | { type: 'library'; library: string }
+    | { type: 'component'; componentId: string };
+
+export type DrxEntity<T> = T & { library?: string };
 
 export interface DrxDocumentState {
     app: DrxApp;
-    pages: EntityMap<DrxPage>;
-    variables: EntityMap<DrxVariable>;
-    services: EntityMap<DrxService>;
-    assets: EntityMap<DrxAsset>;
-    components: EntityMap<DrxComponent>;
-    types: EntityMap<DrxType>;
-    elements: EntityMap<DrxElement>;
-    texts: EntityMap<DrxText>;
-    ifs: EntityMap<DrxIf>;
-    elseIfs: EntityMap<DrxElseIf>;
-    elses: EntityMap<DrxElse>;
-    fors: EntityMap<DrxFor>;
-    componentProperties: EntityMap<DrxComponentProperty>;
-    componentEvents: EntityMap<DrxComponentEvent>;
-    componentInstances: EntityMap<DrxComponentInstance>;
-    pageContainers: EntityMap<DrxPageContainer>;
-    routerRoutes: EntityMap<DrxRouterRoute>;
-    icons: EntityMap<DrxIcon>;
-    apis: EntityMap<DrxApi>;
-    apiEndpoints: EntityMap<DrxApiEndpoint>;
-    apiParameters: EntityMap<DrxApiParameter>;
-    apiHeaders: EntityMap<DrxApiHeader>;
-    apiBodies: EntityMap<DrxApiBody>;
-    apiResponses: EntityMap<DrxApiResponse>;
+    libraries: EntityMap<DrxLibrary>;
+    files: Record<string, string>;
+    pages: EntityMap<DrxEntity<DrxPage>>;
+    variables: EntityMap<DrxEntity<DrxVariable>>;
+    services: EntityMap<DrxEntity<DrxService>>;
+    assets: EntityMap<DrxEntity<DrxAsset>>;
+    components: EntityMap<DrxEntity<DrxComponent>>;
+    types: EntityMap<DrxEntity<DrxType>>;
+    elements: EntityMap<DrxEntity<DrxElement>>;
+    texts: EntityMap<DrxEntity<DrxText>>;
+    ifs: EntityMap<DrxEntity<DrxIf>>;
+    elseIfs: EntityMap<DrxEntity<DrxElseIf>>;
+    elses: EntityMap<DrxEntity<DrxElse>>;
+    fors: EntityMap<DrxEntity<DrxFor>>;
+    componentProperties: EntityMap<DrxEntity<DrxComponentProperty>>;
+    componentEvents: EntityMap<DrxEntity<DrxComponentEvent>>;
+    componentInstances: EntityMap<DrxEntity<DrxComponentInstance>>;
+    pageContainers: EntityMap<DrxEntity<DrxPageContainer>>;
+    routerRoutes: EntityMap<DrxEntity<DrxRouterRoute>>;
+    icons: EntityMap<DrxEntity<DrxIcon>>;
+    apis: EntityMap<DrxEntity<DrxApi>>;
+    apiEndpoints: EntityMap<DrxEntity<DrxApiEndpoint>>;
+    apiParameters: EntityMap<DrxEntity<DrxApiParameter>>;
+    apiHeaders: EntityMap<DrxEntity<DrxApiHeader>>;
+    apiBodies: EntityMap<DrxEntity<DrxApiBody>>;
+    apiResponses: EntityMap<DrxEntity<DrxApiResponse>>;
 }
 
 export const DrxDocumentState = class {
 
-    public static new(): DrxDocumentState {
+    public static new(type: DrxApp['type'] = 'app', name = 'App'): DrxDocumentState {
         return {
             app: {
                 id: $Id.guid(),
-                name: 'App',
+                type,
+                name,
                 pageIds: [],
                 variableIds: [],
                 serviceIds: [],
@@ -79,6 +85,8 @@ export const DrxDocumentState = class {
                 apiIds: [],
                 template: []
             },
+            libraries: {},
+            files: {},
             pages: {},
             variables: {},
             services: {},
@@ -106,84 +114,57 @@ export const DrxDocumentState = class {
         };
     }
 
-}
+    public static unlink(state: DrxDocumentState): DrxDocumentState {
+        const { app, libraries, files, ...entities } = state;
+        const unlinked: DrxDocumentState = {
+            ...state,
+            libraries: {},
+            files: Object.fromEntries(Object.entries(files).filter(([location]) => !$Url.isAbsolute(location)))
+        };
+        for (const key in entities) unlinked[key] = Object.fromEntries(Object.entries<DrxEntity<IEntity>>(entities[key]).filter(([, entity]) => entity.library === undefined));
+        return unlinked;
+    }
 
-export interface DrxSerializedDocument {
-    app: DrxDocumentState;
-    libraries: Record<string, DrxDocumentState>;
+    public static link(state: DrxDocumentState, library: DrxDocumentState, url: string): DrxDocumentState {
+        const { app, libraries, files, ...entities } = library;
+        const linked: DrxDocumentState = {
+            ...state,
+            libraries: EntityAdaptor.create(state.libraries, {
+                id: app.name,
+                url,
+                libraries: app.libraries,
+                packages: app.packages,
+                dependencyTree: app.dependencyTree,
+                variableIds: app.variableIds,
+                serviceIds: app.serviceIds,
+                assetIds: app.assetIds,
+                componentIds: app.componentIds,
+                typeIds: app.typeIds,
+                apiIds: app.apiIds
+            }),
+            files: { ...state.files, ...files }
+        };
+        for (const key in entities) linked[key] = { ...state[key], ...EntityAdaptor.updateAll<DrxEntity<IEntity>>(entities[key], { library: app.name }) };
+        return linked;
+    }
+
 }
 
 export class DrxDocument {
 
     public readonly state: State<DrxDocumentState>;
-    public readonly libraries: State<Record<string, DrxDocument>>;
-    private readonly fileUrls: State<Record<string, string>>;
 
     constructor(state: DrxDocumentState) {
         this.state = new State<DrxDocumentState>(state);
-        this.libraries = new State<Record<string, DrxDocument>>({});
-        this.fileUrls = new State<Record<string, string>>({});
     }
 
-    public getLibraryDocuments(): Record<string, DrxDocument> {
-        const documents: Record<string, DrxDocument> = {};
-        const visit = (document: DrxDocument) => {
-            for (const [name, declared] of Object.entries(document.state.value.app.libraries ?? {})) {
-                const library = document.libraries.value[name];
-                const url = DrxLibraries.getEntryUrl(declared);
-                if (!library || library === this || documents[url]) continue;
-                documents[url] = library;
-                visit(library);
-            }
-        };
-        visit(this);
-        return documents;
+    public static locate(path: string, url?: string): string {
+        return url ? $Url.resolve(url, path) : path;
     }
 
-    public serialize(): DrxSerializedDocument {
-        return {
-            app: this.state.value,
-            libraries: Object.fromEntries(Object.entries(this.getLibraryDocuments()).map(([url, library]) => [url, library.state.value]))
-        };
-    }
-
-    public static deserialize(serialized: DrxSerializedDocument): DrxDocument {
-        const app = new DrxDocument(serialized.app);
-        const libraries: Record<string, DrxDocument> = Object.fromEntries(Object.entries(serialized.libraries).map(([url, state]) => [url, new DrxDocument(state)]));
-        for (const document of [app, ...Object.values(libraries)]) {
-            const linked: Record<string, DrxDocument> = {};
-            for (const [name, declared] of Object.entries(document.state.value.app.libraries ?? {})) {
-                const library = libraries[DrxLibraries.getEntryUrl(declared)];
-                if (library) linked[name] = library;
-            }
-            document.libraries.set(linked);
-        }
-        return app;
-    }
-
-    public getFileUrl(path: string): string {
-        return this.fileUrls.value[path] ?? path;
-    }
-
-    public async loadFiles(read: DrxImport): Promise<void> {
-        const fileUrls: Record<string, string> = {};
-        for (const path of Object.values(this.state.value.assets).map(asset => DrxAsset.getFilePath(asset)).filter(path => path !== undefined)) {
-            try {
-                const content = await read(path);
-                if (content !== undefined) fileUrls[path] = DrxAsset.createUrl(content, $MimeType.fromPath(path));
-            } catch {
-                continue;
-            }
-        }
-        this.fileUrls.set(fileUrls);
-    }
-
-    public assign(document: DrxDocument): void {
-        Signal.batch(() => {
-            this.libraries.set(document.libraries.value);
-            this.fileUrls.set(document.fileUrls.value);
-            this.state.set(document.state.value);
-        });
+    public getFileUrl(path: string, library?: string): string {
+        const location = DrxDocument.locate(path, library && this.state.value.libraries[library].url);
+        return this.state.value.files[location] ?? location;
     }
 
     public toString(): string {
@@ -346,7 +327,7 @@ export class DrxDocument {
     public getLocals(target: { type: NodeType, id: string }) {
         const state = this.state.value;
         const locals: { source: 'global' | 'app-variable' | 'page-variable' | 'component-variable' | 'component-property' | 'component-event' | 'for' | 'asset' | 'library', name: string, definition: TsonDefinition, shadowed?: boolean }[] = [];
-        const libraryLocals = (libraries: Record<string, string> = {}) => Object.keys(libraries).map(name => ({ source: 'library' as const, name, definition: $Tson.any() }));
+        const libraryLocals = DrxLibraries.getLinked(state, state.app).map(library => ({ source: 'library' as const, name: library.id, definition: $Tson.any() }));
         if ([NodeType.Api, NodeType.Page, NodeType.Element, NodeType.For, NodeType.If, NodeType.Icon, NodeType.PageContainer, NodeType.Text, NodeType.ComponentInstance, NodeType.RouterRoute].includes(target.type)) {
             for (const asset of state.app.assetIds.map(id => state.assets[id])) {
                 locals.push({
@@ -360,16 +341,16 @@ export class DrxDocument {
             const ancestors = Array.from(this.getNodeParents(target.id));
             const outermostComponent = ancestors.map(parent => parent.type).lastIndexOf(NodeType.Component);
             const parents = (outermostComponent > -1 ? ancestors.slice(0, outermostComponent + 1) : ancestors).reverse();
-            if (outermostComponent > -1) locals.push(...libraryLocals(state.app.libraries));
+            if (outermostComponent > -1) locals.push(...libraryLocals);
             for (const parent of parents) {
                 if (parent.type === NodeType.App) {
-                    locals.push(...libraryLocals(state.app.libraries));
+                    locals.push(...libraryLocals);
                     const appVariableLocals = state.app.variableIds
                         .map(id => state.variables[id])
                         .map(variable => ({
                             source: 'app-variable' as const,
                             name: variable.name,
-                            definition: DrxType.resolve({ document: this, type: 'app' }, variable.type)
+                            definition: DrxType.resolve(state, { type: 'app' }, variable.type)
                         }));
                     locals.push(...appVariableLocals);
                     locals.push({
@@ -388,17 +369,17 @@ export class DrxDocument {
                         .map(variable => ({
                             source: 'page-variable' as const,
                             name: variable.name,
-                            definition: DrxType.resolve({ document: this, type: 'app' }, variable.type)
+                            definition: DrxType.resolve(state, { type: 'app' }, variable.type)
                         }));
                     locals.push(...pageVariableLocals);
                 } else if (parent.type === NodeType.Component) {
-                    const componentScope: DrxScope = { document: this, type: 'component', componentId: parent.id };
+                    const componentScope: DrxScope = { type: 'component', componentId: parent.id };
                     const componentVariableLocals = state.components[parent.id].variableIds
                         .map(id => state.variables[id])
                         .map(variable => ({
                             source: 'component-variable' as const,
                             name: variable.name,
-                            definition: DrxType.resolve(componentScope, variable.type)
+                            definition: DrxType.resolve(state, componentScope, variable.type)
                         }));
                     locals.push(...componentVariableLocals);
                     const componentPropertyLocals = state.components[parent.id].propertyIds
@@ -406,7 +387,7 @@ export class DrxDocument {
                         .map(property => ({
                             source: 'component-property' as const,
                             name: property.name,
-                            definition: DrxType.resolve(componentScope, property.type)
+                            definition: DrxType.resolve(state, componentScope, property.type)
                         }));
                     locals.push(...componentPropertyLocals);
                     const componentEventLocals = state.components[parent.id].eventIds

@@ -68,24 +68,40 @@ export class State<T = any, TReducer extends Reducer = EmptyReducer> extends Sub
             update: (path, update) => ReducerOperation.create(state => $Value.update(state, path, update)),
             set: (path, update) => ReducerOperation.create(state => $Value.set(state, path, update))
         };
+        const lift = (path: string[], adaptor: object) => new Proxy(adaptor, {
+            get: (target, method) => {
+                const member = target[method];
+                if (typeof member !== 'function') return member;
+                return (...args: any[]) => ReducerOperation.create<T>(state => $Value.update(state, path, member.apply(target, args)));
+            },
+        });
+        const field = (path: string[], property: string): any => {
+            const adaptors: Record<string, any> = {
+                entity: new EntityAdaptor<any, any, any>(property),
+                array: new ArrayAdaptor<any, any, any>(property),
+                value: {
+                    set: (value: any) => ({
+                        [property]: value,
+                    }),
+                    update: (update: any) => (state: any) => ({
+                        [property]: $Value.update(state[property], update),
+                    }),
+                },
+            };
+            if (path.length === 0) Object.assign(adaptors, this.reducer?.[property] ?? {});
+            else for (const [name, adaptor] of Object.entries(adaptors)) adaptors[name] = lift(path, adaptor);
+            return new Proxy(adaptors, {
+                get: (target, key) => {
+                    if (typeof key === 'symbol' || key in target) return target[key as string];
+                    return field([...path, property], key);
+                },
+            });
+        };
         const reducer = new Proxy(reducerFields, {
             get: (target, property) => {
                 if (property === 'update') return target.update;
                 if (property === 'set') return target.set;
-                const reducer = {
-                    entity: new EntityAdaptor<any, any, any>(property),
-                    array: new ArrayAdaptor<any, any, any>(property),
-                    value: {
-                        set: (value: any) => ({
-                            [property]: value,
-                        }),
-                        update: (update: any) => (state: any) => ({
-                            [property]: $Value.update(state[property], update),
-                        }),
-                    },
-                };
-                Object.assign(reducer, this.reducer?.[property as string] ?? {});
-                return reducer;
+                return field([], property as string);
             },
         });
         let value = this.value;

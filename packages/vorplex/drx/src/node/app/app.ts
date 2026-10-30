@@ -17,11 +17,12 @@ import { DrxPwaMetadata } from './pwa-metadata';
 
 export interface DrxApp {
     id: string;
+    type: 'app' | 'library';
     name?: string;
     script?: string;
     style?: string;
     packages?: Record<string, string>;
-    libraries?: Record<string, string>;
+    libraries?: string[];
     dependencyTree?: DependencyTree;
     pwaMetadata?: DrxPwaMetadata;
     pageIds: string[];
@@ -46,6 +47,7 @@ export const DrxApp = class {
         const apis = DrxDom.parseChildren(element, NodeType.Api, child => DrxApi.parse(child, state));
         return {
             id: DrxDom.getId(element),
+            type: element.tagName === NodeType.Library ? 'library' : 'app',
             name: DrxDom.getAttribute(element, 'name'),
             script: DrxDom.getScript(element),
             style: DrxDom.getStyle(element),
@@ -65,7 +67,7 @@ export const DrxApp = class {
     }
 
     public static to(app: DrxApp, state: DrxDocumentState): Element {
-        const element = document.createElement(NodeType.App);
+        const element = document.createElement(app.type === 'library' ? NodeType.Library : NodeType.App);
         DrxDom.setAttribute(element, 'id', app.id);
         if (app.name) DrxDom.setAttribute(element, 'name', app.name);
         if (app.packages) element.appendChild(DrxPackages.to(app.packages));

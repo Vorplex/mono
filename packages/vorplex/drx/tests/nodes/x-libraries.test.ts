@@ -4,7 +4,7 @@ import { expect, test } from '../fixtures/drx';
 const ui = new URL('/tests/app/ui/', config.use.baseURL).href;
 
 const library = `
-    <x-app>
+    <x-library name="ui">
         <x-type name="priority">{ "type": "enum", "flags": ["low", "high"] }</x-type>
         <x-variable name="count" type="number">0</x-variable>
         <x-asset name="logo" src="https://example.com/logo.png"></x-asset>
@@ -12,7 +12,7 @@ const library = `
         <x-service name="greeter">
             <script type="application/typescript">
                 export default DRX.defineService(drx => class {
-                    greet(name) { return 'Hello ' + name; }
+                    greet(name) { return 'Hello ' + name + ' ' + drx.library.variables.count.get(); }
                 });
             </script>
         </x-service>
@@ -26,15 +26,14 @@ const library = `
                 <x-component-instance component="badge" label="Card {{title()}}"></x-component-instance>
             </div>
         </x-component>
-        <p id="showcase">Showcase</p>
-    </x-app>
+    </x-library>
 `;
 
 test.describe('<x-libraries>', () => {
-    test('the app and its pages use library components by namespace', async ({ drx, page }) => {
+    test('the app and its pages use library components by the library name', async ({ drx, page }) => {
         await drx.render(`
             <x-app>
-                <x-libraries>{ "ui": "${ui}" }</x-libraries>
+                <x-libraries>["${ui}"]</x-libraries>
                 <x-page name="home">
                     <x-component-instance component="ui.badge" label="Page"></x-component-instance>
                 </x-page>
@@ -43,18 +42,15 @@ test.describe('<x-libraries>', () => {
             </x-app>
         `, { files: { 'ui/index.html': library } });
         const badges = page.locator('.badge');
-        const showcase = drx.node('showcase');
         {
             await expect(badges).toHaveText(['App', 'Page']);
-            await showcase.expect.not.toBeAttached();
-            await expect(page.getByText('./ui/')).toHaveCount(0);
         }
     });
 
     test('a library component resolves its sibling components inside the library', async ({ drx, page }) => {
         await drx.render(`
             <x-app>
-                <x-libraries>{ "ui": "${ui}" }</x-libraries>
+                <x-libraries>["${ui}"]</x-libraries>
                 <x-component name="badge">
                     <span class="badge">Consumer badge</span>
                 </x-component>
@@ -70,7 +66,7 @@ test.describe('<x-libraries>', () => {
     test('library variables have one instance shared by every consumer', async ({ drx }) => {
         await drx.render(`
             <x-app>
-                <x-libraries>{ "ui": "${ui}" }</x-libraries>
+                <x-libraries>["${ui}"]</x-libraries>
                 <x-component name="counter">
                     <p id="component-count">Component {{ui.count()}}</p>
                 </x-component>
@@ -94,7 +90,7 @@ test.describe('<x-libraries>', () => {
     test('every component, nested or not, uses the app libraries', async ({ drx, page }) => {
         await drx.render(`
             <x-app>
-                <x-libraries>{ "ui": "${ui}" }</x-libraries>
+                <x-libraries>["${ui}"]</x-libraries>
                 <x-component name="outer">
                     <x-component name="inner">
                         <p id="inner">{{typeof ui}}</p>
@@ -120,8 +116,8 @@ test.describe('<x-libraries>', () => {
         await drx.render(`
             <x-app>
                 <x-component name="probe">
-                    <x-libraries>{ "kit": "${ui}" }</x-libraries>
-                    <p id="probe">{{typeof kit}}</p>
+                    <x-libraries>["${ui}"]</x-libraries>
+                    <p id="probe">{{typeof ui}}</p>
                 </x-component>
                 <x-component-instance component="probe"></x-component-instance>
             </x-app>
@@ -132,23 +128,22 @@ test.describe('<x-libraries>', () => {
         }
     });
 
-    test('scripts reach library services and variables through drx.libraries', async ({ drx }) => {
+    test('scripts reach library services and variables through drx.libraries, library services reach their own through drx.library', async ({ drx }) => {
         await drx.render(`
             <x-app>
-                <x-libraries>{ "ui": "${ui}" }</x-libraries>
+                <x-libraries>["${ui}"]</x-libraries>
                 <script type="application/typescript">
                     export default DRX.defineApp(drx => class {
                         onMount() {
+                            drx.libraries.ui.variables.count.set(2);
                             console.log(drx.libraries.ui.services.greeter.greet('app'));
-                            console.log('count ' + drx.libraries.ui.variables.count.get());
                         }
                     });
                 </script>
             </x-app>
         `, { files: { 'ui/index.html': library } });
         {
-            await drx.logged('Hello app');
-            await drx.logged('count 0');
+            await drx.logged('Hello app 2');
         }
     });
 
@@ -157,7 +152,7 @@ test.describe('<x-libraries>', () => {
         const asset = page.waitForRequest('**/tests/app/ui/icon.svg?ref=main');
         await drx.render(`
             <x-app>
-                <x-libraries>{ "ui": "${ui}index.html?ref=main" }</x-libraries>
+                <x-libraries>["${ui}index.html?ref=main"]</x-libraries>
                 <x-component-instance component="ui.badge" label="Imported"></x-component-instance>
                 <img id="icon" src="{{ui.asset.icon}}">
             </x-app>
@@ -175,7 +170,7 @@ test.describe('<x-libraries>', () => {
     test('relative library URLs are not loaded', async ({ drx, page }) => {
         await drx.render(`
             <x-app>
-                <x-libraries>{ "ui": "./ui/" }</x-libraries>
+                <x-libraries>["./ui/"]</x-libraries>
                 <x-component-instance component="ui.badge" label="Relative"></x-component-instance>
             </x-app>
         `, { files: { 'ui/index.html': library } });
@@ -186,10 +181,40 @@ test.describe('<x-libraries>', () => {
         }
     });
 
-    test('library assets resolve through the namespace, relative ones against the library', async ({ drx, page }) => {
+    test('a document that is not a library is not loaded', async ({ drx, page }) => {
         await drx.render(`
             <x-app>
-                <x-libraries>{ "ui": "${ui}" }</x-libraries>
+                <x-libraries>["${ui}"]</x-libraries>
+                <x-component-instance component="ui.badge" label="App"></x-component-instance>
+            </x-app>
+        `, { files: { 'ui/index.html': library.replace('<x-library name="ui">', '<x-app name="ui">').replace('</x-library>', '</x-app>') } });
+        const badges = page.locator('.badge');
+        {
+            await expect.poll(() => drx.errors.join(' ')).toContain('is not a library');
+            await expect(badges).toHaveCount(0);
+        }
+    });
+
+    test('a second library with the same name is not loaded', async ({ drx, page }) => {
+        const other = new URL('/tests/app/other/', config.use.baseURL).href;
+        await drx.render(`
+            <x-app>
+                <x-libraries>["${ui}", "${other}"]</x-libraries>
+                <x-component-instance component="ui.badge" label="First"></x-component-instance>
+            </x-app>
+        `, { files: { 'ui/index.html': library, 'other/index.html': library.replace('<span class="badge">', '<span class="badge other">') } });
+        const badges = page.locator('.badge');
+        {
+            await expect.poll(() => drx.errors.join(' ')).toContain('Library with name "ui" is already loaded');
+            await expect(badges).toHaveText(['First']);
+            await expect(page.locator('.other')).toHaveCount(0);
+        }
+    });
+
+    test('library assets resolve through the library name, relative ones against the library', async ({ drx, page }) => {
+        await drx.render(`
+            <x-app>
+                <x-libraries>["${ui}"]</x-libraries>
                 <img id="logo" src="{{ui.asset.logo}}">
                 <img id="icon" src="{{ui.asset.icon}}">
             </x-app>
@@ -211,17 +236,17 @@ test.describe('<x-libraries>', () => {
         const a = new URL('/tests/app/a/', config.use.baseURL).href;
         const b = new URL('/tests/app/b/', config.use.baseURL).href;
         const tile = (name: string, other: string, url: string) => `
-            <x-app>
-                <x-libraries>{ "${other}": "${url}" }</x-libraries>
+            <x-library name="${name}">
+                <x-libraries>["${url}"]</x-libraries>
                 <x-variable name="label" type="string">"${name.toUpperCase()}"</x-variable>
                 <x-component name="tile">
                     <span class="tile">${name.toUpperCase()} {{${other}.label()}}</span>
                 </x-component>
-            </x-app>
+            </x-library>
         `;
         await drx.render(`
             <x-app>
-                <x-libraries>{ "a": "${a}", "b": "${b}" }</x-libraries>
+                <x-libraries>["${a}", "${b}"]</x-libraries>
                 <x-component-instance component="a.tile"></x-component-instance>
                 <x-component-instance component="b.tile"></x-component-instance>
             </x-app>

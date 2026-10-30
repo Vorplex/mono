@@ -200,7 +200,7 @@ interface Drx {
     /** Every <x-service> declared on this component or a component it's nested in -- never the app's. */
     services: Record<string, Record<string, (...args: any[]) => any>>;
 
-    /** Every library declared on the app, keyed by its name in <x-libraries>. Each is the library's single shared instance. */
+    /** Every library declared on the app, keyed by the library's name. Each is the library's single shared instance. */
     libraries: Record<string, {
         /** The library's top-level <x-variable> declarations, keyed by name -- same shape as drx.component.variables. */
         variables: Record<string, any>;

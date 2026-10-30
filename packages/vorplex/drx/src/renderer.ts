@@ -1,4 +1,4 @@
-import { $Path, $Value, Context, ContextValue, Getter, Scope, Signal, State } from '@vorplex/core';
+import { $Path, $Value, Context, ContextValue, Getter, Scope, Signal, SignalProxy, State } from '@vorplex/core';
 import { $Element } from '@vorplex/web';
 import type { DrxDocument, DrxDocumentState, DrxScope } from './document';
 import { DrxDocumentStyles } from './document-styles';
@@ -9,6 +9,7 @@ import { DrxModalManager } from './modal-manager';
 import { DrxAsset } from './node/asset';
 import { DrxComponent } from './node/component/component';
 import type { DrxComponentInstance } from './node/component/instance';
+import { DrxLibraries } from './node/libraries';
 import { NodeType } from './node/node-type';
 import { DrxTemplateItem } from './node/template-item';
 import { DrxApplicationHost, DrxComponentHost, DrxHost, DrxPageHost, DrxRenderContext } from './render-context';
@@ -58,7 +59,7 @@ export class DrxRenderer {
     private expression: DrxExpression;
     private realm: typeof globalThis;
     private scripts?: Record<string, any>;
-    private readonly instances = new Map<DrxDocument, DrxDocumentInstance>();
+    private readonly instances = new Map<string | undefined, DrxDocumentInstance>();
     private readonly instanceScopes: Scope[] = [];
 
     constructor(private readonly root: DrxDocument, private readonly options: DrxRendererOptions = {}) {
@@ -66,11 +67,11 @@ export class DrxRenderer {
     }
 
     private get scope(): DrxScope {
-        return DrxRenderContext.host()?.scope ?? { document: this.root, type: 'app' };
+        return DrxRenderContext.host()?.scope ?? { type: 'app' };
     }
 
-    private get state(): Signal<DrxDocumentState> {
-        return this.scope.document.state.signal;
+    private get proxy(): SignalProxy<DrxDocumentState> {
+        return this.root.state.signal.proxy;
     }
 
     private loadScripts(): Record<string, any> | undefined {
@@ -97,18 +98,18 @@ export class DrxRenderer {
                     const host: DrxApplicationHost = {
                         type: NodeType.App,
                         app: this.root.state.value.app,
-                        scope: { document: this.root, type: 'app' },
+                        scope: { type: 'app' },
                         root,
                         locals: {},
                         variables: new Map()
                     };
-                    const state = host.scope.document.state.value;
+                    const state = this.root.state.value;
                     const view = host.root.ownerDocument.defaultView;
-                    const instance = this.getInstance(host.scope.document);
+                    const instance = this.getInstance();
                     const variables = host.app.variableIds.map(id => state.variables[id]);
                     host.router = DrxRouter.mount(view);
                     this.instantiateHost(host, host.app.id, instance.variables, { ...instance.dependencies.locals, asset: instance.locals.asset, router: host.router }, () => ({
-                        app: { variables: DrxScripting.createVariableApis(variables, host.variables, host.scope) },
+                        app: { variables: DrxScripting.createVariableApis(state, variables, host.variables, host.scope) },
                         apis: instance.api.apis,
                         services: instance.api.services,
                         libraries: instance.dependencies.api,
@@ -118,10 +119,10 @@ export class DrxRenderer {
                     return host;
                 },
                 host => {
-                    host.style = DrxStyleSheet.create(host.root.ownerDocument.defaultView, () => this.expression.parse(this.state.proxy.app.style() ?? '', host.locals));
+                    host.style = DrxStyleSheet.create(host.root.ownerDocument.defaultView, () => this.expression.parse(this.proxy.app.style() ?? '', host.locals));
                     DrxStyleSheet.attach(host.root.ownerDocument, host.style);
                     DrxStyleSheet.adopt(host.root, host.style);
-                    this.renderTemplate(host.root, () => template ?? this.state.proxy.app.template());
+                    this.renderTemplate(host.root, () => template ?? this.proxy.app.template());
                     group.ready(true);
                 },
                 host => [DrxRenderContext.application.as(host), DrxRenderContext.route.as({ group })]
@@ -140,11 +141,10 @@ export class DrxRenderer {
             Signal.effect(() => {
                 const item = entry().value;
                 try {
-                    const scope = this.scope;
                     output = this.options.renderNode
                         ? this.options.renderNode(parent, item, {
-                            scope,
-                            state: scope.document.state.signal,
+                            scope: this.scope,
+                            state: this.root.state.signal,
                             next: (target = parent) => this.renderNode(target, item),
                             renderTemplate: (target, template) => this.renderTemplate(target, template)
                         })
@@ -155,7 +155,7 @@ export class DrxRenderer {
                 } catch (error) {
                     output = null;
                     const host = DrxRenderContext.host();
-                    const node = item.type === NodeType.Element ? this.state.value.elements[item.id].tag : item.type === NodeType.Text ? 'text()' : item.type.toLowerCase();
+                    const node = item.type === NodeType.Element ? this.root.state.value.elements[item.id].tag : item.type === NodeType.Text ? 'text()' : item.type.toLowerCase();
                     const name = host.type === NodeType.Component ? `component "${host.component.name}"` : host.type === NodeType.Page ? `page "${host.page.name}"` : 'app';
                     console.error(`Failed to render node at path "${$Element.getXPath(parent as Element).replace(/\/$/, '')}/${node}" in ${name}.`, error);
                 }
@@ -176,45 +176,45 @@ export class DrxRenderer {
             case NodeType.Text: {
                 const node = parent.ownerDocument.createTextNode('');
                 return new DrxView(node, () => Signal.effect(() => {
-                    const value = this.expression.parse(this.state.proxy.texts[item.id].content(), DrxRenderContext.locals());
+                    const value = this.expression.parse(this.proxy.texts[item.id].content(), DrxRenderContext.locals());
                     node.textContent = value == null ? '' : String(value);
                 }));
             }
             case NodeType.Element: {
-                const element = DrxDom.createElement(parent, this.state.proxy.elements[item.id].tag());
+                const element = DrxDom.createElement(parent, this.proxy.elements[item.id].tag());
                 return new DrxView(element, () => {
                     Signal.effect(() => {
-                        if (!('html' in this.state.proxy.elements[item.id].attributes())) {
-                            this.renderTemplate(element, () => this.state.proxy.elements[item.id].template());
+                        if (!('html' in this.proxy.elements[item.id].attributes())) {
+                            this.renderTemplate(element, () => this.proxy.elements[item.id].template());
                         }
                     });
-                    Signal.effect(() => this.expression.bindAttributes(element, this.state.proxy.elements[item.id].attributes(), DrxRenderContext.locals()));
+                    Signal.effect(() => this.expression.bindAttributes(element, this.proxy.elements[item.id].attributes(), DrxRenderContext.locals()));
                 });
             }
             case NodeType.Icon: {
                 const element = parent.ownerDocument.createElementNS('http://www.w3.org/2000/svg', 'svg');
                 return new DrxView(element, () => {
-                    Signal.effect(() => this.expression.bindAttributes(element, this.state.proxy.icons[item.id].attributes(), DrxRenderContext.locals()));
-                    Signal.effect(() => DrxIconSheet.apply(element, this.expression.parse(this.state.proxy.icons[item.id].name(), DrxRenderContext.locals())));
+                    Signal.effect(() => this.expression.bindAttributes(element, this.proxy.icons[item.id].attributes(), DrxRenderContext.locals()));
+                    Signal.effect(() => DrxIconSheet.apply(element, this.expression.parse(this.proxy.icons[item.id].name(), DrxRenderContext.locals())));
                 });
             }
             case NodeType.If: return this.createHost(parent, item, host => Signal.effect(() => {
                 const locals = DrxRenderContext.locals();
-                const node = this.state.proxy.ifs[item.id]();
-                const branches = [node, ...node.branchIds.map(id => this.state.proxy.elseIfs[id]())];
+                const node = this.proxy.ifs[item.id]();
+                const branches = [node, ...node.branchIds.map(id => this.proxy.elseIfs[id]())];
                 for (const branch of branches) {
                     if (this.expression.evaluate(branch.condition, locals)) {
                         this.renderTemplate(host, () => branch.template);
                         return;
                     }
                 }
-                if (node.elseId) this.renderTemplate(host, () => this.state.proxy.elses[node.elseId].template());
+                if (node.elseId) this.renderTemplate(host, () => this.proxy.elses[node.elseId].template());
             }));
-            case NodeType.ElseIf: return this.createHost(parent, item, host => this.renderTemplate(host, () => this.state.proxy.elseIfs[item.id].template()));
-            case NodeType.Else: return this.createHost(parent, item, host => this.renderTemplate(host, () => this.state.proxy.elses[item.id].template()));
+            case NodeType.ElseIf: return this.createHost(parent, item, host => this.renderTemplate(host, () => this.proxy.elseIfs[item.id].template()));
+            case NodeType.Else: return this.createHost(parent, item, host => this.renderTemplate(host, () => this.proxy.elses[item.id].template()));
             case NodeType.For: return this.createHost(parent, item, host => Signal.effect(() => {
                 const locals = DrxRenderContext.locals();
-                const node = this.state.proxy.fors[item.id]();
+                const node = this.proxy.fors[item.id]();
                 const entries = Signal.keyed(
                     () => this.expression.evaluate(node.each, locals),
                     entry => node.track ? $Value.get(entry.value, node.track) : entry.key,
@@ -226,7 +226,7 @@ export class DrxRenderer {
                         if (node.index) scoped[node.index] = entry.proxy.index;
                         if (node.key) scoped[node.key] = entry.proxy.key;
                         DrxRenderContext.locals.use({ ...locals, ...scoped }, () => {
-                            this.renderTemplate(element, () => this.state.proxy.fors[item.id].template());
+                            this.renderTemplate(element, () => this.proxy.fors[item.id].template());
                         });
                         return element;
                     }
@@ -240,7 +240,7 @@ export class DrxRenderer {
                 const locals = DrxRenderContext.locals();
                 const scope = DrxRenderContext.route();
                 const group = scope?.group;
-                const node = this.state.proxy.routerRoutes[item.id]();
+                const node = this.proxy.routerRoutes[item.id]();
                 if (node.route != null && group) {
                     group.routes(routes => [...routes, node]);
                     Signal.cleanup(() => group.routes(routes => routes.filter(route => route !== node)));
@@ -271,7 +271,7 @@ export class DrxRenderer {
                             DrxRenderContext.locals.as({ ...locals, router }),
                             DrxRenderContext.route.as(child)
                         ],
-                        () => this.renderTemplate(host, () => this.state.proxy.routerRoutes[item.id].template())
+                        () => this.renderTemplate(host, () => this.proxy.routerRoutes[item.id].template())
                     );
                     child.group.ready(true);
                 });
@@ -279,19 +279,19 @@ export class DrxRenderer {
             case NodeType.PageContainer: return this.createHost(parent, item, host => Signal.effect(() => {
                 const application = DrxRenderContext.application();
                 const locals = DrxRenderContext.locals();
-                const name = this.expression.parse(this.state.proxy.pageContainers[item.id].page(), locals);
-                const pageId = this.state.proxy.app.pageIds().find(id => this.state.proxy.pages[id].name() === name);
+                const name = this.expression.parse(this.proxy.pageContainers[item.id].page(), locals);
+                const pageId = this.proxy.app.pageIds().find(id => this.proxy.pages[id].name() === name);
                 if (!pageId) throw new Error(`Unknown page "${name}"`);
                 DrxRenderContext.locals.use({ ...application.locals, router: locals.router }, () => {
                     this.renderTemplate(host, () => [{ type: NodeType.Page, id: pageId }]);
                 });
             }));
             case NodeType.ComponentInstance: {
-                const instance = this.state.proxy.componentInstances[item.id]();
+                const instance = this.proxy.componentInstances[item.id]();
                 const name = this.expression.parse(instance.component, DrxRenderContext.locals());
-                const resolved = DrxComponent.find(this.scope, name);
+                const resolved = DrxComponent.find(this.root.state.value, this.scope, name);
                 if (!resolved) throw new Error(`Unknown component with name "${name}"`);
-                return this.renderComponent(parent, resolved.scope.document, resolved.component.id, instance);
+                return this.renderComponent(parent, resolved.component.id, instance);
             }
             case NodeType.Page: return this.renderHost(
                 parent,
@@ -299,23 +299,23 @@ export class DrxRenderer {
                 root => {
                     const host: DrxPageHost = {
                         type: NodeType.Page,
-                        page: this.state.value.pages[item.id],
-                        scope: { document: this.scope.document, type: 'app' },
+                        page: this.root.state.value.pages[item.id],
+                        scope: { type: 'app' },
                         root,
                         locals: { ...DrxRenderContext.locals() },
                         variables: new Map()
                     };
-                    const state = host.scope.document.state.value;
+                    const state = this.root.state.value;
                     const application = DrxRenderContext.application();
-                    const instance = this.getInstance(application.scope.document);
+                    const instance = this.getInstance();
                     const view = host.root.ownerDocument.defaultView;
                     const variables = host.page.variableIds.map(id => state.variables[id]);
                     this.instantiateHost(host, host.page.id, DrxScripting.instantiateVariables(variables), host.locals, () => ({
                         app: {
-                            variables: DrxScripting.createVariableApis(application.app.variableIds.map(id => state.variables[id]), instance.variables.states, application.scope),
+                            variables: DrxScripting.createVariableApis(state, application.app.variableIds.map(id => state.variables[id]), instance.variables.states, application.scope),
                             get instance() { return application.instance; }
                         },
-                        page: { variables: DrxScripting.createVariableApis(variables, host.variables, host.scope), root: host.root },
+                        page: { variables: DrxScripting.createVariableApis(state, variables, host.variables, host.scope), root: host.root },
                         apis: instance.api.apis,
                         services: instance.api.services,
                         libraries: instance.dependencies.api,
@@ -326,12 +326,12 @@ export class DrxRenderer {
                     return host;
                 },
                 host => {
-                    DrxStyleSheet.adopt(host.root, DrxRenderContext.application().style, () => this.expression.parse(this.state.proxy.pages[item.id].style() ?? '', host.locals));
-                    DrxStyleSheet.registerDocumentRules(host.root.ownerDocument, item.id, () => this.expression.parse(this.state.proxy.pages[item.id].style() ?? '', host.locals));
-                    this.renderTemplate(host.root, () => this.state.proxy.pages[item.id].template());
+                    DrxStyleSheet.adopt(host.root, DrxRenderContext.application().style, () => this.expression.parse(this.proxy.pages[item.id].style() ?? '', host.locals));
+                    DrxStyleSheet.registerDocumentRules(host.root.ownerDocument, item.id, () => this.expression.parse(this.proxy.pages[item.id].style() ?? '', host.locals));
+                    this.renderTemplate(host.root, () => this.proxy.pages[item.id].template());
                 }
             );
-            case NodeType.Component: return this.renderComponent(parent, this.scope.document, item.id);
+            case NodeType.Component: return this.renderComponent(parent, item.id);
             default: throw new Error(`Unsupported DRX node type "${item.type}"`);
         }
     }
@@ -341,11 +341,12 @@ export class DrxRenderer {
         return new DrxView(host, () => render(host));
     }
 
-    private getInstance(document: DrxDocument): DrxDocumentInstance {
-        if (!this.instances.has(document)) this.instanceScopes.push(Signal.root(() => {
-            const state = document.state.value;
-            const scope: DrxScope = { document, type: 'app' };
-            const variables = state.app.variableIds.map(id => state.variables[id]);
+    private getInstance(library?: string): DrxDocumentInstance {
+        if (!this.instances.has(library)) this.instanceScopes.push(Signal.root(() => {
+            const state = this.root.state.value;
+            const scope: DrxScope = library ? { type: 'library', library } : { type: 'app' };
+            const owner = DrxLibraries.getOwner(state, scope);
+            const variables = owner.variableIds.map(id => state.variables[id]);
             const instance: DrxDocumentInstance = {
                 variables: DrxScripting.instantiateVariables(variables),
                 services: new Map(),
@@ -353,21 +354,22 @@ export class DrxRenderer {
                 api: { variables: {}, services: {}, apis: {} },
                 dependencies: { locals: {}, api: {} }
             };
-            this.instances.set(document, instance);
-            for (const [name, library] of Object.entries(document.libraries.value)) {
-                const dependency = this.getInstance(library);
-                instance.dependencies.locals[name] = dependency.locals;
-                instance.dependencies.api[name] = dependency.api;
+            this.instances.set(library, instance);
+            for (const dependency of DrxLibraries.getLinked(state, owner)) {
+                const dependencyInstance = this.getInstance(dependency.id);
+                instance.dependencies.locals[dependency.id] = dependencyInstance.locals;
+                instance.dependencies.api[dependency.id] = dependencyInstance.api;
             }
-            Object.assign(instance.locals, instance.variables.locals, { asset: this.createAssetLocals(document, state.app.assetIds) });
-            const variableApis = DrxScripting.createVariableApis(variables, instance.variables.states, scope);
+            Object.assign(instance.locals, instance.variables.locals, { asset: this.createAssetLocals(owner.assetIds) });
+            const variableApis = DrxScripting.createVariableApis(state, variables, instance.variables.states, scope);
+            const context = library || state.app.type === 'library' ? { library: { variables: variableApis } } : { app: { variables: variableApis } };
             Object.assign(instance.api, {
                 variables: variableApis,
-                services: DrxScripting.instantiateServices(state.app.serviceIds, scope, this.loadScripts(), instance.services, this.realm, instance.dependencies.api, { variables: variableApis }),
-                apis: DrxScripting.createApiClients(scope, this.realm)
+                services: DrxScripting.instantiateServices(state, owner.serviceIds, scope, this.loadScripts(), instance.services, this.realm, instance.dependencies.api, context),
+                apis: DrxScripting.createApiClients(state, scope, this.realm)
             });
         }));
-        return this.instances.get(document);
+        return this.instances.get(library);
     }
 
     private renderHost<T extends DrxHost>(parent: Node, type: NodeType, create: (root: ShadowRoot) => T, render: (host: T) => void, buildContexts: (host: T) => ContextValue[] = () => []): DrxView {
@@ -392,15 +394,15 @@ export class DrxRenderer {
         });
     }
 
-    private renderComponent(parent: Node, document: DrxDocument, id: string, componentInstance?: DrxComponentInstance): DrxView {
+    private renderComponent(parent: Node, id: string, componentInstance?: DrxComponentInstance): DrxView {
         return this.renderHost(
             parent,
             NodeType.ComponentInstance,
             root => {
                 const host: DrxComponentHost = {
                     type: NodeType.Component,
-                    component: document.state.value.components[id],
-                    scope: { document, type: 'component', componentId: id },
+                    component: this.root.state.value.components[id],
+                    scope: { type: 'component', componentId: id },
                     componentInstance,
                     parent: DrxRenderContext.component(),
                     parentLocals: DrxRenderContext.locals(),
@@ -410,7 +412,7 @@ export class DrxRenderer {
                     properties: new Map(),
                     services: new Map()
                 };
-                const state = document.state.value;
+                const state = this.root.state.value;
                 const scope = host.scope;
                 const attribute = (name: string) => Object.entries(componentInstance?.attributes ?? {}).find(([key]) => key.toLowerCase() === name.toLowerCase())?.[1];
                 const events: Record<string, { emit(value?: unknown): void }> = {};
@@ -441,15 +443,15 @@ export class DrxRenderer {
                         break;
                     }
                 }
-                const dependencies = this.getInstance(document).dependencies;
+                const dependencies = this.getInstance(state.components[id].library).dependencies;
                 const variables = host.component.variableIds.map(id => state.variables[id]);
-                host.apis = { ...enclosing?.apis, ...DrxScripting.createApiClients(scope, this.realm) };
-                host.serviceApis = { ...enclosing?.serviceApis, ...DrxScripting.instantiateServices(host.component.serviceIds, scope, this.loadScripts(), host.services, this.realm, dependencies.api) };
-                const locals = { ...enclosing?.locals, ...dependencies.locals, asset: this.createAssetLocals(document, host.component.assetIds, enclosing?.locals.asset) };
+                host.apis = { ...enclosing?.apis, ...DrxScripting.createApiClients(state, scope, this.realm) };
+                host.serviceApis = { ...enclosing?.serviceApis, ...DrxScripting.instantiateServices(state, host.component.serviceIds, scope, this.loadScripts(), host.services, this.realm, dependencies.api) };
+                const locals = { ...enclosing?.locals, ...dependencies.locals, asset: this.createAssetLocals(host.component.assetIds, enclosing?.locals.asset) };
                 host.props = { ...enclosing?.props, ...Object.fromEntries(Array.from(host.properties, ([name, value]) => [name, () => value.value])) };
                 host.events = { ...enclosing?.events, ...events };
                 this.instantiateHost(host, host.component.id, DrxScripting.instantiateVariables(variables), locals, () => {
-                    host.variableApis = { ...enclosing?.variableApis, ...DrxScripting.createVariableApis(variables, host.variables, scope) };
+                    host.variableApis = { ...enclosing?.variableApis, ...DrxScripting.createVariableApis(state, variables, host.variables, scope) };
                     return {
                         component: {
                             variables: host.variableApis,
@@ -465,9 +467,9 @@ export class DrxRenderer {
                 return host;
             },
             host => {
-                DrxStyleSheet.adopt(host.root, () => this.expression.parse(this.state.proxy.components[id].style() ?? '', host.locals));
-                DrxStyleSheet.registerDocumentRules(host.root.ownerDocument, id, () => this.expression.parse(this.state.proxy.components[id].style() ?? '', host.locals));
-                this.renderTemplate(host.root, () => this.state.proxy.components[id].template());
+                DrxStyleSheet.adopt(host.root, () => this.expression.parse(this.proxy.components[id].style() ?? '', host.locals));
+                DrxStyleSheet.registerDocumentRules(host.root.ownerDocument, id, () => this.expression.parse(this.proxy.components[id].style() ?? '', host.locals));
+                this.renderTemplate(host.root, () => this.proxy.components[id].template());
             },
             host => [DrxRenderContext.component.as(host)]
         );
@@ -481,7 +483,7 @@ export class DrxRenderer {
     }
 
     private createPagesApi(application: DrxApplicationHost): Record<string, any> {
-        const state = application.scope.document.state.value;
+        const state = this.root.state.value;
         const api: Record<string, any> = {};
         for (const id of application.app.pageIds) {
             api[state.pages[id].name] = {
@@ -500,15 +502,15 @@ export class DrxRenderer {
         return api;
     }
 
-    private createAssetLocals(document: DrxDocument, assetIds: string[], fallback?: Record<string, string>): Record<string, string> {
-        const assets = assetIds.map(id => document.state.value.assets[id]);
+    private createAssetLocals(assetIds: string[], fallback?: Record<string, string>): Record<string, string> {
+        const assets = assetIds.map(id => this.root.state.value.assets[id]);
         return new Proxy({} as Record<string, string>, {
             get: (_, name) => {
                 const asset = typeof name === 'string' ? assets.find(asset => asset.name === name) : undefined;
                 if (!asset) return typeof name === 'string' ? fallback?.[name] : undefined;
                 if (asset.source.type === 'external') {
                     const path = DrxAsset.getFilePath(asset);
-                    return path ? document.getFileUrl(path) : asset.source.url;
+                    return path ? this.root.getFileUrl(path, asset.library) : asset.source.url;
                 }
                 return DrxAsset.createUrl(asset.source.content ?? '', asset.source.mimeType ?? 'application/octet-stream');
             }

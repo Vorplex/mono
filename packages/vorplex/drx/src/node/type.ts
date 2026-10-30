@@ -36,21 +36,20 @@ export const DrxType = class {
         return element;
     }
 
-    public static find(scope: DrxScope, name: string): DrxResolvedType | undefined {
-        const target = DrxLibraries.resolve(scope, name);
+    public static find(state: DrxDocumentState, scope: DrxScope, name: string): DrxResolvedType | undefined {
+        const target = DrxLibraries.resolveReference(state, scope, name);
         if (!target) return undefined;
-        const state = target.scope.document.state.value;
-        const owners = target.scope.type === 'app' ? [state.app] : DrxComponent.getChain(state, target.scope.componentId);
+        const owners = target.scope.type === 'component' ? DrxComponent.getChain(state, target.scope.componentId) : [DrxLibraries.getOwner(state, target.scope)];
         const type = owners.flatMap(owner => owner.typeIds.map(id => state.types[id])).find(type => type?.name === target.name);
         return type && { type, scope: target.scope };
     }
 
-    public static resolve(scope: DrxScope, name: string): TsonDefinition {
+    public static resolve(state: DrxDocumentState, scope: DrxScope, name: string): TsonDefinition {
         const defaultTypeName = name as TsonDefinition['type'];
         if ($Tson.definitions.includes(defaultTypeName)) return $Tson.getDefaultDefinition(defaultTypeName);
-        const resolved = DrxType.find(scope, name);
+        const resolved = DrxType.find(state, scope, name);
         if (!resolved) return $Tson.any();
-        return $Tson.resolveRefs(resolved.type.type, refName => DrxType.resolve(resolved.scope, refName));
+        return $Tson.resolveRefs(resolved.type.type, refName => DrxType.resolve(state, resolved.scope, refName));
     }
 
 }

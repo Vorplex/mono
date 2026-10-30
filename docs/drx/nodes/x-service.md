@@ -53,9 +53,9 @@ None. `onMount()`/`onUnmount()` are never called on a service instance and shoul
 
 ```ts
 interface Drx {
-    /** Only present on services declared directly on the app (or library) -- not on component services. */
+    /** Only present on services declared directly on the app -- not on library or component services. */
     app?: {
-        /** The defining document's top-level <x-variable> declarations, keyed by name. */
+        /** The app's top-level <x-variable> declarations, keyed by name. */
         variables: Record<string, {
             get(): any;
             set(update: any | ((value: any) => any)): void;
@@ -65,7 +65,13 @@ interface Drx {
         }>;
     };
 
-    /** Every <x-api> declared on the same owner (app or component), keyed by name. */
+    /** Only present on services declared directly on a <x-library> -- same shape as app. */
+    library?: {
+        /** The library's top-level <x-variable> declarations, keyed by name. */
+        variables: Record<string, any>;
+    };
+
+    /** Every <x-api> declared on the same owner (app, library or component), keyed by name. */
     apis: Record<string, {
         /** The api's base url. */
         url: string;
@@ -80,7 +86,7 @@ interface Drx {
     /** Every sibling <x-service> declared on the same owner (app or component), keyed by name. */
     services: Record<string, Record<string, (...args: any[]) => any>>;
 
-    /** Every library declared on the app, keyed by its name in <x-libraries>. */
+    /** Every library declared on the app, keyed by the library's name. */
     libraries: Record<string, {
         /** The library's top-level <x-variable> declarations, keyed by name. */
         variables: Record<string, any>;

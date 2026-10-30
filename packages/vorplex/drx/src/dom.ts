@@ -1,7 +1,7 @@
 import { $Id, $Path, $String, Awaitable } from '@vorplex/core';
 import { NodeType } from './node/node-type';
 
-export const DrxDom = class {
+export class DrxDom {
 
     public static async bootstrap<T>(target: Element, callback: () => Awaitable<T>): Promise<T | undefined> {
         const container = target.ownerDocument.createElement('div');
@@ -46,8 +46,20 @@ export const DrxDom = class {
         return element?.getAttribute(attribute);
     }
 
+    private static namespace = '';
+
     public static getId(element: Element): string {
-        return element?.getAttribute('id') ?? $Id.guid();
+        return `${DrxDom.namespace}${element?.getAttribute('id') ?? $Id.guid()}`;
+    }
+
+    public static withNamespace<T>(namespace: string, callback: () => T): T {
+        const previous = DrxDom.namespace;
+        DrxDom.namespace = namespace;
+        try {
+            return callback();
+        } finally {
+            DrxDom.namespace = previous;
+        }
     }
 
     public static getAttributes(element: Element, ...excluded: string[]): Record<string, string> {

@@ -11,9 +11,10 @@ type ArrayItem<V> = V extends (infer U)[] ? U : never;
 
 type FieldOf<TClass, K> = K extends keyof TClass ? TClass[K] : {};
 
-type ReducerFieldAdaptor<TState, TReducer extends Reducer, K extends keyof TState> =
+type Primitive = string | number | boolean | bigint | symbol | null | undefined;
+
+type FieldAdaptors<TState, K extends keyof TState> =
     { value: { set: (value: TState[K]) => Update<TState>, update: (update: Update<TState[K]>) => Update<TState> } }
-    & FieldOf<TReducer, K>
     & (
         TState[K] extends EntityMap<IEntity>
         ? { entity: EntityAdaptor<TState, EntityItem<TState[K]>, K & any> }
@@ -21,6 +22,24 @@ type ReducerFieldAdaptor<TState, TReducer extends Reducer, K extends keyof TStat
         ? { array: ArrayAdaptor<TState, ArrayItem<TState[K]>, K & any> }
         : unknown
     );
+
+type LiftedAdaptor<TAdaptor, TRoot> = {
+    [M in keyof TAdaptor]: TAdaptor[M] extends (...args: infer A) => any ? (...args: A) => ReducerOperation<TRoot> : TAdaptor[M];
+};
+
+type NestedFieldAdaptor<TRoot, TState, K extends keyof TState> =
+    { [A in keyof FieldAdaptors<TState, K>]: LiftedAdaptor<FieldAdaptors<TState, K>[A], TRoot> }
+    & NestedFields<TState[K], TRoot>;
+
+type NestedFields<TValue, TRoot> =
+    [NonNullable<TValue>] extends [Primitive | Function | any[]]
+    ? unknown
+    : { [K in Exclude<keyof NonNullable<TValue>, 'value' | 'entity' | 'array'>]: NestedFieldAdaptor<TRoot, NonNullable<TValue>, K> };
+
+type ReducerFieldAdaptor<TState, TReducer extends Reducer, K extends keyof TState> =
+    FieldAdaptors<TState, K>
+    & FieldOf<TReducer, K>
+    & NestedFields<TState[K], TState>;
 
 type StateFields<TState, TReducer extends Reducer> = {
     [K in keyof TState]: ReducerFieldAdaptor<TState, TReducer, K>;

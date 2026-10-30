@@ -16,7 +16,7 @@ Instantiates a declared `<x-component>` by name. Use it wherever you need to dro
 `component` is resolved where the instance is written, not where it ends up rendered:
 
 - **A plain name** looks at the components declared directly inside the current component, then directly inside each component enclosing it, then directly inside the app. The nearest match wins; each level only searches its direct children, never deeper.
-- **A namespaced name** such as `ui.button` finds the nearest [`<x-libraries>`](x-libraries.md) declaring `ui` and takes that library's top-level `button`.
+- **A namespaced name** such as `ui.button` finds the library named `ui` in the [`<x-libraries>`](x-libraries.md) of the app or library it is used in, and takes that library's top-level `button`.
 
 ## Example
 ```html drx

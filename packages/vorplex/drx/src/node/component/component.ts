@@ -81,11 +81,11 @@ export const DrxComponent = class {
         return chain;
     }
 
-    public static find(scope: DrxScope, name: string): { component: DrxComponent; scope: DrxScope } | undefined {
-        const target = DrxLibraries.resolve(scope, name);
+    public static find(state: DrxDocumentState, scope: DrxScope, name: string): { component: DrxComponent; scope: DrxScope } | undefined {
+        const target = DrxLibraries.resolveReference(state, scope, name);
         if (!target) return undefined;
-        const state = target.scope.document.state.value;
-        const owners = target.scope.type === 'app' ? [state.app] : [...DrxComponent.getChain(state, target.scope.componentId), state.app];
+        const owner = DrxLibraries.getOwner(state, target.scope);
+        const owners = target.scope.type === 'component' ? [...DrxComponent.getChain(state, target.scope.componentId), owner] : [owner];
         const component = owners.flatMap(owner => owner.componentIds.map(id => state.components[id])).find(component => component?.name === target.name);
         return component && { component, scope: target.scope };
     }

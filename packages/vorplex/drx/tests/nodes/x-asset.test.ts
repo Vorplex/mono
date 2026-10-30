@@ -78,7 +78,7 @@ test.describe('<x-asset>', () => {
         `);
         const missing = drx.node('missing');
         {
-            await missing.expect.toHaveText('./missing.svg');
+            await missing.expect.toHaveText('missing.svg');
         }
     });
 

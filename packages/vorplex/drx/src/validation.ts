@@ -1,5 +1,5 @@
 import { $Router, $String, $Tson, $Url, TsonDefinition } from '@vorplex/core';
-import type { DrxDocument, DrxDocumentState, DrxScope } from './document';
+import { DrxDocumentState, type DrxScope } from './document';
 import { DrxExpression } from './expression';
 import { DrxComponent } from './node/component/component';
 import { DrxLibraries } from './node/libraries';
@@ -49,10 +49,10 @@ export class DrxValidation {
         return selectors;
     }
 
-    private static findTemplateScope(document: DrxDocument, id: string): DrxScope | undefined {
-        const parent = DrxValidation.findTemplateParent(document.state.value, id);
+    private static findTemplateScope(state: DrxDocumentState, id: string): DrxScope | undefined {
+        const parent = DrxValidation.findTemplateParent(state, id);
         if (!parent) return undefined;
-        return parent.type === 'component' ? { document, type: 'component', componentId: parent.id } : { document, type: 'app' };
+        return parent.type === 'component' ? { type: 'component', componentId: parent.id } : { type: 'app' };
     }
 
     private static findTemplateParent(state: DrxDocumentState, id: string, visited: Set<string> = new Set()): { type: 'app' | 'page' | 'component'; id: string } | undefined {
@@ -71,7 +71,7 @@ export class DrxValidation {
         return undefined;
     }
 
-    private static readonly validators: Record<string, Record<string, (state: DrxDocumentState, document: DrxDocument) => DrxProblem[]>> = {
+    private static readonly validators: Record<string, Record<string, (state: DrxDocumentState, linked: DrxDocumentState) => DrxProblem[]>> = {
         general: {
             validateTemplateReferencesExist(state: DrxDocumentState): DrxProblem[] {
                 const problems: DrxProblem[] = [];
@@ -233,17 +233,17 @@ export class DrxValidation {
                     .filter(type => !$Tson.definitions.includes(type.type?.type as TsonDefinition['type']))
                     .map(type => ({ severity: 'error' as const, code: 'DRX018', message: `Type "${type.name}" has a malformed definition (unrecognized or missing "type" discriminator)`, target: { type: NodeType.Type, id: type.id } }));
             },
-            validateReferencesResolve(state: DrxDocumentState, document: DrxDocument): DrxProblem[] {
+            validateReferencesResolve(state: DrxDocumentState, linked: DrxDocumentState): DrxProblem[] {
                 const problems: DrxProblem[] = [];
                 const check = (scope: DrxScope, kind: string, item: { name: string; type: string } | undefined, target: DrxProblemTarget) => {
-                    if (!item?.type || $Tson.definitions.includes(item.type as TsonDefinition['type']) || DrxType.find(scope, item.type)) return;
+                    if (!item?.type || $Tson.definitions.includes(item.type as TsonDefinition['type']) || DrxType.find(linked, scope, item.type)) return;
                     problems.push({ severity: 'warning', code: 'DRX005', message: `Unknown type "${item.type}" for ${kind} "${item.name}"`, target });
                 };
-                const appScope: DrxScope = { document, type: 'app' };
+                const appScope: DrxScope = { type: 'app' };
                 for (const id of state.app.variableIds) check(appScope, 'variable', state.variables[id], { type: NodeType.Variable, id });
                 for (const page of Object.values(state.pages)) for (const id of page.variableIds) check(appScope, 'variable', state.variables[id], { type: NodeType.Variable, id });
                 for (const component of Object.values(state.components)) {
-                    const scope: DrxScope = { document, type: 'component', componentId: component.id };
+                    const scope: DrxScope = { type: 'component', componentId: component.id };
                     for (const id of component.variableIds) check(scope, 'variable', state.variables[id], { type: NodeType.Variable, id });
                     for (const id of component.propertyIds) check(scope, 'property', state.componentProperties[id], { type: NodeType.ComponentProperty, id });
                     for (const id of component.eventIds) check(scope, 'event', state.componentEvents[id], { type: NodeType.ComponentEvent, id });
@@ -466,30 +466,30 @@ export class DrxValidation {
                     .filter(instance => !instance.component?.trim())
                     .map(instance => ({ severity: 'error' as const, code: 'DRX003', message: 'Component instance "component" is required', target: { type: NodeType.ComponentInstance, id: instance.id } }));
             },
-            validateComponentExists(state: DrxDocumentState, document: DrxDocument): DrxProblem[] {
+            validateComponentExists(state: DrxDocumentState, linked: DrxDocumentState): DrxProblem[] {
                 const problems: DrxProblem[] = [];
+                const libraries = DrxLibraries.getLinked(linked, state.app).map(library => library.id);
                 for (const instance of Object.values(state.componentInstances)) {
                     if (!instance.component || !DrxExpression.isLiteral(instance.component)) continue;
-                    const scope = DrxValidation.findTemplateScope(document, instance.id);
-                    if (!scope || DrxComponent.find(scope, instance.component)) continue;
+                    const scope = DrxValidation.findTemplateScope(state, instance.id);
+                    if (!scope || DrxComponent.find(linked, scope, instance.component)) continue;
                     const target: DrxProblemTarget = { type: NodeType.ComponentInstance, id: instance.id };
-                    const namespace = DrxLibraries.getNamespace(instance.component);
-                    if (namespace !== undefined && state.app.libraries?.[namespace] == null) problems.push({ severity: 'error', code: 'DRX025', message: `Unknown library with name "${namespace}" -- declare it in the app's <x-libraries>`, target });
-                    else if (namespace === undefined || document.libraries.value[namespace]) problems.push({ severity: 'error', code: 'DRX004', message: `Unknown component with name "${instance.component}"`, target });
+                    const { namespace } = DrxLibraries.getNamespace(instance.component);
+                    if (namespace !== undefined && !libraries.includes(namespace)) problems.push({ severity: 'error', code: 'DRX025', message: `Unknown library with name "${namespace}" -- declare its url in the <x-libraries>`, target });
+                    else problems.push({ severity: 'error', code: 'DRX004', message: `Unknown component with name "${instance.component}"`, target });
                 }
                 return problems;
             },
-            validateAttributesDeclared(state: DrxDocumentState, document: DrxDocument): DrxProblem[] {
+            validateAttributesDeclared(state: DrxDocumentState, linked: DrxDocumentState): DrxProblem[] {
                 const problems: DrxProblem[] = [];
                 for (const instance of Object.values(state.componentInstances)) {
                     if (!instance.component || !DrxExpression.isLiteral(instance.component)) continue;
-                    const scope = DrxValidation.findTemplateScope(document, instance.id);
-                    const resolved = scope && DrxComponent.find(scope, instance.component);
+                    const scope = DrxValidation.findTemplateScope(state, instance.id);
+                    const resolved = scope && DrxComponent.find(linked, scope, instance.component);
                     if (!resolved) continue;
-                    const source = resolved.scope.document.state.value;
                     const declared = new Set([
-                        ...resolved.component.propertyIds.map(id => source.componentProperties[id]?.name),
-                        ...resolved.component.eventIds.map(id => source.componentEvents[id]?.name)
+                        ...resolved.component.propertyIds.map(id => linked.componentProperties[id]?.name),
+                        ...resolved.component.eventIds.map(id => linked.componentEvents[id]?.name)
                     ].filter(name => name != null).map(name => name.toLowerCase()));
                     for (const attribute of Object.keys(instance.attributes)) {
                         if (attribute === 'id' || attribute === 'component' || declared.has(attribute.toLowerCase())) continue;
@@ -536,22 +536,19 @@ export class DrxValidation {
             }
         },
         library: {
-            validateLoaded(state: DrxDocumentState, document: DrxDocument): DrxProblem[] {
+            validateLoaded(state: DrxDocumentState, linked: DrxDocumentState): DrxProblem[] {
                 const problems: DrxProblem[] = [];
                 const target: DrxProblemTarget = { type: NodeType.App, id: state.app.id };
-                for (const [name, url] of Object.entries(state.app.libraries ?? {})) {
-                    if (!$Url.isAbsolute(url)) {
-                        problems.push({ severity: 'error', code: 'DRX027', message: `Library with name "${name}" has url "${url}" that must be absolute, e.g. "https://cdn.example.com/${name}/"`, target });
-                        continue;
-                    }
-                    if (document.libraries.value[name]) continue;
-                    problems.push({ severity: 'error', code: 'DRX026', message: `Library with name "${name}" from url "${url}" is not loaded`, target });
+                const loaded = Object.values(linked.libraries).map(library => library.url);
+                for (const url of state.app.libraries ?? []) {
+                    if (!$Url.isAbsolute(url)) problems.push({ severity: 'error', code: 'DRX027', message: `Library with url "${url}" must be absolute, e.g. "https://cdn.example.com/library/"`, target });
+                    else if (!loaded.includes(DrxLibraries.getEntryUrl(url))) problems.push({ severity: 'error', code: 'DRX026', message: `Library with url "${url}" is not loaded`, target });
                 }
                 return problems;
             },
-            validateNotShadowed(state: DrxDocumentState): DrxProblem[] {
+            validateNotShadowed(state: DrxDocumentState, linked: DrxDocumentState): DrxProblem[] {
                 const problems: DrxProblem[] = [];
-                const names = Object.keys(state.app.libraries ?? {});
+                const names = DrxLibraries.getLinked(linked, state.app).map(library => library.id);
                 const variableIds = [...state.app.variableIds, ...Object.values(state.pages).flatMap(page => page.variableIds)];
                 for (const id of variableIds) {
                     const name = state.variables[id]?.name;
@@ -586,10 +583,10 @@ export class DrxValidation {
                 for (const endpoint of Object.values(state.apiEndpoints)) check(endpoint.name, 'Endpoint', { type: NodeType.ApiEndpoint, id: endpoint.id });
                 for (const property of Object.values(state.componentProperties)) check(property.name, 'Property', { type: NodeType.ComponentProperty, id: property.id });
                 for (const event of Object.values(state.componentEvents)) check(event.name, 'Event', { type: NodeType.ComponentEvent, id: event.id });
-                for (const name of Object.keys(state.app.libraries ?? {})) check(name, 'Library', { type: NodeType.App, id: state.app.id });
+                if (state.app.type === 'library' && !DrxValidation.isValidName(state.app.name ?? '')) problems.push({ severity: 'error', code: 'DRX024', message: `Library name "${state.app.name ?? ''}" must be camelCase, e.g. "myLibrary"`, target: { type: NodeType.App, id: state.app.id } });
                 return problems;
             },
-            validateNotReserved(state: DrxDocumentState): DrxProblem[] {
+            validateNotReserved(state: DrxDocumentState, linked: DrxDocumentState): DrxProblem[] {
                 const problems: DrxProblem[] = [];
                 const { app, component, attribute } = DrxValidation.reserved;
                 const variable = (id: string, reserved: string[]) => {
@@ -599,7 +596,7 @@ export class DrxValidation {
                 for (const id of state.app.variableIds) variable(id, app);
                 for (const page of Object.values(state.pages)) for (const id of page.variableIds) variable(id, app);
                 for (const item of Object.values(state.components)) for (const id of item.variableIds) variable(id, component);
-                for (const name of Object.keys(state.app.libraries ?? {})) {
+                for (const { id: name } of DrxLibraries.getLinked(linked, state.app)) {
                     if (app.includes(name)) problems.push({ severity: 'error', code: 'DRX014', message: `Library name "${name}" is reserved and will shadow the built-in local of the same name`, target: { type: NodeType.App, id: state.app.id } });
                 }
                 for (const property of Object.values(state.componentProperties)) {
@@ -695,13 +692,13 @@ export class DrxValidation {
         }
     };
 
-    public static validate(document: DrxDocument): DrxProblem[] {
-        const state = document.state.value;
+    public static validate(linked: DrxDocumentState): DrxProblem[] {
+        const state = DrxDocumentState.unlink(linked);
         const problems: DrxProblem[] = [];
         for (const group of Object.values(this.validators)) {
             for (const validate of Object.values(group)) {
                 try {
-                    problems.push(...validate(state, document));
+                    problems.push(...validate(state, linked));
                 } catch (error) {
                     problems.push({ severity: 'error', code: 'DRX000', message: `Validator crashed: ${error instanceof Error ? error.message : String(error)}`, target: { type: NodeType.App, id: state.app.id } });
                 }
