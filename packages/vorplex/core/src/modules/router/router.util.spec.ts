@@ -136,6 +136,30 @@ describe($Router.name, () => {
             expected: { year: '2026' },
         });
         test({
+            it: 'should decode a parameter',
+            pattern: '/users/{name}',
+            value: '/users/Jane%20Doe',
+            expected: { name: 'Jane Doe' },
+        });
+        test({
+            it: 'should decode an encoded slash without splitting the segment',
+            pattern: '/branches/{branch}/files',
+            value: '/branches/feature%2Flogin/files',
+            expected: { branch: 'feature/login' },
+        });
+        test({
+            it: 'should decode a rest parameter across segments',
+            pattern: '/files/{...path}',
+            value: '/files/my%20docs/100%25.txt',
+            expected: { path: 'my docs/100%.txt' },
+        });
+        test({
+            it: 'should keep a malformed encoding as is',
+            pattern: '/users/{name}',
+            value: '/users/%E0%A4%A',
+            expected: { name: '%E0%A4%A' },
+        });
+        test({
             it: 'should treat literal characters literally',
             pattern: '/v1.0/items',
             value: '/v1x0/items',
@@ -180,6 +204,12 @@ describe($Router.name, () => {
             pattern: '/edit/{id}',
             value: '/edit/5/preview',
             expected: { params: { id: '5' }, rest: '/preview' },
+        });
+        test({
+            it: 'decodes a parameter and leaves the rest encoded for a nested route',
+            pattern: '/edit/{id}',
+            value: '/edit/a%20b/c%20d',
+            expected: { params: { id: 'a b' }, rest: '/c%20d' },
         });
         test({
             it: 'does not match a shared prefix that is not on a segment boundary',

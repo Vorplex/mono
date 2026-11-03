@@ -12,6 +12,7 @@ export * from './modules/api/socket.model';
 export * from './modules/api/web-client.model';
 export * from './modules/array/array.util';
 export * from './modules/changes/changes.util';
+export * from './modules/cipher/cipher.util';
 export * from './modules/color/color-data.interface';
 export * from './modules/color/color-formats.const';
 export * from './modules/color/color.type';

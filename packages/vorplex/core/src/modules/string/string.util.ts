@@ -18,6 +18,12 @@ export class $String {
         return lines.map(line => line.slice(minIndent)).join('\n').trim();
     }
 
+    public static lines(string: string): string[] {
+        const lines = string.split('\n');
+        if (lines.length > 1 && lines[lines.length - 1] === '') lines.pop();
+        return lines;
+    }
+
     public static toAlphanumeric(string: string, specialCharacterReplacement?: string): string {
         return string.replace(/[^a-zA-Z0-9]/g, specialCharacterReplacement ?? '');
     }

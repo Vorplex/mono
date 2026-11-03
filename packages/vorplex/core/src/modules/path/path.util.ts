@@ -30,6 +30,21 @@ export class $Path {
         );
     }
 
+    public static glob(pattern: string): RegExp {
+        let source = '';
+        for (let index = 0; index < pattern.length; index++) {
+            const character = pattern[index];
+            if (character === '*' && pattern[index + 1] === '*') {
+                const slash = pattern[index + 2] === '/';
+                source += slash ? '(?:.*/)?' : '.*';
+                index += slash ? 2 : 1;
+            } else if (character === '*') source += '[^/]*';
+            else if (character === '?') source += '[^/]';
+            else source += character.replace(/[.+^${}()|[\]\\]/g, '\\$&');
+        }
+        return new RegExp(`^${pattern.includes('/') ? '' : '(?:.*/)?'}${source}$`);
+    }
+
     public static getRelativePath(from: string, to: string): string {
         const getSegments = (path: string) => path.split(/[/\\]+/).reduce<string[]>((stack, segment) => {
             if (segment === '' || segment === '.') return stack;
