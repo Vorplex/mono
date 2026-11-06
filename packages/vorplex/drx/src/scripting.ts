@@ -186,7 +186,7 @@ export class DrxScripting {
                                 body = target;
                             }
                         }
-                        const raw = await fetch(url.toString(), { method: endpoint.method, headers, body });
+                        const raw = await realm.fetch(url.toString(), { method: endpoint.method, headers, body });
                         let value: any;
                         let resolved = false;
                         return {

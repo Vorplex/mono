@@ -16,9 +16,9 @@ export interface Signal<T = any> extends Getter<T>, Setter<T> {
     readonly proxy: SignalProxy<T>;
 }
 export type SignalProxy<T> =
-    IsAny<T> extends true ? Signal<T>
-    : [T] extends [object] ? Signal<T> & { readonly [K in keyof T]-?: SignalProxy<T[K]> }
-    : Signal<T>;
+    IsAny<T> extends true ? Getter<T> & Setter<T>
+    : [T] extends [object] ? Getter<T> & Setter<T> & { readonly [K in keyof T]-?: SignalProxy<T[K]> }
+    : Getter<T> & Setter<T>;
 
 export class Signal<T = any> {
 
