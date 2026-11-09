@@ -155,6 +155,12 @@ export class DRX {
         return await Compiler.compile({ files, entryFilePath: entryPath });
     }
 
+    public static updateCdnVersionReference(html: string) {
+        const regex = /https:\/\/cdn\.jsdelivr\.net\/npm\/@vorplex\/drx@[^/"'\s]+\/dist\/standalone\/drx\.js/g;
+        if (!html.match(regex)) return html;
+        return html.replace(regex, `https://cdn.jsdelivr.net/npm/@vorplex/drx@${version}/dist/standalone/drx.js`);
+    }
+
     public static async compile(document: DrxDocument) {
         const runtimeUrl = `https://cdn.jsdelivr.net/npm/@vorplex/drx@${version}/dist/standalone`;
         const state = $Value.clone({ ...document.state.value, files: {} });
