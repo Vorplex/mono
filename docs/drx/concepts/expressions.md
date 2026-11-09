@@ -40,3 +40,19 @@ Event handler attributes such as `onclick` and `<x-event>` handlers contain Java
     </button>
 </x-app>
 ```
+
+## Reactivity
+
+An expression updates when a signal it read changes. A script reading a variable with `drx.<owner>.variables.<name>.get()` is not tracked, so an expression that calls a script method reading state that way won't update. Pass the signal's value in as an argument instead.
+
+```html drx
+<x-app>
+    <x-variable name="count" type="number">0</x-variable>
+    <script type="application/typescript">
+        export default DRX.defineApp(drx => class {
+            label(count) { return count === 1 ? '1 click' : `${count} clicks`; }
+        });
+    </script>
+    <button onclick="count(value => value + 1)">{{label(count())}}</button>
+</x-app>
+```

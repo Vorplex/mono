@@ -15,6 +15,10 @@
 </x-app>
 ```
 
+## Skill
+
+- [DRX skill](skill.md) — the practice guide for AI agents building with DRX.
+
 ## Concepts
 
 - [Locals](concepts/locals.md)
