@@ -1107,25 +1107,35 @@ Reaches the app script's instance via `drx.app.instance` to call a method declar
 
 Opens a page as a modal with `showModal({ data })`, reads the data it was opened with via `drx.modal.data()`, and resolves the caller's promise via `drx.modal.close(...)` — here, a form that edits a record and hands the edited copy back.
 
+The page renders inside a native `<dialog class="x-modal">` that covers the whole viewport and is transparent, so the page lays itself out: a centered panel, a drawer, or a full screen. Style the backdrop with `::backdrop` in the app's `<style>`.
+
 ```html drx
 <x-app>
+    <style>::backdrop { background: rgb(0 0 0 / 40%); }</style>
+
     <x-page name="editPerson">
+        <style>
+            .panel { position: fixed; inset: 0; margin: auto; width: fit-content; height: fit-content; display: grid; gap: 8px; padding: 16px; background: white; border-radius: 8px; }
+        </style>
+
         <script type="application/typescript">
             export default DRX.definePage(drx => class {
                 save() { drx.modal.close(drx.modal.data()); }
             });
         </script>
 
-        <label>
-            Name
-            <input value="{{modal.data.name()}}" onchange="modal.data.name(event.target.value)">
-        </label>
-        <label>
-            Age
-            <input type="number" value="{{modal.data.age()}}" onchange="modal.data.age(Number(event.target.value))">
-        </label>
-        <button onclick="modal.close()">Cancel</button>
-        <button onclick="save()">Save</button>
+        <div class="panel">
+            <label>
+                Name
+                <input value="{{modal.data.name()}}" onchange="modal.data.name(event.target.value)">
+            </label>
+            <label>
+                Age
+                <input type="number" value="{{modal.data.age()}}" onchange="modal.data.age(Number(event.target.value))">
+            </label>
+            <button onclick="modal.close()">Cancel</button>
+            <button onclick="save()">Save</button>
+        </div>
     </x-page>
 
     <x-page name="home">
