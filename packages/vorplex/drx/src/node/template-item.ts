@@ -37,6 +37,7 @@ export const DrxTemplate = class {
                 NodeType.Libraries,
                 NodeType.DependencyTree,
                 NodeType.PwaMetadata,
+                NodeType.Settings,
                 NodeType.Variable,
                 NodeType.Type,
                 NodeType.Service,

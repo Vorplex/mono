@@ -181,4 +181,62 @@ test.describe('<x-api>', () => {
             await drx.logged('component apis componentApi');
         }
     });
+
+    test('url is an expression evaluated against the owner locals when a request is sent', async ({ drx, page }) => {
+        const requests: string[] = [];
+        await page.route('https://*.example.com/todos', route => {
+            requests.push(route.request().url());
+            return route.fulfill({ json: [] });
+        });
+        await drx.render(`
+            <x-app>
+                <x-variable name="region" type="string">"eu"</x-variable>
+                <x-api name="todos" url="https://{{region()}}.example.com">
+                    <x-endpoint name="list" path="/todos"></x-endpoint>
+                </x-api>
+                <script type="application/typescript">
+                    export default DRX.defineApp(drx => class {
+                        async onMount() {
+                            console.log('url ' + drx.apis.todos.url);
+                            await drx.apis.todos.endpoints.list.request();
+                            drx.app.variables.region.set('us');
+                            console.log('url ' + drx.apis.todos.url);
+                            await drx.apis.todos.endpoints.list.request();
+                            console.log('requested');
+                        }
+                    });
+                </script>
+            </x-app>
+        `);
+        {
+            await drx.logged('url https://eu.example.com');
+            await drx.logged('url https://us.example.com');
+            await drx.logged('requested');
+            expect(requests).toEqual(['https://eu.example.com/todos', 'https://us.example.com/todos']);
+        }
+    });
+
+    test('a component api url sees the component locals', async ({ drx, page }) => {
+        const request = page.waitForRequest('https://component.example.com/ping');
+        await page.route('https://component.example.com/ping', route => route.fulfill({ json: {} }));
+        await drx.render(`
+            <x-app>
+                <x-component name="probe">
+                    <x-property name="host" type="string"></x-property>
+                    <x-api name="probeApi" url="https://{{host()}}">
+                        <x-endpoint name="ping" path="/ping"></x-endpoint>
+                    </x-api>
+                    <script type="application/typescript">
+                        export default DRX.defineComponent(drx => class {
+                            onMount() { drx.apis.probeApi.endpoints.ping.request(); }
+                        });
+                    </script>
+                </x-component>
+                <x-component-instance component="probe" host="component.example.com"></x-component-instance>
+            </x-app>
+        `);
+        {
+            expect((await request).url()).toBe('https://component.example.com/ping');
+        }
+    });
 });

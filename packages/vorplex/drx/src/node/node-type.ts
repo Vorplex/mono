@@ -6,6 +6,7 @@ export enum NodeType {
     Libraries = 'X-LIBRARIES',
     DependencyTree = 'X-DEPENDENCY-TREE',
     PwaMetadata = 'X-PWA-METADATA',
+    Settings = 'X-SETTINGS',
     Variable = 'X-VARIABLE',
     Type = 'X-TYPE',
     Service = 'X-SERVICE',

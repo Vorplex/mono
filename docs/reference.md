@@ -56,6 +56,7 @@ See [Expressions](concepts/expressions.md) for attribute syntax and expression f
 - [\<x-libraries>](nodes/x-libraries.md)
 - [\<x-dependency-tree>](nodes/x-dependency-tree.md)
 - [\<x-pwa-metadata>](nodes/x-pwa-metadata.md)
+- [\<x-settings>](nodes/x-settings.md)
 - [\<x-api>](nodes/x-api.md)
 - [\<x-route>](nodes/x-route.md)
 - [\<x-if>](nodes/x-if.md)
@@ -176,28 +177,30 @@ Each level below adds locals on top of what it inherited; lower in the list wins
 ## App
 
 1. app [`<x-libraries>`](../nodes/x-libraries.md) namespaces
-2. `asset`
-3. [`router`](../nodes/x-route.md)
-4. app script methods
-5. app `<x-variable>`s
+2. `assets`
+3. [`settings`](../nodes/x-settings.md)
+4. [`router`](../nodes/x-route.md)
+5. app script methods
+6. app `<x-variable>`s
 
 ## Page
 
 Adds on top of App:
 
-6. page script methods
-7. page `<x-variable>`s
+7. page script methods
+8. page `<x-variable>`s
 
 ## Component
 
 Isolated — App/Page locals never apply here. A [nested component](../nodes/x-component.md#nested-components) starts from the locals of the component instance enclosing it, then adds:
 
 1. the app's [`<x-libraries>`](../nodes/x-libraries.md) namespaces
-2. `asset` — names it doesn't declare fall back to the enclosing instance's `asset`
-3. component script methods
-4. component `<x-variable>`s
-5. `<x-property>` values
-6. `<x-event>`s
+2. `assets` — names it doesn't declare fall back to the enclosing instance's `assets`
+3. [`settings`](../nodes/x-settings.md) — always the app's settings
+4. component script methods
+5. component `<x-variable>`s
+6. `<x-property>` values
+7. `<x-event>`s
 
 ## Resets
 
@@ -229,6 +232,7 @@ In text content, interpolation results are shown as text. In a regular attribute
 | `<x-if condition>` and `<x-for each>`                                         | Pure expression               | `<x-if condition="isVisible()">...</x-if>`; `<x-for each="items()" as="item">...</x-for>`                                                |
 | `<x-page-container page>` and `<x-component-instance component>`              | Interpolation or literal text | `<x-page-container page="{{router.active()}}"></x-page-container>`; `<x-component-instance component="Greeting"></x-component-instance>` |
 | Component property attributes on `<x-component-instance>`                     | Interpolation or literal text | `<x-component-instance component="Greeting" name="{{user.name()}}"></x-component-instance>`                                              |
+| `<x-api url>`                                                                 | Interpolation or literal text | `<x-api name="todos" url="{{settings.api.url}}"></x-api>`                                                                                |
 | `<style>` in an app, page or component                                        | Interpolation                 | `<style>:root { --accent: {{accent()}}; }</style>`                                                                                       |
 
 Event handler attributes such as `onclick` and `<x-event>` handlers contain JavaScript statements, which can include expressions. They are a separate handler syntax: `event` is the event, `this` is the element for DOM events, and returning `false` prevents the browser's default action. See [Templates: Event handlers](templates.md#event-handlers) and [Component events](../nodes/x-event.md).
@@ -459,6 +463,7 @@ The composition root of a DRX document — exactly one per file, everything else
     <x-libraries></x-libraries>
     <x-dependency-tree></x-dependency-tree>
     <x-pwa-metadata></x-pwa-metadata>
+    <x-settings></x-settings>
     <x-type></x-type>
     <x-variable></x-variable>
     <x-service></x-service>
@@ -526,7 +531,7 @@ Styles live next to what consumes them. The app owns the document, so the app's 
 - A page's own rules win over the app's at equal specificity.
 - `@keyframes` in the app style work in the app and its pages; a component declares its own.
 - `@font-face` and `@property` work in any `<style>`.
-- `{{ }}` works in a `<style>` with the owner's locals, and the styles update when those change: `:root { --accent: {{accent()}}; }`, or `src: url({{asset.inter}})` for a font bundled as an [`<x-asset>`](x-asset.md). Per-element values belong in `style.<property>` bindings.
+- `{{ }}` works in a `<style>` with the owner's locals, and the styles update when those change: `:root { --accent: {{accent()}}; }`, or `src: url({{assets.inter}})` for a font bundled as an [`<x-asset>`](x-asset.md). Per-element values belong in `style.<property>` bindings.
 - CSS that a library injects into the document `<head>` applies everywhere, as on any web page; your own styles win over it at equal specificity.
 - Pages and components are rendered as `display: contents`, so their top-level elements take part directly in the app's layout, e.g. as grid items.
 
@@ -724,7 +729,7 @@ A library is a `<x-library>` instead of an `<x-app>`. It declares types, variabl
 | Variables          | `ui.theme()` in templates, `drx.libraries.ui.variables.theme` in scripts  |
 | Services           | `drx.libraries.ui.services.logger.log(...)`                               |
 | Apis               | `drx.libraries.ui.apis.todoApi.endpoints.list.request()`                  |
-| Assets             | `ui.asset.logo`                                                           |
+| Assets             | `ui.assets.logo`                                                           |
 
 - **Only the top level is exported.** Components, types and the rest declared inside a library component stay private to that component.
 - **One instance.** A library's variables and services exist once per running app, however many pages, components and other libraries use it. `ui.theme()` is the same signal everywhere.
@@ -803,7 +808,7 @@ Scripts reach a library's variables, services and apis through `drx.libraries.<n
 
 ## Names
 
-A library's name must not clash with an app variable. `asset`, `router` and `modal` are reserved.
+A library's name must not clash with an app variable. `assets`, `router` and `modal` are reserved.
 
 <!-- drx/nodes/x-import.md -->
 
@@ -1954,7 +1959,7 @@ Calls a `<x-service>` declared inside the component itself, from the component's
 
 # \<x-asset>
 
-Declares a static asset, resolved via `asset.<name>` to a plain URL string. Use it for images, icons, or other files bundled with the app instead of hardcoding paths or embedding data URIs inline in markup.
+Declares a static asset, resolved via `assets.<name>` to a plain URL string. Use it for images, icons, or other files bundled with the app instead of hardcoding paths or embedding data URIs inline in markup.
 
 ```html
 <x-asset></x-asset>
@@ -1966,7 +1971,7 @@ Declares a static asset, resolved via `asset.<name>` to a plain URL string. Use 
 | src?      | URL of an external asset; omit to declare an inline asset   |
 | type?     | MIME type of an inline asset                                |
 
-A relative `src` is a file of the app. It resolves against the file it's written in, as in HTML, and is read the same way as an `<x-import>`, so `asset.<name>` serves its content rather than linking to it. If the file can't be read, `asset.<name>` is the file's resolved path: relative to the app for the app's own assets, and an absolute URL for a library's assets.
+A relative `src` is a file of the app. It resolves against the file it's written in, as in HTML, and is read the same way as an `<x-import>`, so `assets.<name>` serves its content rather than linking to it. If the file can't be read, `assets.<name>` is the file's resolved path: relative to the app for the app's own assets, and an absolute URL for a library's assets.
 
 When an app is split into files, the declaration moves to `app/assets/<name>.html` and the file moves to `assets/<id>.<extension>` next to `index.html`, named by the asset's id so renaming an asset never moves its file. The `src` is rewritten to point at it: `./logo.svg` written in `index.html` becomes `../../assets/<id>.svg` in `app/assets/logo.html`. Absolute URLs are never read or rewritten.
 
@@ -1975,7 +1980,7 @@ When an app is split into files, the declaration moves to `app/assets/<name>.htm
 <x-app>
     <x-asset name="logo" src="https://www.google.com/favicon.ico"></x-asset>
 
-    <img src="{{asset.logo}}" />
+    <img src="{{assets.logo}}" />
 </x-app>
 ```
 
@@ -1985,7 +1990,7 @@ When an app is split into files, the declaration moves to `app/assets/<name>.htm
 <x-app>
     <x-asset name="mark" src="./mark.svg"></x-asset>
 
-    <img src="{{asset.mark}}" width="48" height="48" />
+    <img src="{{assets.mark}}" width="48" height="48" />
 </x-app>
 ```
 
@@ -2063,6 +2068,103 @@ No attributes, content is a JSON object matching the [Web App Manifest](https://
 </x-app>
 ```
 
+<!-- drx/nodes/x-settings.md -->
+
+# \<x-settings>
+
+Declares the app's settings: a JSON object read as the `settings` local in templates and as `drx.settings` in scripts. Use it for values that change between environments, such as API addresses, feature flags or display names, instead of hardcoding them in markup or scripts. At most one per app; a library can't declare settings.
+
+```html
+<x-settings></x-settings>
+```
+
+| Attribute | Description                                                                      |
+| --------- | -------------------------------------------------------------------------------- |
+| src?      | Path or URL of a JSON file holding the settings; omit to write the JSON as the content |
+
+The content, or the file at `src`, is a JSON object. `settings` is an empty object when the app declares none.
+
+## Example
+
+```html drx
+<x-app>
+    <x-settings>{ "title": "Customer portal", "support": { "email": "help@example.com" } }</x-settings>
+
+    <h1>{{settings.title}}</h1>
+    <p>Contact {{settings.support.email}}</p>
+</x-app>
+```
+
+## Settings in a file
+
+A relative `src` resolves against the file it's written in, as with [\<x-import>](x-import.md). An absolute URL such as `https://config.example.com/portal.json` is requested as-is and never rewritten. When an app is split into files, settings with a `src` stay in that file, and `src` is rewritten relative to the file the node moves to. Settings without a `src` move to `settings.json` next to the app's file, and the node becomes `<x-settings src="./settings.json"></x-settings>`.
+
+```html drx
+<x-app>
+    <x-settings src="./settings.json"></x-settings>
+
+    <p>Environment: {{settings.environment}}</p>
+</x-app>
+```
+
+```json drx file=settings.json
+{
+    "environment": "development"
+}
+```
+
+## Api addresses
+
+An [\<x-api>](x-api.md) `url` is an expression, so it can read its address from the settings:
+
+```html drx
+<x-app>
+    <x-settings>{ "api": { "url": "https://jsonplaceholder.typicode.com" } }</x-settings>
+
+    <x-api name="jsonPlaceholder" url="{{settings.api.url}}">
+        <x-endpoint name="get" path="/todos/1"></x-endpoint>
+    </x-api>
+
+    <script type="application/typescript">
+        export default DRX.defineApp(drx => class {
+            async onMount() {
+                console.log(drx.apis.jsonPlaceholder.url);
+                const response = await drx.apis.jsonPlaceholder.endpoints.get.request();
+                console.log(await response.value());
+            }
+        });
+    </script>
+</x-app>
+```
+
+## Scripts
+
+App, page, component and service scripts read the same object through `drx.settings`:
+
+```html drx
+<x-app>
+    <x-settings>{ "greeting": "Hello from settings" }</x-settings>
+
+    <x-service name="greeter">
+        <script type="application/typescript">
+            export default DRX.defineService(drx => class {
+                greet() { return drx.settings.greeting; }
+            });
+        </script>
+    </x-service>
+
+    <script type="application/typescript">
+        export default DRX.defineApp(drx => class {
+            onMount() { console.log(drx.services.greeter.greet()); }
+        });
+    </script>
+</x-app>
+```
+
+## Compiled output
+
+A compiled app writes its settings to `settings.json` next to `index.html`, separate from the rest of the app, and loads it before the app renders. Replace that file to change the settings of a deployed app without compiling it again. An installable PWA keeps working offline: its service worker caches `settings.json` with the rest of the app, requests every file from the network first while online, and only serves its cached copies when offline, so a replaced file takes effect on the next online load.
+
 <!-- drx/nodes/x-api.md -->
 
 # \<x-api>
@@ -2080,10 +2182,10 @@ Declares an HTTP client, reached via `drx.apis.<name>`. Use it to centralize a b
 </x-api>
 ```
 
-| Attribute | Description         |
-| --------- | ------------------- |
-| **name**  | Name of the api     |
-| **url**   | Base url of the api |
+| Attribute    | Description         |
+| ------------ | ------------------- |
+| **name**     | Name of the api     |
+| **{ƒ} url**  | Base url of the api |
 
 ## Example
 
@@ -2120,6 +2222,33 @@ Against the public [JSONPlaceholder](https://jsonplaceholder.typicode.com) API:
         });
     </script>
     <h1>Todos</h1>
+</x-app>
+```
+
+## Url expressions
+
+The `url` is evaluated each time a request is sent, against the locals of the api's owner: the app's locals for an app api, the component's locals for a component api. `drx.apis.<name>.url` returns the evaluated url. Read environment-specific addresses from [\<x-settings>](x-settings.md):
+
+```html drx
+<x-app>
+    <x-settings>{ "api": { "url": "https://jsonplaceholder.typicode.com" } }</x-settings>
+    <x-variable name="resource" type="string">"todos"</x-variable>
+
+    <x-api name="jsonPlaceholder" url="{{settings.api.url}}/{{resource()}}">
+        <x-endpoint name="get" path="/1"></x-endpoint>
+    </x-api>
+
+    <script type="application/typescript">
+        export default DRX.defineApp(drx => class {
+            async onMount() {
+                console.log(drx.apis.jsonPlaceholder.url);
+                drx.app.variables.resource.set('posts');
+                console.log(drx.apis.jsonPlaceholder.url);
+                const response = await drx.apis.jsonPlaceholder.endpoints.get.request();
+                console.log(await response.value());
+            }
+        });
+    </script>
 </x-app>
 ```
 

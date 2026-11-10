@@ -154,7 +154,7 @@ test.describe('<x-libraries>', () => {
             <x-app>
                 <x-libraries>["${ui}index.html?ref=main"]</x-libraries>
                 <x-component-instance component="ui.badge" label="Imported"></x-component-instance>
-                <img id="icon" src="{{ui.asset.icon}}">
+                <img id="icon" src="{{ui.assets.icon}}">
             </x-app>
         `, { files: { 'ui/index.html': '<x-import src="./library.html"></x-import>', 'ui/library.html': library, 'ui/icon.svg': '<svg></svg>' } });
         const badges = page.locator('.badge');
@@ -215,8 +215,8 @@ test.describe('<x-libraries>', () => {
         await drx.render(`
             <x-app>
                 <x-libraries>["${ui}"]</x-libraries>
-                <img id="logo" src="{{ui.asset.logo}}">
-                <img id="icon" src="{{ui.asset.icon}}">
+                <img id="logo" src="{{ui.assets.logo}}">
+                <img id="icon" src="{{ui.assets.icon}}">
             </x-app>
         `, { files: { 'ui/index.html': library, 'ui/icon.svg': '<svg id="library-icon"></svg>' } });
         const logo = drx.node('logo');

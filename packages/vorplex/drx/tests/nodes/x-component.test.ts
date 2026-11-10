@@ -286,7 +286,7 @@ test.describe('<x-component>', () => {
                             });
                         </script>
                         <button id="inner" onclick="count(value => value + 1)">Inner {{count()}}</button>
-                        <img id="logo" src="{{asset.logo}}">
+                        <img id="logo" src="{{assets.logo}}">
                     </x-component>
                     <p id="outer">Outer {{count()}}</p>
                     <x-component-instance component="inner"></x-component-instance>

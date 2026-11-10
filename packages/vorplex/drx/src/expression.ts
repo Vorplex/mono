@@ -7,32 +7,39 @@ export class DrxExpression {
         return expression != null && $String.matchDelimited(expression, ['{{', '}}']).every(segment => segment.type === 'text');
     }
 
-    public static isLocal(expression: string): { name: string; path: string[] } | null {
+    public static isLocal(expression: string): { name: string; path: string[]; call: boolean } | null {
         if (expression == null) return null;
         const segments = $String.matchDelimited(expression, ['{{', '}}']);
         if (segments.length !== 1 || segments[0].type !== 'match') return null;
         return DrxExpression.isPureLocal(segments[0].value);
     }
 
-    public static isPureLocal(expression: string): { name: string; path: string[] } | null {
+    public static isPureLocal(expression: string): { name: string; path: string[]; call: boolean } | null {
         if (expression == null) return null;
         const marker = Object.freeze(Object.create(null));
         const calls: { name: string; path: string[] }[] = [];
-        const record = (name: string, path: string[]): any => new Proxy(() => { }, {
-            get: (_target, key) => typeof key === 'string' ? record(name, [...path, key]) : undefined,
-            apply: (_target, _this, args) => {
-                if (args.length > 0) throw new Error('Unexpected arguments');
-                calls.push({ name, path });
-                return marker;
-            }
-        });
+        const references = new WeakMap<object, { name: string; path: string[] }>();
+        const record = (name: string, path: string[]): any => {
+            const reference = new Proxy(() => { }, {
+                get: (_target, key) => typeof key === 'string' ? record(name, [...path, key]) : undefined,
+                apply: (_target, _this, args) => {
+                    if (args.length > 0) throw new Error('Unexpected arguments');
+                    calls.push({ name, path });
+                    return marker;
+                }
+            });
+            references.set(reference, { name, path });
+            return reference;
+        };
         const scope = new Proxy({}, {
             has: () => true,
             get: (_target, key) => typeof key === 'string' ? record(key, []) : undefined
         });
         try {
             const result = new Function('scope', `with (scope) { return (function () { 'use strict'; return (${expression}); })(); }`)(scope);
-            return result === marker && calls.length === 1 ? calls[0] : null;
+            if (result === marker && calls.length === 1) return { ...calls[0], call: true };
+            if (calls.length === 0 && references.has(result)) return { ...references.get(result), call: false };
+            return null;
         } catch {
             return null;
         }
@@ -40,7 +47,7 @@ export class DrxExpression {
 
     public static isAsset(expression: string): string {
         if (expression == null) return null;
-        return /^\{\{\s*asset\.([A-Za-z_$][\w$]*)\s*\}\}$/.exec(expression.trim())?.[1];
+        return /^\{\{\s*assets\.([A-Za-z_$][\w$]*)\s*\}\}$/.exec(expression.trim())?.[1];
     }
 
     public static mask(content: string): string {

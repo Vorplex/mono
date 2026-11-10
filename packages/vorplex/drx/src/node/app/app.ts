@@ -1,11 +1,11 @@
 import { DependencyTree } from '@vorplex/compiler';
-import { DrxDom } from '../../dom';
 import type { DrxDocumentState } from '../../document';
+import { DrxDom } from '../../dom';
 import { DrxApi } from '../api/api';
 import { DrxAsset } from '../asset';
 import { DrxComponent } from '../component/component';
-import { DrxLibraries } from '../libraries';
 import { DrxDependencyTree } from '../dependency-tree';
+import { DrxLibraries } from '../libraries';
 import { NodeType } from '../node-type';
 import { DrxPackages } from '../packages';
 import { DrxPage } from '../page';
@@ -14,6 +14,7 @@ import { DrxTemplate, DrxTemplateItem } from '../template-item';
 import { DrxType } from '../type';
 import { DrxVariable } from '../variable';
 import { DrxPwaMetadata } from './pwa-metadata';
+import { DrxSettings } from './settings';
 
 export interface DrxApp {
     id: string;
@@ -25,6 +26,7 @@ export interface DrxApp {
     libraries?: string[];
     dependencyTree?: DependencyTree;
     pwaMetadata?: DrxPwaMetadata;
+    settings?: DrxSettings;
     pageIds: string[];
     variableIds: string[];
     serviceIds: string[];
@@ -55,6 +57,7 @@ export const DrxApp = class {
             libraries: DrxDom.parseChildren(element, NodeType.Libraries, child => DrxLibraries.parse(child))[0],
             dependencyTree: DrxDom.parseChildren(element, NodeType.DependencyTree, child => DrxDependencyTree.parse(child))[0],
             pwaMetadata: DrxDom.parseChildren(element, NodeType.PwaMetadata, child => DrxPwaMetadata.parse(child))[0],
+            settings: DrxDom.parseChildren(element, NodeType.Settings, child => DrxSettings.parse(child))[0],
             pageIds: pages.map(page => page.id),
             variableIds: variables.map(variable => variable.id),
             serviceIds: services.map(service => service.id),
@@ -74,6 +77,7 @@ export const DrxApp = class {
         if (app.libraries) element.appendChild(DrxLibraries.to(app.libraries));
         if (app.dependencyTree) element.appendChild(DrxDependencyTree.to(app.dependencyTree));
         if (app.pwaMetadata) element.appendChild(DrxPwaMetadata.to(app.pwaMetadata));
+        if (app.settings) element.appendChild(DrxSettings.to(app.settings));
         DrxDom.createScript(element, app.script);
         DrxDom.createStyle(element, app.style);
         for (const id of app.typeIds) element.appendChild(DrxType.to(state.types[id]));

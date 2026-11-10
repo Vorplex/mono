@@ -21,9 +21,9 @@ export interface DrxProblem {
 export class DrxValidation {
 
     private static readonly reserved = {
-        app: ['asset', 'router', 'modal'],
-        component: ['asset'],
-        attribute: ['id', 'component', 'asset']
+        app: ['assets', 'router', 'modal'],
+        component: ['assets'],
+        attribute: ['id', 'component', 'assets']
     };
 
     public static isValidName(name: string): boolean {
@@ -289,7 +289,7 @@ export class DrxValidation {
             validateUrlValid(state: DrxDocumentState): DrxProblem[] {
                 const problems: DrxProblem[] = [];
                 for (const api of Object.values(state.apis)) {
-                    if (!api.url?.trim()) continue;
+                    if (!api.url?.trim() || !DrxExpression.isLiteral(api.url)) continue;
                     try {
                         new URL(api.url);
                     } catch {
@@ -535,6 +535,17 @@ export class DrxValidation {
                 return problems;
             }
         },
+        settings: {
+            validateNotInLibrary(state: DrxDocumentState): DrxProblem[] {
+                if (state.app.type !== 'library' || state.app.settings === undefined) return [];
+                return [{ severity: 'error', code: 'DRX030', message: 'A library can\'t declare <x-settings> -- settings belong to the app and can not access them', target: { type: NodeType.App, id: state.app.id } }];
+            },
+            validateObject(state: DrxDocumentState): DrxProblem[] {
+                const value = state.app.settings?.value;
+                if (state.app.settings === undefined || (typeof value === 'object' && value !== null && !Array.isArray(value))) return [];
+                return [{ severity: 'error', code: 'DRX031', message: 'Settings must be a JSON object', target: { type: NodeType.App, id: state.app.id } }];
+            }
+        },
         library: {
             validateLoaded(state: DrxDocumentState, linked: DrxDocumentState): DrxProblem[] {
                 const problems: DrxProblem[] = [];
@@ -681,6 +692,7 @@ export class DrxValidation {
                 for (const item of Object.values(state.elseIfs)) expression(item.condition, 'x-else-if condition', { type: NodeType.ElseIf, id: item.id });
                 for (const item of Object.values(state.fors)) expression(item.each, 'x-for each', { type: NodeType.For, id: item.id });
                 for (const container of Object.values(state.pageContainers)) interpolation(container.page, 'expression in x-page-container page', { type: NodeType.PageContainer, id: container.id });
+                for (const api of Object.values(state.apis)) interpolation(api.url, `expression in the url of api "${api.name}"`, { type: NodeType.Api, id: api.id });
                 for (const instance of Object.values(state.componentInstances)) {
                     interpolation(instance.component, 'expression in x-component-instance component', { type: NodeType.ComponentInstance, id: instance.id });
                     for (const [name, value] of Object.entries(instance.attributes)) {

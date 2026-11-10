@@ -269,7 +269,6 @@ export class $Tson {
         if (typeof value === 'string') return $Tson.string();
         if (typeof value === 'number') return $Tson.number();
         if (typeof value === 'boolean') return $Tson.boolean();
-        if ($Enum.isEnum(value)) return $Tson.enum(value);
         if ($Reflection.isArray(value))
             return $Tson.array({
                 itemDefinition: $Tson.generate(value[0]) ?? $Tson.any(),

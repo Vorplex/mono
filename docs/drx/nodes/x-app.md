@@ -15,6 +15,7 @@ The composition root of a DRX document — exactly one per file, everything else
     <x-libraries></x-libraries>
     <x-dependency-tree></x-dependency-tree>
     <x-pwa-metadata></x-pwa-metadata>
+    <x-settings></x-settings>
     <x-type></x-type>
     <x-variable></x-variable>
     <x-service></x-service>
@@ -82,7 +83,7 @@ Styles live next to what consumes them. The app owns the document, so the app's 
 - A page's own rules win over the app's at equal specificity.
 - `@keyframes` in the app style work in the app and its pages; a component declares its own.
 - `@font-face` and `@property` work in any `<style>`.
-- `{{ }}` works in a `<style>` with the owner's locals, and the styles update when those change: `:root { --accent: {{accent()}}; }`, or `src: url({{asset.inter}})` for a font bundled as an [`<x-asset>`](x-asset.md). Per-element values belong in `style.<property>` bindings.
+- `{{ }}` works in a `<style>` with the owner's locals, and the styles update when those change: `:root { --accent: {{accent()}}; }`, or `src: url({{assets.inter}})` for a font bundled as an [`<x-asset>`](x-asset.md). Per-element values belong in `style.<property>` bindings.
 - CSS that a library injects into the document `<head>` applies everywhere, as on any web page; your own styles win over it at equal specificity.
 - Pages and components are rendered as `display: contents`, so their top-level elements take part directly in the app's layout, e.g. as grid items.
 

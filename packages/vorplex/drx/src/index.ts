@@ -36,6 +36,7 @@ export * from './node/api/parameter';
 export * from './node/api/response';
 export * from './node/app/app';
 export * from './node/app/pwa-metadata';
+export * from './node/app/settings';
 export * from './node/component/component';
 export * from './node/component/event';
 export * from './node/component/instance';

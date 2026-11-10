@@ -47,6 +47,7 @@ See [Expressions](concepts/expressions.md) for attribute syntax and expression f
 - [\<x-libraries>](nodes/x-libraries.md)
 - [\<x-dependency-tree>](nodes/x-dependency-tree.md)
 - [\<x-pwa-metadata>](nodes/x-pwa-metadata.md)
+- [\<x-settings>](nodes/x-settings.md)
 - [\<x-api>](nodes/x-api.md)
 - [\<x-route>](nodes/x-route.md)
 - [\<x-if>](nodes/x-if.md)

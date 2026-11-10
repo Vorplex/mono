@@ -7,28 +7,30 @@ Each level below adds locals on top of what it inherited; lower in the list wins
 ## App
 
 1. app [`<x-libraries>`](../nodes/x-libraries.md) namespaces
-2. `asset`
-3. [`router`](../nodes/x-route.md)
-4. app script methods
-5. app `<x-variable>`s
+2. `assets`
+3. [`settings`](../nodes/x-settings.md)
+4. [`router`](../nodes/x-route.md)
+5. app script methods
+6. app `<x-variable>`s
 
 ## Page
 
 Adds on top of App:
 
-6. page script methods
-7. page `<x-variable>`s
+7. page script methods
+8. page `<x-variable>`s
 
 ## Component
 
 Isolated — App/Page locals never apply here. A [nested component](../nodes/x-component.md#nested-components) starts from the locals of the component instance enclosing it, then adds:
 
 1. the app's [`<x-libraries>`](../nodes/x-libraries.md) namespaces
-2. `asset` — names it doesn't declare fall back to the enclosing instance's `asset`
-3. component script methods
-4. component `<x-variable>`s
-5. `<x-property>` values
-6. `<x-event>`s
+2. `assets` — names it doesn't declare fall back to the enclosing instance's `assets`
+3. [`settings`](../nodes/x-settings.md) — always the app's settings
+4. component script methods
+5. component `<x-variable>`s
+6. `<x-property>` values
+7. `<x-event>`s
 
 ## Resets
 

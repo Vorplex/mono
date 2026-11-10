@@ -9,6 +9,7 @@ import type { DrxApiHeader } from './node/api/header';
 import type { DrxApiParameter } from './node/api/parameter';
 import type { DrxApiResponse } from './node/api/response';
 import { DrxApp } from './node/app/app';
+import { DrxSettings } from './node/app/settings';
 import { DrxAsset } from './node/asset';
 import { DrxComponent } from './node/component/component';
 import type { DrxComponentEvent } from './node/component/event';
@@ -326,18 +327,26 @@ export class DrxDocument {
 
     public getLocals(target: { type: NodeType, id: string }) {
         const state = this.state.value;
-        const locals: { source: 'global' | 'app-variable' | 'page-variable' | 'component-variable' | 'component-property' | 'component-event' | 'for' | 'asset' | 'library', name: string, definition: TsonDefinition, shadowed?: boolean }[] = [];
-        const libraryLocals = DrxLibraries.getLinked(state, state.app).map(library => ({ source: 'library' as const, name: library.id, definition: $Tson.any() }));
-        if ([NodeType.Api, NodeType.Page, NodeType.Element, NodeType.For, NodeType.If, NodeType.Icon, NodeType.PageContainer, NodeType.Text, NodeType.ComponentInstance, NodeType.RouterRoute].includes(target.type)) {
-            for (const asset of state.app.assetIds.map(id => state.assets[id])) {
-                locals.push({
-                    source: 'asset',
-                    name: asset.name,
-                    definition: $Tson.string()
-                });
-            }
+        const locals: { source: 'global' | 'app-variable' | 'page-variable' | 'component-variable' | 'component-property' | 'component-event' | 'for' | 'asset' | 'library', name: string, definition: TsonDefinition, reactive: boolean, shadowed?: boolean }[] = [];
+        const libraryLocals = DrxLibraries.getLinked(state, state.app).map(library => ({ source: 'library' as const, name: library.id, definition: $Tson.any(), reactive: true }));
+        const templateNodes = [NodeType.Element, NodeType.For, NodeType.If, NodeType.Icon, NodeType.PageContainer, NodeType.Text, NodeType.ComponentInstance, NodeType.RouterRoute];
+        const scopedNodes = [NodeType.Api, ...templateNodes];
+        const expressionNodes = [NodeType.Page, ...scopedNodes];
+        if (expressionNodes.includes(target.type)) {
+            locals.push({
+                source: 'asset',
+                name: 'assets',
+                definition: $Tson.object({ properties: Object.fromEntries(state.app.assetIds.map(id => [state.assets[id].name, $Tson.string()])) }),
+                reactive: false
+            });
+            locals.push({
+                source: 'global',
+                name: 'settings',
+                definition: $Tson.generate(state.app.settings?.value ?? {}),
+                reactive: false
+            });
         }
-        if ([NodeType.Element, NodeType.For, NodeType.If, NodeType.Icon, NodeType.PageContainer, NodeType.Text, NodeType.ComponentInstance, NodeType.RouterRoute].includes(target.type)) {
+        if (scopedNodes.includes(target.type)) {
             const ancestors = Array.from(this.getNodeParents(target.id));
             const outermostComponent = ancestors.map(parent => parent.type).lastIndexOf(NodeType.Component);
             const parents = (outermostComponent > -1 ? ancestors.slice(0, outermostComponent + 1) : ancestors).reverse();
@@ -350,26 +359,32 @@ export class DrxDocument {
                         .map(variable => ({
                             source: 'app-variable' as const,
                             name: variable.name,
-                            definition: DrxType.resolve(state, { type: 'app' }, variable.type)
+                            definition: DrxType.resolve(state, { type: 'app' }, variable.type),
+                            reactive: true
                         }));
                     locals.push(...appVariableLocals);
                     locals.push({
                         source: 'global',
                         name: 'router',
-                        definition: $Tson.object({ properties: { route: $Tson.string(), params: $Tson.record({ property: $Tson.string() }) } })
+                        definition: $Tson.object({ properties: { route: $Tson.string(), params: $Tson.record({ property: $Tson.string() }) } }),
+                        reactive: true
                     });
-                    locals.push({
-                        source: 'global',
-                        name: 'modal',
-                        definition: $Tson.object({ properties: { data: $Tson.any({ default: { value: undefined } }) } })
-                    });
+                    if (target.type !== NodeType.Api) {
+                        locals.push({
+                            source: 'global',
+                            name: 'modal',
+                            definition: $Tson.object({ properties: { data: $Tson.any({ default: { value: undefined } }) } }),
+                            reactive: true
+                        });
+                    }
                 } else if (parent.type === NodeType.Page) {
                     const pageVariableLocals = state.pages[parent.id].variableIds
                         .map(id => state.variables[id])
                         .map(variable => ({
                             source: 'page-variable' as const,
                             name: variable.name,
-                            definition: DrxType.resolve(state, { type: 'app' }, variable.type)
+                            definition: DrxType.resolve(state, { type: 'app' }, variable.type),
+                            reactive: true
                         }));
                     locals.push(...pageVariableLocals);
                 } else if (parent.type === NodeType.Component) {
@@ -379,7 +394,8 @@ export class DrxDocument {
                         .map(variable => ({
                             source: 'component-variable' as const,
                             name: variable.name,
-                            definition: DrxType.resolve(state, componentScope, variable.type)
+                            definition: DrxType.resolve(state, componentScope, variable.type),
+                            reactive: true
                         }));
                     locals.push(...componentVariableLocals);
                     const componentPropertyLocals = state.components[parent.id].propertyIds
@@ -387,7 +403,8 @@ export class DrxDocument {
                         .map(property => ({
                             source: 'component-property' as const,
                             name: property.name,
-                            definition: DrxType.resolve(state, componentScope, property.type)
+                            definition: DrxType.resolve(state, componentScope, property.type),
+                            reactive: true
                         }));
                     locals.push(...componentPropertyLocals);
                     const componentEventLocals = state.components[parent.id].eventIds
@@ -395,7 +412,8 @@ export class DrxDocument {
                         .map(event => ({
                             source: 'component-event' as const,
                             name: event.name,
-                            definition: $Tson.any()
+                            definition: $Tson.any(),
+                            reactive: false
                         }));
                     locals.push(...componentEventLocals);
                 } else if (parent.type === NodeType.For) {
@@ -403,15 +421,15 @@ export class DrxDocument {
                     const eachLocal = DrxExpression.isPureLocal(forNode.each);
                     const eachDefinition = eachLocal && locals.find(local => local.name === eachLocal.name)?.definition;
                     const itemDefinition = eachDefinition && $Tson.getDefinitionAtPath(eachDefinition, eachLocal.path);
-                    locals.push({ source: 'for', name: forNode.as, definition: itemDefinition?.type === 'array' ? (itemDefinition.itemDefinition ?? $Tson.any()) : $Tson.any() });
-                    if (forNode.index) locals.push({ source: 'for', name: forNode.index, definition: $Tson.number() });
-                    if (forNode.key) locals.push({ source: 'for', name: forNode.key, definition: $Tson.string() });
+                    locals.push({ source: 'for', name: forNode.as, definition: itemDefinition?.type === 'array' ? (itemDefinition.itemDefinition ?? $Tson.any()) : $Tson.any(), reactive: true });
+                    if (forNode.index) locals.push({ source: 'for', name: forNode.index, definition: $Tson.number(), reactive: true });
+                    if (forNode.key) locals.push({ source: 'for', name: forNode.key, definition: $Tson.string(), reactive: true });
                 }
             }
         }
         return locals.map((local, index) => ({
             ...local,
-            shadowed: local.source !== 'asset' && locals.slice(index + 1).some(other => other.source !== 'asset' && other.name === local.name)
+            shadowed: locals.slice(index + 1).some(other => other.name === local.name)
         }));
     }
 
@@ -456,6 +474,15 @@ export class DrxDocument {
                 style.replaceWith(createImport(element, 'style.css'));
             }
             for (const child of Array.from(element.children)) {
+                if (child.tagName === NodeType.Settings) {
+                    const settings = state.app.settings;
+                    if (settings.type === 'external' && $Url.isAbsolute(settings.src)) continue;
+                    const target = settings.type === 'external' ? settings.src : $Path.join(directory, DrxSettings.file);
+                    files[target] = DrxSettings.stringify(settings.value);
+                    child.textContent = '';
+                    child.setAttribute('src', $Path.getRelativePath(directory, target));
+                    continue;
+                }
                 const layout = layouts[child.tagName as NodeType];
                 if (!layout) continue;
                 if (layout.type === 'file') {
@@ -502,6 +529,12 @@ export class DrxDocument {
                 const target = $Path.join(base, src);
                 if (!(target in files)) missing.push({ type: 'import', path, target });
                 else if (!target.endsWith('.ts') && !target.endsWith('.css')) visit(target, $Path.getDirectory(target));
+            }
+            for (const element of Array.from(dom.body.querySelectorAll(`${NodeType.Settings}[src]`))) {
+                const src = element.getAttribute('src');
+                if ($Url.isAbsolute(src)) continue;
+                const target = $Path.join(base, src);
+                if (!(target in files)) missing.push({ type: 'import', path, target });
             }
             for (const element of Array.from(dom.body.querySelectorAll(NodeType.Asset))) {
                 const src = element.getAttribute('src');

@@ -6,8 +6,8 @@ test.describe('<x-asset>', () => {
         await drx.render(`
             <x-app>
                 <x-asset name="logo" src="https://example.com/logo.png"></x-asset>
-                <img id="logo" src="{{asset.logo}}" />
-                <p id="type">{{typeof asset.logo}}</p>
+                <img id="logo" src="{{assets.logo}}" />
+                <p id="type">{{typeof assets.logo}}</p>
             </x-app>
         `);
         const logo = drx.node('logo');
@@ -22,7 +22,7 @@ test.describe('<x-asset>', () => {
         await drx.render(`
             <x-app>
                 <x-asset name="note" type="text/plain">Hello asset</x-asset>
-                <a id="note" href="{{asset.note}}">Note</a>
+                <a id="note" href="{{assets.note}}">Note</a>
             </x-app>
         `);
         const note = drx.node('note');
@@ -43,9 +43,9 @@ test.describe('<x-asset>', () => {
                 <x-asset name="root" src="./images/root.svg"></x-asset>
                 <x-import src="./parts/assets.html"></x-import>
                 <x-import src="./top.html"></x-import>
-                <p id="root">{{asset.root}}</p>
-                <p id="nested">{{asset.nested}}</p>
-                <p id="top">{{asset.top}}</p>
+                <p id="root">{{assets.root}}</p>
+                <p id="nested">{{assets.nested}}</p>
+                <p id="top">{{assets.top}}</p>
             </x-app>
         `, {
             files: {
@@ -73,7 +73,7 @@ test.describe('<x-asset>', () => {
         await drx.render(`
             <x-app>
                 <x-asset name="missing" src="./missing.svg"></x-asset>
-                <p id="missing">{{asset.missing}}</p>
+                <p id="missing">{{assets.missing}}</p>
             </x-app>
         `);
         const missing = drx.node('missing');
@@ -87,7 +87,7 @@ test.describe('<x-asset>', () => {
             <x-app>
                 <x-component name="badge">
                     <x-asset name="icon" src="https://example.com/icon.svg"></x-asset>
-                    <p id="icon">{{asset.icon}}</p>
+                    <p id="icon">{{assets.icon}}</p>
                 </x-component>
                 <x-component-instance component="badge"></x-component-instance>
             </x-app>

@@ -1,5 +1,6 @@
 import { $Reflection, $String, $Tson, ModuleLoader, Scope, Signal, State, type TsonResult } from '@vorplex/core';
 import type { DrxDocumentState, DrxScope } from './document';
+import { DrxExpression } from './expression';
 import { DrxLibraries } from './node/libraries';
 import { DrxType } from './node/type';
 import { DrxVariable } from './node/variable';
@@ -81,13 +82,13 @@ export class DrxScripting {
             .reduce((methods, name) => Object.assign(methods, { [name]: instance[name].bind(instance) }), {});
     }
 
-    public static instantiateServices(state: DrxDocumentState, serviceIds: string[], scope: DrxScope, module: Record<string, any> | undefined, instances: Map<string, any>, realm: typeof globalThis, libraries: Record<string, any>, context: Record<string, unknown> = {}): Record<string, any> {
+    public static instantiateServices(state: DrxDocumentState, serviceIds: string[], scope: DrxScope, module: Record<string, any> | undefined, instances: Map<string, any>, realm: typeof globalThis, libraries: Record<string, any>, context: Record<string, unknown> = {}, locals: () => Record<string, any> = () => ({}), expression?: DrxExpression): Record<string, any> {
         const api: Record<string, any> = {};
         for (const serviceId of serviceIds) {
             const service = state.services[serviceId];
             Object.defineProperty(api, service.name, { get: () => instances.get(serviceId), enumerable: true });
         }
-        const apis = DrxScripting.createApiClients(state, scope, realm);
+        const apis = DrxScripting.createApiClients(state, scope, realm, locals, expression);
         for (const serviceId of serviceIds) {
             if (instances.has(serviceId)) continue;
             const service = state.services[serviceId];
@@ -134,11 +135,15 @@ export class DrxScripting {
         }, {} as Record<string, DrxVariableApi>);
     }
 
-    public static createApiClients(state: DrxDocumentState, scope: DrxScope, realm: typeof globalThis): Record<string, DrxApiClient> {
+    public static createApiClients(state: DrxDocumentState, scope: DrxScope, realm: typeof globalThis, locals: () => Record<string, any> = () => ({}), expression: DrxExpression = new DrxExpression(realm)): Record<string, DrxApiClient> {
         const apiIds = scope.type === 'component' ? state.components[scope.componentId].apiIds : DrxLibraries.getOwner(state, scope).apiIds;
         const api: Record<string, DrxApiClient> = {};
         for (const apiId of apiIds) {
             const definition = state.apis[apiId];
+            const resolveUrl = (): string => {
+                const url = expression.parse(definition.url ?? '', locals());
+                return url == null ? '' : String(url);
+            };
             const endpoints: Record<string, DrxApiEndpointClient> = {};
             for (const endpointId of definition.endpointIds) {
                 const endpoint = state.apiEndpoints[endpointId];
@@ -160,7 +165,7 @@ export class DrxScripting {
                             usedParameters.add(name);
                             return encodeURIComponent(parameters[name]);
                         });
-                        const url = new URL(definition.url + path);
+                        const url = new URL(resolveUrl() + path);
                         for (const [name, value] of Object.entries(parameters)) {
                             if (!usedParameters.has(name)) url.searchParams.set(name, value);
                         }
@@ -209,7 +214,7 @@ export class DrxScripting {
                     }
                 };
             }
-            api[definition.name] = { url: definition.url, endpoints };
+            api[definition.name] = { get url() { return resolveUrl(); }, endpoints };
         }
         return api;
     }

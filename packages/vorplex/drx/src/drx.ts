@@ -1,10 +1,11 @@
 import { Compiler, JsDelivr, NPM, type DependencyTree } from '@vorplex/compiler';
-import { $Id, $MimeType, $Object, $Path, $String, $Url, $Value, Awaitable, Scope } from '@vorplex/core';
+import { $MimeType, $Object, $Path, $String, $Url, $Value, Awaitable, Scope } from '@vorplex/core';
 import { version } from '../package.json';
 import { DrxDocument, DrxDocumentState } from './document';
 import { DrxDom } from './dom';
 import { DrxIconSheet } from './icon-sheet';
 import { DrxApp } from './node/app/app';
+import { DrxSettings } from './node/app/settings';
 import { DrxAsset } from './node/asset';
 import { DrxLibraries, type DrxLibrary } from './node/libraries';
 import { NodeType } from './node/node-type';
@@ -86,7 +87,17 @@ export class DRX {
         const dom = await resolveImports(drx, '');
         const namespace = url ? `${dom.body.querySelector(`:scope > ${NodeType.Library}`)?.getAttribute('name') ?? ''}:` : '';
         const state = DrxDom.withNamespace(namespace, () => DRX.from(dom));
-        for (const path of Object.values(state.assets).map(asset => DrxAsset.getFilePath(asset)).filter(path => path !== undefined)) {
+        const settings = state.app.settings;
+        if (state.app.type === 'app' && settings?.type === 'external') {
+            const content = await DRX.readText(await read(DrxDocument.locate(settings.src, url)));
+            if (content === undefined) throw new Error(`Settings file "${settings.src}" does not exist`);
+            state.app.settings = { ...settings, value: JSON.parse(content) };
+        }
+        const assetPaths = Object
+            .values(state.assets)
+            .map(asset => DrxAsset.getFilePath(asset))
+            .filter(path => path !== undefined);
+        for (const path of assetPaths) {
             try {
                 const content = await read(DrxDocument.locate(path, url));
                 if (content !== undefined) state.files[DrxDocument.locate(path, url)] = DrxAsset.createUrl(content, $MimeType.fromPath(path));
@@ -163,7 +174,8 @@ export class DRX {
 
     public static async compile(document: DrxDocument) {
         const runtimeUrl = `https://cdn.jsdelivr.net/npm/@vorplex/drx@${version}/dist/standalone`;
-        const state = $Value.clone({ ...document.state.value, files: {} });
+        const { settings, ...app } = document.state.value.app;
+        const state = $Value.clone({ ...document.state.value, app, files: {} });
         const [bundle, icons, runtime] = await Promise.all([
             DRX.bundle(document),
             fetch(DrxIconSheet.url).then(response => response.text()),
@@ -188,7 +200,7 @@ export class DRX {
                     <head>
                         <script type="module">
                             import { bootstrap } from './drx.js';
-                            bootstrap({ documents: 'app.json', bundle: 'bundle.js', icons: 'icons.svg' });
+                            bootstrap({ documents: 'app.json', bundle: 'bundle.js', icons: 'icons.svg'${settings ? `, settings: '${DrxSettings.file}'` : ''} });
                         </script>
                         ${state.app.pwaMetadata ? '<link rel="manifest" href="manifest.json" />' : ''}
                         ${!$String.isNullOrEmpty(state.app.pwaMetadata?.theme_color) ? `<meta name="theme-color" content="${state.app.pwaMetadata.theme_color}" />` : ''}
@@ -200,6 +212,7 @@ export class DRX {
             text('icons.svg', 'image/svg+xml', icons),
             text('drx.js', 'application/javascript', runtime),
             text('app.json', 'application/json', JSON.stringify(state)),
+            ...settings ? [text(DrxSettings.file, 'application/json', DrxSettings.stringify(settings.value))] : [],
         ]);
         if (state.app.pwaMetadata) {
             const serviceWorker = await fetch(`${runtimeUrl}/pwa-service-worker.js`).then(response => response.text());
@@ -210,7 +223,6 @@ export class DRX {
                 display: pwa.display ?? 'standalone',
                 start_url: '.',
                 scope: '.',
-                hash: $Id.guid(),
                 files: files.map(file => file.path)
             };
             files.push(text('manifest.json', 'application/json', JSON.stringify(manifest)));

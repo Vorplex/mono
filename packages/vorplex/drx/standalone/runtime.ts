@@ -3,13 +3,15 @@ import { DrxDom } from '../src/dom';
 import { DrxIconSheet } from '../src/icon-sheet';
 import { DrxRenderer } from '../src/renderer';
 
-export async function bootstrap(paths: { bundle: string, documents: string, icons: string }) {
+export async function bootstrap(paths: { bundle: string, documents: string, icons: string, settings?: string }) {
     await DrxDom.bootstrap(document.body, async () => {
         DrxIconSheet.load(paths.icons);
-        const [state, bundle]: [DrxDocumentState, string] = await Promise.all([
+        const [state, bundle, settings]: [DrxDocumentState, string, Record<string, any> | undefined] = await Promise.all([
             fetch(paths.documents).then(response => response.json()),
-            fetch(paths.bundle).then(response => response.text())
+            fetch(paths.bundle).then(response => response.text()),
+            paths.settings ? fetch(paths.settings).then(response => response.json()) : undefined
         ]);
+        if (settings !== undefined) state.app.settings = { type: 'inline', value: settings };
         if (state.app.pwaMetadata && 'serviceWorker' in navigator) {
             navigator.serviceWorker
                 .register('pwa-service-worker.js', { updateViaCache: 'none' })

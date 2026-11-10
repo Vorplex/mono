@@ -13,10 +13,10 @@ Declares an HTTP client, reached via `drx.apis.<name>`. Use it to centralize a b
 </x-api>
 ```
 
-| Attribute | Description         |
-| --------- | ------------------- |
-| **name**  | Name of the api     |
-| **url**   | Base url of the api |
+| Attribute    | Description         |
+| ------------ | ------------------- |
+| **name**     | Name of the api     |
+| **{ƒ} url**  | Base url of the api |
 
 ## Example
 
@@ -53,6 +53,33 @@ Against the public [JSONPlaceholder](https://jsonplaceholder.typicode.com) API:
         });
     </script>
     <h1>Todos</h1>
+</x-app>
+```
+
+## Url expressions
+
+The `url` is evaluated each time a request is sent, against the locals of the api's owner: the app's locals for an app api, the component's locals for a component api. `drx.apis.<name>.url` returns the evaluated url. Read environment-specific addresses from [\<x-settings>](x-settings.md):
+
+```html drx
+<x-app>
+    <x-settings>{ "api": { "url": "https://jsonplaceholder.typicode.com" } }</x-settings>
+    <x-variable name="resource" type="string">"todos"</x-variable>
+
+    <x-api name="jsonPlaceholder" url="{{settings.api.url}}/{{resource()}}">
+        <x-endpoint name="get" path="/1"></x-endpoint>
+    </x-api>
+
+    <script type="application/typescript">
+        export default DRX.defineApp(drx => class {
+            async onMount() {
+                console.log(drx.apis.jsonPlaceholder.url);
+                drx.app.variables.resource.set('posts');
+                console.log(drx.apis.jsonPlaceholder.url);
+                const response = await drx.apis.jsonPlaceholder.endpoints.get.request();
+                console.log(await response.value());
+            }
+        });
+    </script>
 </x-app>
 ```
 

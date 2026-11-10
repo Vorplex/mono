@@ -70,7 +70,7 @@ A library is a `<x-library>` instead of an `<x-app>`. It declares types, variabl
 | Variables          | `ui.theme()` in templates, `drx.libraries.ui.variables.theme` in scripts  |
 | Services           | `drx.libraries.ui.services.logger.log(...)`                               |
 | Apis               | `drx.libraries.ui.apis.todoApi.endpoints.list.request()`                  |
-| Assets             | `ui.asset.logo`                                                           |
+| Assets             | `ui.assets.logo`                                                           |
 
 - **Only the top level is exported.** Components, types and the rest declared inside a library component stay private to that component.
 - **One instance.** A library's variables and services exist once per running app, however many pages, components and other libraries use it. `ui.theme()` is the same signal everywhere.
@@ -149,4 +149,4 @@ Scripts reach a library's variables, services and apis through `drx.libraries.<n
 
 ## Names
 
-A library's name must not clash with an app variable. `asset`, `router` and `modal` are reserved.
+A library's name must not clash with an app variable. `assets`, `router` and `modal` are reserved.
